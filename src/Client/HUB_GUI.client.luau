@@ -1,19 +1,23 @@
--- HUD principal no estilo escuro (vermelho e branco):
---   embaixo à esquerda (no celular, em cima à esquerda): anel de level com o XP, nome e caminho, vida (números em
---     cima da barra), stamina, tempo de vida (só Caçador) e gold; em cima disso, os bônus em pílulas (árvore + itens)
---   embaixo no centro: habilidades com a tecla em cima (F guarda, Z/X/C do estilo, Q dash, V/B poderes do caminho),
---     a hotbar redonda 1 a 5 (estilos de combate; a mochila padrão do Roblox sai) e os botões da árvore (M), do
---     inventário (G) e das configurações
+-- HUD principal (refeita em 2026-10-05, pedido do usuário: mais moderna e menos poluída). Regras do visual:
+--   sem molduras nem degradês pesados, cantos arredondados, fundo escuro translúcido e um destaque vermelho só no que
+--   importa agora (estilo na mão, guarda levantada, vida baixa). Fonte Builder Sans nos textos e números.
+--   embaixo à esquerda (no celular, em cima à esquerda): level, nome/clã/caminho e gold numa linha; a vida com o número
+--     dentro da barra; fôlego, tempo de vida (só Caçador) e XP em linhas finas. Os bônus (árvore + itens) saíram da
+--     tela: aparecem no balão do level e no inventário.
+--   embaixo no centro, numa linha só: estilos de combate (1 a 5, só as casas com estilo), as habilidades (F guarda,
+--     Z/X/C do estilo, Q dash) e os poderes do caminho (V/B). A tecla fica no canto de cada casa.
+--   menus (árvore M, inventário G, configurações) num grupo pequeno em cima do minimapa, fora da linha de combate
 --   animações de ganho (XP, gold, LEVEL UP) e a borda de sangue com a vida baixa
 --   no celular (sem teclado): as habilidades viram botões redondos grandes no canto de baixo à direita, em volta de um
---     botão de ataque (M1), ao lado do pulo do Roblox; a hotbar fica maior e sem as casas vazias. Para ver esse layout
---     no Studio, ponha o atributo ForceMobileHUD = true no ReplicatedStorage antes do Play.
+--     botão de ataque (M1), ao lado do pulo do Roblox; a hotbar fica maior e os menus vão para a linha de baixo. Para
+--     ver esse layout no Studio, ponha o atributo ForceMobileHUD = true no ReplicatedStorage antes do Play.
 -- As telas grandes ficam em SkillTreeMenu (árvore), Inventory (inventário) e StatusMenu (caminho).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 local StatConfig = require(ReplicatedStorage:WaitForChild("StatConfig"))
@@ -51,17 +55,27 @@ local RED = Colors.Accent
 local RED_BRIGHT = Colors.Orange
 local CREAM = Colors.Gold
 local BLACK = Colors.Black
-local SLOT_BG = Color3.fromRGB(12, 12, 14)
-local SLOT_LINE = Color3.fromRGB(70, 70, 78)
+local SLOT_BG = Color3.fromRGB(16, 16, 20)
+local SLOT_LINE = Color3.fromRGB(255, 255, 255) -- contorno das casas, quase transparente (LINE_FADE)
+local LINE_FADE = 0.86
+local TRACK = Color3.fromRGB(8, 8, 10) -- fundo das barras
+
+-- Builder Sans (fonte atual do Roblox) nos textos e números da HUD; os kanji dos ícones continuam na fonte do tema
+local FONT_HEAVY = Enum.Font.BuilderSansExtraBold
+local FONT_BOLD = Enum.Font.BuilderSansBold
+local FONT_MEDIUM = Enum.Font.BuilderSansMedium
 
 local touchOnly = (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
 	or ReplicatedStorage:GetAttribute("ForceMobileHUD") == true
-local RING_SEGMENTS = 40
 local HOTBAR_SLOTS = 5
 local HOTBAR_KEYS = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four, Enum.KeyCode.Five }
 -- Ícone de cada estilo de combate na hotbar e das skills dele (kanji brancos, como os nós da árvore)
 local STYLE_GLYPHS = { Punhos = "拳", Katana = "刀" }
 local SKILL_GLYPHS = { Punhos = { Z = "連", X = "溜" } }
+
+local SLOT_SIZE = 46 -- casas da linha de baixo (estilos, habilidades e poderes)
+local SLOT_GAP = 6
+local MENU_SIZE = 34
 
 local screen = UITheme.screen("HUD", 1, playerGui)
 
@@ -77,8 +91,101 @@ end
 local function text(props)
 	props.BackgroundTransparency = 1
 	props.TextColor3 = props.TextColor3 or WHITE
-	props.Font = props.Font or Fonts.Title
+	props.Font = props.Font or FONT_BOLD
 	return new("TextLabel", props)
+end
+
+-- Contorno fino e discreto das casas (acende em vermelho/branco quando a ação está ativa)
+local function softStroke(parent)
+	return UITheme.stroke(parent, SLOT_LINE, 1, LINE_FADE)
+end
+
+local function setStroke(stroke, color, thickness)
+	stroke.Color = color
+	stroke.Thickness = thickness or 1
+	stroke.Transparency = if color == SLOT_LINE then LINE_FADE else 0
+end
+
+-- Letra da tecla no canto de cima, à esquerda, dentro da casa
+local function cornerKey(parent, key)
+	return text({
+		Position = UDim2.fromOffset(5, 3),
+		Size = UDim2.fromOffset(16, 12),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Font = FONT_BOLD,
+		TextSize = 11,
+		TextColor3 = DIM,
+		Text = key,
+		ZIndex = 7,
+		Parent = parent,
+	})
+end
+
+-- Barra fina, sem moldura: trilho escuro, preenchimento e um rastro claro que acompanha a perda com atraso.
+-- Devolve { Frame, Fill, Ratio, Set(ratio, instant?) }
+local function slimBar(props, color, gradient)
+	local track = new("Frame", {
+		Position = props.Position,
+		Size = props.Size,
+		BackgroundColor3 = TRACK,
+		BackgroundTransparency = 0.35,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Visible = props.Visible ~= false,
+		Parent = props.Parent,
+	})
+	local radius = UDim.new(0, math.min(4, math.floor(props.Size.Y.Offset / 2)))
+	UITheme.corner(track, radius)
+	local trail = new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = WHITE,
+		BackgroundTransparency = 0.5,
+		BorderSizePixel = 0,
+		Parent = track,
+	})
+	UITheme.corner(trail, radius)
+	local fill = new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+		ZIndex = 2,
+		Parent = track,
+	})
+	UITheme.corner(fill, radius)
+	if gradient then
+		-- Degradê da esquerda (escura) para a direita (clara); o fundo branco deixa as cores como estão
+		fill.BackgroundColor3 = WHITE
+		new("UIGradient", { Color = ColorSequence.new(gradient[1], gradient[2]), Rotation = 0, Parent = fill })
+	end
+
+	local api = { Frame = track, Fill = fill, Ratio = 1 }
+	local trailTween
+	function api.Set(ratio, instant)
+		ratio = math.clamp(ratio, 0, 1)
+		if ratio == api.Ratio then return end
+		local previous = api.Ratio
+		api.Ratio = ratio
+		local target = UDim2.fromScale(ratio, 1)
+		if trailTween then
+			trailTween:Cancel()
+			trailTween = nil
+		end
+		if instant then
+			fill.Size = target
+			trail.Size = target
+			return
+		end
+		UITheme.tween(fill, 0.15, { Size = target })
+		if ratio < previous then
+			trailTween = TweenService:Create(trail,
+				TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 0.3), { Size = target })
+			trailTween:Play()
+		else
+			trail.Size = target
+		end
+	end
+	return api
 end
 
 -- Cadeado desenhado com Frames (o emoji sairia amarelo)
@@ -109,12 +216,12 @@ local function padlock(parent, size)
 		ZIndex = 8,
 		Parent = clip,
 	}))
-	UITheme.stroke(arc, WHITE, 2)
+	UITheme.stroke(arc, DIM, 2)
 	local body = round(new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.fromScale(0.5, 1),
 		Size = UDim2.fromOffset(size * 0.78, size * 0.52),
-		BackgroundColor3 = WHITE,
+		BackgroundColor3 = DIM,
 		BorderSizePixel = 0,
 		ZIndex = 9,
 		Parent = holder,
@@ -131,13 +238,15 @@ local function padlock(parent, size)
 	return holder
 end
 
--- ================= Vida, stamina, XP e gold =================
+-- ================= Vida, fôlego, XP e gold =================
+
+local VITALS_WIDTH = 300
 
 local vitals = new("Frame", {
 	Name = "Vitals",
 	AnchorPoint = if touchOnly then Vector2.new(0, 0) else Vector2.new(0, 1),
-	Position = if touchOnly then UDim2.fromOffset(12, 8) else UDim2.new(0, 22, 1, -16),
-	Size = UDim2.fromOffset(372, 112),
+	Position = if touchOnly then UDim2.fromOffset(12, 8) else UDim2.new(0, 20, 1, -18),
+	Size = UDim2.fromOffset(VITALS_WIDTH, 64),
 	BackgroundTransparency = 1,
 	Parent = screen,
 })
@@ -145,193 +254,111 @@ UITheme.autoScale(vitals, 1280, 720)
 -- O tutorial (Tutorial.client.luau) acha os elementos que destaca pelo atributo TutorialAnchor
 vitals:SetAttribute("TutorialAnchor", "Vitals")
 
--- Anel de level: segmentos que acendem com o XP
-local ring = new("Frame", {
-	Position = UDim2.fromOffset(0, 30),
-	Size = UDim2.fromOffset(76, 76),
+-- Linha de cima: level, nome (clã + caminho) e gold
+local topRow = new("Frame", {
+	Size = UDim2.new(1, 0, 0, 22),
 	BackgroundTransparency = 1,
 	Parent = vitals,
 })
-local ringScale = new("UIScale", { Parent = ring })
-local ringSegments = {}
-for i = 1, RING_SEGMENTS do
-	local angle = (i - 0.5) / RING_SEGMENTS * math.pi * 2 -- começa em cima, sentido horário
-	local segment = new("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, math.sin(angle) * 34, 0.5, -math.cos(angle) * 34),
-		Size = UDim2.fromOffset(3, 8),
-		Rotation = math.deg(angle),
-		BackgroundColor3 = WHITE,
-		BackgroundTransparency = 0.8,
-		BorderSizePixel = 0,
-		Parent = ring,
-	})
-	ringSegments[i] = segment
-end
-local ringCore = round(new("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.fromScale(0.5, 0.5),
-	Size = UDim2.fromOffset(56, 56),
-	BackgroundColor3 = BLACK,
-	BackgroundTransparency = 0.35,
-	Parent = ring,
-}))
-text({
-	Position = UDim2.fromOffset(0, 9),
-	Size = UDim2.new(1, 0, 0, 12),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	Font = Fonts.Title,
-	TextSize = 11,
-	TextColor3 = DIM,
-	Text = "Lv",
-	Parent = ringCore,
-})
+local levelBadge = round(new("Frame", {
+	Size = UDim2.fromOffset(0, 22),
+	AutomaticSize = Enum.AutomaticSize.X,
+	BackgroundColor3 = RED,
+	BorderSizePixel = 0,
+	Parent = topRow,
+}), UDim.new(0, 6))
+UITheme.padding(levelBadge, 0, 7, 0, 7)
+local levelBadgeScale = new("UIScale", { Parent = levelBadge })
 local levelNumber = text({
-	Position = UDim2.fromOffset(0, 19),
-	Size = UDim2.new(1, 0, 0, 26),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	Font = Fonts.Number,
-	TextSize = 22,
-	TextStrokeTransparency = 0.5,
-	Parent = ringCore,
-})
-local xpLabel = text({
-	Position = UDim2.fromOffset(0, 12),
-	Size = UDim2.fromOffset(160, 14),
-	TextXAlignment = Enum.TextXAlignment.Left,
-	Font = Fonts.Title,
-	TextSize = 11,
-	TextColor3 = RED_BRIGHT,
-	TextStrokeTransparency = 0.5,
-	Parent = vitals,
-})
-
--- Barras à direita do anel
-local bars = new("Frame", {
-	Position = UDim2.fromOffset(88, 0),
-	Size = UDim2.new(1, -88, 1, 0),
-	BackgroundTransparency = 1,
-	Parent = vitals,
+	Size = UDim2.fromOffset(0, 22),
+	AutomaticSize = Enum.AutomaticSize.X,
+	RichText = true,
+	Font = FONT_HEAVY,
+	TextSize = 14,
+	Parent = levelBadge,
 })
 local nameLabel = text({
-	Position = UDim2.fromOffset(0, 26),
-	Size = UDim2.new(0.62, 0, 0, 18),
+	Position = UDim2.fromOffset(44, 0),
+	Size = UDim2.new(1, -130, 1, 0),
 	TextXAlignment = Enum.TextXAlignment.Left,
 	TextTruncate = Enum.TextTruncate.AtEnd,
 	RichText = true,
-	Font = Fonts.Title,
-	TextSize = 13,
-	TextStrokeTransparency = 0.5,
-	Parent = bars,
+	Font = FONT_BOLD,
+	TextSize = 15,
+	TextStrokeTransparency = 0.7,
+	Parent = topRow,
 })
-local hpNumbers = text({
-	AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, 0, 0, 22),
-	Size = UDim2.new(0.5, 0, 0, 22),
-	TextXAlignment = Enum.TextXAlignment.Right,
-	Font = Fonts.Number,
-	TextSize = 19,
-	TextStrokeTransparency = 0.3,
-	Parent = bars,
-})
-local hpBar = UITheme.bar({
-	Position = UDim2.fromOffset(0, 46),
-	Size = UDim2.new(1, 0, 0, 14),
-	Parent = bars,
-}, Colors.Health, 1)
-hpBar.Label.Visible = false
-local hpStroke = hpBar.Frame:FindFirstChildOfClass("UIStroke")
-local staminaBar = UITheme.bar({
-	Position = UDim2.fromOffset(0, 64),
-	Size = UDim2.new(1, 0, 0, 6),
-	Parent = bars,
-}, Colors.Stamina, 1)
-staminaBar.Label.Visible = false
--- Tempo de vida: só aparece para Caçadores
-local lifespanBar = UITheme.bar({
-	Position = UDim2.fromOffset(0, 74),
-	Size = UDim2.new(1, 0, 0, 6),
-	Visible = false,
-	Parent = bars,
-}, Colors.Lifespan, 1)
-lifespanBar.Label.Visible = false
-local lifespanLabel = text({
-	Position = UDim2.fromOffset(0, 82),
-	Size = UDim2.fromOffset(150, 14),
-	TextXAlignment = Enum.TextXAlignment.Left,
-	Font = Fonts.Title,
-	TextSize = 11,
-	TextColor3 = Colors.Lifespan[1],
-	TextStrokeTransparency = 0.5,
-	Visible = false,
-	Parent = bars,
-})
--- Gold: moeda creme e o número
+-- O nome começa logo depois do level e vai até o gold (a largura do selo muda com o número)
+local GOLD_WIDTH = 86
+local function placeName()
+	local scale = math.max(0.01, levelBadge.AbsoluteSize.Y / 22)
+	local badgeWidth = levelBadge.AbsoluteSize.X / scale
+	nameLabel.Position = UDim2.fromOffset(badgeWidth + 8, 0)
+	nameLabel.Size = UDim2.new(1, -(badgeWidth + 8 + GOLD_WIDTH + 6), 1, 0)
+end
+levelBadge:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeName)
+-- Gold: moeda creme e o número, à direita
 local goldRow = new("Frame", {
 	AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, 0, 0, 74),
-	Size = UDim2.fromOffset(140, 18),
+	Position = UDim2.fromScale(1, 0),
+	Size = UDim2.fromOffset(GOLD_WIDTH, 22),
 	BackgroundTransparency = 1,
-	Parent = bars,
+	Parent = topRow,
 })
 round(new("Frame", {
 	AnchorPoint = Vector2.new(1, 0.5),
 	Position = UDim2.new(1, 0, 0.5, 0),
-	Size = UDim2.fromOffset(11, 11),
+	Size = UDim2.fromOffset(9, 9),
 	BackgroundColor3 = CREAM,
 	Parent = goldRow,
 }))
 local goldLabel = text({
 	AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 0),
-	Size = UDim2.fromOffset(120, 18),
+	Position = UDim2.new(1, -14, 0, 0),
+	Size = UDim2.new(1, -14, 1, 0),
 	TextXAlignment = Enum.TextXAlignment.Right,
-	Font = Fonts.Number,
+	Font = FONT_HEAVY,
 	TextSize = 14,
 	TextColor3 = CREAM,
-	TextStrokeTransparency = 0.5,
+	TextStrokeTransparency = 0.7,
 	Parent = goldRow,
 })
 
--- Balões das barras e do anel
-UITheme.tooltip(ring, function()
-	if level.Value >= StatConfig.MaxLevel then
-		return UITheme.tipText(`Level {level.Value}`, "Level máximo.")
-	end
-	return UITheme.tipText(`Level {level.Value}`, `XP: {UITheme.formatNumber(xp.Value)} / {UITheme.formatNumber(xpNeeded.Value)}\n`
-		.. `Cada level dá {StatConfig.PointsPerLevel} ponto na árvore de habilidades (M).`)
-end)
-UITheme.tooltip(hpBar.Frame, UITheme.tipText("Vida", "A regeneração da árvore e dos itens recupera fora de combate."))
-UITheme.tooltip(staminaBar.Frame, UITheme.tipText("Fôlego", "O dash gasta; recupera sozinho."))
-UITheme.tooltip(lifespanLabel, UITheme.tipText("Tempo de vida", "Os poderes do Caçador gastam tempo de vida. Ele recupera sozinho."))
-UITheme.tooltip(goldRow, UITheme.tipText("Gold", "Vem dos inimigos e das missões."))
-
-local function layoutVitals(showLifespan)
-	lifespanBar.Frame.Visible = showLifespan
-	lifespanLabel.Visible = showLifespan
-	goldRow.Position = UDim2.new(1, 0, 0, if showLifespan then 84 else 74)
-end
-
--- ================= Bônus (pílulas) =================
-
-local bonuses = new("Frame", {
-	Name = "Bonuses",
-	AnchorPoint = if touchOnly then Vector2.new(0, 0) else Vector2.new(0, 1),
-	Position = if touchOnly then UDim2.fromOffset(12, 124) else UDim2.new(0, 22, 1, -132),
-	Size = UDim2.fromOffset(372, 84),
-	BackgroundTransparency = 1,
-	Parent = screen,
+-- Vida com o número dentro da barra
+local hpBar = slimBar({
+	Position = UDim2.fromOffset(0, 28),
+	Size = UDim2.new(1, 0, 0, 16),
+	Parent = vitals,
+}, Colors.Health[1], { Color3.fromRGB(150, 8, 20), Colors.Health[1] })
+local hpNumbers = text({
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -6, 0, 0),
+	Size = UDim2.new(1, -12, 1, 0),
+	TextXAlignment = Enum.TextXAlignment.Right,
+	Font = FONT_HEAVY,
+	TextSize = 12,
+	TextStrokeTransparency = 0.55,
+	ZIndex = 3,
+	Parent = hpBar.Frame,
 })
-UITheme.autoScale(bonuses, 1280, 720)
-new("UIListLayout", {
-	FillDirection = Enum.FillDirection.Horizontal,
-	Wraps = true,
-	Padding = UDim.new(0, 5),
-	HorizontalAlignment = Enum.HorizontalAlignment.Left,
-	VerticalAlignment = if touchOnly then Enum.VerticalAlignment.Top else Enum.VerticalAlignment.Bottom,
-	SortOrder = Enum.SortOrder.LayoutOrder,
-	Parent = bonuses,
-})
+local staminaBar = slimBar({
+	Position = UDim2.fromOffset(0, 48),
+	Size = UDim2.new(1, 0, 0, 4),
+	Parent = vitals,
+}, WHITE)
+-- Tempo de vida: só aparece para Caçadores
+local lifespanBar = slimBar({
+	Position = UDim2.fromOffset(0, 56),
+	Size = UDim2.new(1, 0, 0, 4),
+	Visible = false,
+	Parent = vitals,
+}, Colors.Lifespan[1])
+-- XP: a linha mais fina, embaixo de tudo
+local xpBar = slimBar({
+	Position = UDim2.fromOffset(0, 56),
+	Size = UDim2.new(1, 0, 0, 3),
+	Parent = vitals,
+}, RED_BRIGHT)
 
 -- Bônus atuais: stats acima da base e os efeitos da árvore/itens (atributos Tree<Efeito>)
 local function currentBonuses()
@@ -353,44 +380,69 @@ local function currentBonuses()
 	return effects
 end
 
-local bonusPills = {} -- [efeito] = { Frame, Value }
-local function updateBonuses()
+-- Balão do level: XP e os bônus ativos (antes ficavam em pílulas em cima da vida)
+local function levelTip()
+	local lines = {}
+	if level.Value >= StatConfig.MaxLevel then
+		table.insert(lines, "Level máximo.")
+	else
+		table.insert(lines, `XP: {UITheme.formatNumber(xp.Value)} / {UITheme.formatNumber(xpNeeded.Value)}`)
+		table.insert(lines, `Cada level dá {StatConfig.PointsPerLevel} ponto na árvore de habilidades (M).`)
+	end
 	local effects = currentBonuses()
-	for index, key in SkillTreeData.EffectOrder do
+	local bonusLines = {}
+	for _, key in SkillTreeData.EffectOrder do
 		local value = effects[key]
-		local pill = bonusPills[key]
-		if value == nil then
-			if pill then
-				pill.Frame.Visible = false
-			end
-		else
-			if not pill then
-				local info = SkillTreeData.EffectInfo[key] or {}
-				local frame, _, valueLabel = UITheme.pill({ LayoutOrder = index, Parent = bonuses }, info.Icon or "•", "")
-				pill = { Frame = frame, Value = valueLabel }
-				bonusPills[key] = pill
-				-- Balão: o nome do bônus e o que ele faz (árvore + itens vestidos)
-				UITheme.tooltip(frame, function()
-					local current = currentBonuses()[key]
-					return UITheme.tipText(info.Name or key, if current ~= nil then SkillTreeData.EffectText(key, current) else "")
-				end)
-			end
-			pill.Frame.Visible = true
-			pill.Value.Text = SkillTreeData.ShortValue(key, value)
+		if value ~= nil then
+			local info = SkillTreeData.EffectInfo[key] or {}
+			table.insert(bonusLines, `{info.Icon or "•"} {SkillTreeData.EffectText(key, value)}`)
 		end
 	end
+	if #bonusLines > 0 then
+		table.insert(lines, `\n<font color="#{WHITE:ToHex()}"><b>Bônus ativos</b></font>`)
+		table.insert(lines, table.concat(bonusLines, "\n"))
+	end
+	return UITheme.tipText(`Level {level.Value}`, table.concat(lines, "\n"))
 end
 
--- ================= Habilidades, hotbar e botões (embaixo no centro) =================
+UITheme.tooltip(topRow, levelTip)
+UITheme.tooltip(xpBar.Frame, levelTip)
+UITheme.tooltip(hpBar.Frame, UITheme.tipText("Vida", "A regeneração da árvore e dos itens recupera fora de combate."))
+UITheme.tooltip(staminaBar.Frame, UITheme.tipText("Fôlego", "O dash gasta; recupera sozinho."))
+UITheme.tooltip(lifespanBar.Frame, function()
+	local maxLifespan = player:GetAttribute("MaxLifespan")
+	if type(maxLifespan) ~= "number" or maxLifespan <= 0 then
+		maxLifespan = PathData.MaxLifespan
+	end
+	local lifespan = player:GetAttribute("Lifespan")
+	if type(lifespan) ~= "number" then
+		lifespan = maxLifespan
+	end
+	return UITheme.tipText(`Tempo de vida {math.floor(lifespan)} / {math.floor(maxLifespan)}`,
+		"Os poderes do Caçador gastam tempo de vida. Ele recupera sozinho.")
+end)
+UITheme.tooltip(goldRow, UITheme.tipText("Gold", "Vem dos inimigos e das missões."))
+
+-- Altura do bloco conforme o tempo de vida (Caçador) aparece ou não
+local function layoutVitals(showLifespan)
+	lifespanBar.Frame.Visible = showLifespan
+	xpBar.Frame.Position = UDim2.fromOffset(0, if showLifespan then 64 else 56)
+	vitals.Size = UDim2.fromOffset(VITALS_WIDTH, if showLifespan then 67 else 59)
+end
+layoutVitals(false)
+
+-- ================= Linha de baixo: estilos, habilidades e poderes =================
 
 local actions = new("Frame", {
 	Name = "Actions",
 	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 1, -12),
-	Size = UDim2.fromOffset(560, 146),
+	Position = UDim2.new(0.5, 0, 1, -16),
+	Size = UDim2.fromOffset(0, SLOT_SIZE),
+	AutomaticSize = Enum.AutomaticSize.X,
 	BackgroundTransparency = 1,
 	Parent = screen,
 })
+UITheme.list(actions, 12, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center)
 local actionsScale = UITheme.autoScale(actions, 1280, 720)
 if touchOnly then
 	-- No celular a hotbar não fica menor que 80% (o dedo precisa acertar as casas)
@@ -403,25 +455,35 @@ if touchOnly then
 	keepTouchSize()
 end
 
-local skillsRow = new("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.fromScale(0.5, 0),
-	Size = UDim2.fromOffset(560, 66),
-	BackgroundTransparency = 1,
-	Parent = actions,
-})
-UITheme.list(skillsRow, 8, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Bottom)
-skillsRow:SetAttribute("TutorialAnchor", "Skills")
+local function row(name, order)
+	local frame = new("Frame", {
+		Name = name,
+		Size = UDim2.fromOffset(0, SLOT_SIZE),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundTransparency = 1,
+		LayoutOrder = order,
+		Parent = actions,
+	})
+	UITheme.list(frame, SLOT_GAP, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center)
+	return frame
+end
 
-local hotbarRow = new("Frame", {
-	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.fromScale(0.5, 1),
-	Size = UDim2.fromOffset(560, 74),
-	BackgroundTransparency = 1,
-	Parent = actions,
-})
-UITheme.list(hotbarRow, 10, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top)
+local function divider(parent, order)
+	return new("Frame", {
+		Size = UDim2.fromOffset(1, 26),
+		LayoutOrder = order,
+		BackgroundColor3 = WHITE,
+		BackgroundTransparency = 0.82,
+		BorderSizePixel = 0,
+		Parent = parent,
+	})
+end
+
+local hotbarRow = row("Hotbar", 1)
 hotbarRow:SetAttribute("TutorialAnchor", "Hotbar")
+local rowDivider = divider(actions, 2)
+local skillsRow = row("Skills", 3)
+skillsRow:SetAttribute("TutorialAnchor", "Skills")
 
 -- F e Z/X/C vêm do estilo equipado (CombatStyles; slot sem skill no estilo some); o teclado é do CombatInput
 local SKILLS = {
@@ -440,7 +502,6 @@ local POWERS = {
 	{ Key = "H", Name = "Poder", Glyph = "?", Attribute = "PowerHZReadyAt", Power = "HZ" },
 	{ Key = "J", Name = "Poder", Glyph = "?", Attribute = "PowerHXReadyAt", Power = "HX" },
 }
-local SLOT_SIZE = 44
 
 -- Toques nos slots: os scripts donos das ações escutam BindableEvents ao lado dos LocalScripts.
 -- "MovementAction" (StaminaDashRunscript): ("Dash") e ("AutoRun", ligado).
@@ -492,15 +553,8 @@ end)
 local slots = {}
 local powerSlots = {}
 
-local powerDivider = new("Frame", {
-	Size = UDim2.fromOffset(2, 30),
-	LayoutOrder = 10,
-	BackgroundColor3 = WHITE,
-	BackgroundTransparency = 0.8,
-	BorderSizePixel = 0,
-	Visible = false,
-	Parent = skillsRow,
-})
+local powerDivider = divider(skillsRow, 10)
+powerDivider.Visible = false
 
 -- Balão de cada slot: o que a tecla faz agora (nome, recarga, se está travada)
 local function slotTip(slot)
@@ -538,36 +592,31 @@ end
 
 local function createSlot(info, order)
 	local holder = new("Frame", {
-		Size = UDim2.fromOffset(SLOT_SIZE, SLOT_SIZE + 20),
+		Size = UDim2.fromOffset(SLOT_SIZE, SLOT_SIZE),
 		BackgroundTransparency = 1,
 		LayoutOrder = order,
 		Parent = skillsRow,
 	})
 	holder:SetAttribute("TutorialAnchor", "Slot_" .. info.Key)
-	local keyLabel = UITheme.keyLabel({
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.fromScale(0.5, 0),
-		Text = info.Key,
-		Parent = holder,
-	})
 	local button = round(new("TextButton", {
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.fromScale(0.5, 1),
-		Size = UDim2.fromOffset(SLOT_SIZE, SLOT_SIZE),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(1, 1),
 		AutoButtonColor = false,
 		BackgroundColor3 = SLOT_BG,
-		BackgroundTransparency = 0.25,
+		BackgroundTransparency = 0.3,
 		ClipsDescendants = true,
 		Text = "",
 		Parent = holder,
-	}), UDim.new(0, 8))
-	local stroke = UITheme.stroke(button, SLOT_LINE, 1.5)
+	}), UDim.new(0, 10))
+	local stroke = softStroke(button)
+	local keyLabel = cornerKey(button, info.Key)
 
 	local icon = text({
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Fonts.Title,
-		TextSize = 22,
+		TextSize = 21,
 		Text = info.Glyph,
 		ZIndex = 2,
 		Parent = button,
@@ -578,13 +627,13 @@ local function createSlot(info, order)
 	if info.Power then
 		costLabel = text({
 			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -3, 0, 2),
-			Size = UDim2.fromOffset(34, 12),
+			Position = UDim2.new(1, -4, 0, 3),
+			Size = UDim2.fromOffset(30, 11),
 			TextXAlignment = Enum.TextXAlignment.Right,
-			Font = Fonts.Title,
-			TextSize = 9,
-			TextStrokeTransparency = 0.4,
-			ZIndex = 4,
+			Font = FONT_BOLD,
+			TextSize = 10,
+			TextStrokeTransparency = 0.6,
+			ZIndex = 7,
 			Parent = button,
 		})
 	end
@@ -592,30 +641,30 @@ local function createSlot(info, order)
 	-- Barra da guarda no slot do block
 	local guardFill
 	if info.Block then
-		local guardTrack = new("Frame", {
+		local guardTrack = round(new("Frame", {
 			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.new(0.5, 0, 1, -4),
-			Size = UDim2.new(1, -10, 0, 3),
+			Position = UDim2.new(0.5, 0, 1, -5),
+			Size = UDim2.new(1, -14, 0, 3),
 			BackgroundColor3 = BLACK,
 			BackgroundTransparency = 0.3,
 			BorderSizePixel = 0,
 			ZIndex = 3,
 			Parent = button,
-		})
-		guardFill = new("Frame", {
+		}))
+		guardFill = round(new("Frame", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundColor3 = WHITE,
 			BorderSizePixel = 0,
 			ZIndex = 4,
 			Parent = guardTrack,
-		})
+		}))
 	end
 
 	-- Escurece de cima para baixo enquanto está em recarga
 	local cooldown = new("Frame", {
 		Size = UDim2.fromScale(1, 0),
 		BackgroundColor3 = BLACK,
-		BackgroundTransparency = 0.3,
+		BackgroundTransparency = 0.35,
 		BorderSizePixel = 0,
 		ZIndex = 5,
 		Parent = button,
@@ -623,14 +672,14 @@ local function createSlot(info, order)
 	local cooldownText = text({
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
-		Font = Fonts.Number,
-		TextSize = 15,
-		TextStrokeTransparency = 0.3,
+		Font = FONT_HEAVY,
+		TextSize = 16,
+		TextStrokeTransparency = 0.5,
 		ZIndex = 6,
 		Parent = button,
 	})
 	-- Cadeado: técnica do estilo ainda não desbloqueada na árvore (atributo Tech_<Técnica>)
-	local lock = if info.Skill or info.Power then padlock(button, 18) else nil
+	local lock = if info.Skill or info.Power then padlock(button, 16) else nil
 
 	local slot = {
 		Info = info,
@@ -647,6 +696,7 @@ local function createSlot(info, order)
 		Total = 1,
 		WasCooling = false,
 		BaseColor = SLOT_LINE,
+		BaseTransparency = LINE_FADE,
 		Skill = nil, -- habilidade do caminho (só nos slots V/B)
 		CostColor = WHITE, -- cor do custo quando dá para pagar (só nos slots V/B)
 	}
@@ -712,18 +762,6 @@ for index, info in POWERS do
 	table.insert(powerSlots, slot)
 end
 
--- Largura da linha conforme os slots visíveis
-local function resizeSkillsRow()
-	local width, count = 0, 0
-	for _, child in skillsRow:GetChildren() do
-		if child:IsA("GuiObject") and child.Visible then
-			width += child.Size.X.Offset
-			count += 1
-		end
-	end
-	skillsRow.Size = UDim2.fromOffset(math.max(560, width + math.max(0, count - 1) * 8), 66)
-end
-
 -- Vida atual (para saber se dá para pagar o custo dos poderes de Infernal)
 local currentHumanoid
 
@@ -755,7 +793,6 @@ local function updatePowers()
 		anyShown = anyShown or show
 		if skill then
 			slot.Icon.Text = UITheme.glyphOf(skill)
-			slot.Icon.TextSize = 22
 			local costText, costColor = UITheme.skillCostShort(skill)
 			slot.CostLabel.Text = costText
 			slot.CostLabel.TextColor3 = costColor
@@ -770,14 +807,16 @@ local function updatePowers()
 			slot.CostLabel.Text = ""
 			slot.Lock.Visible = true
 		end
+		-- Os poderes ficam com o contorno na cor do caminho (separa do estilo de combate)
 		slot.BaseColor = pathColor
+		slot.BaseTransparency = 0.45
 		slot.Stroke.Color = pathColor
+		slot.Stroke.Transparency = 0.45
 	end
 	powerDivider.Visible = anyShown
-	resizeSkillsRow()
 end
 
--- ----- Hotbar: estilos de combate (Tools) nas casas 1 a 5 -----
+-- ----- Hotbar: estilos de combate (Tools) nas casas 1 a 5 (só as casas com estilo aparecem) -----
 local hotbarSlots = {}
 local toolOrder = {} -- nomes na ordem em que chegaram (a casa de cada estilo não muda)
 
@@ -815,41 +854,41 @@ local function toggleTool(index)
 end
 
 for index = 1, HOTBAR_SLOTS do
-	local holder = new("Frame", {
-		Size = UDim2.fromOffset(54, 74),
-		BackgroundTransparency = 1,
-		LayoutOrder = index,
-		Parent = hotbarRow,
-	})
-	local circle = round(new("TextButton", {
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.fromScale(0.5, 0),
-		Size = UDim2.fromOffset(52, 52),
+	local button = round(new("TextButton", {
+		Size = UDim2.fromOffset(SLOT_SIZE, SLOT_SIZE),
 		BackgroundColor3 = SLOT_BG,
 		BackgroundTransparency = 0.3,
 		AutoButtonColor = false,
+		LayoutOrder = index,
+		Visible = false,
 		Text = "",
-		Parent = holder,
-	}))
-	local circleStroke = UITheme.stroke(circle, SLOT_LINE, 1.5)
-	local circleScale = new("UIScale", { Parent = circle })
+		Parent = hotbarRow,
+	}), UDim.new(0, 10))
+	local stroke = softStroke(button)
+	local scale = new("UIScale", { Parent = button })
 	local glyph = text({
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Fonts.Title,
-		TextSize = 24,
-		Parent = circle,
+		TextSize = 22,
+		Parent = button,
 	})
-	UITheme.keyLabel({
+	cornerKey(button, tostring(index))
+	-- Risquinho vermelho embaixo do estilo que está na mão
+	local underline = round(new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.fromScale(0.5, 1),
-		Text = tostring(index),
-		Parent = holder,
-	})
-	circle.MouseButton1Click:Connect(function()
+		Position = UDim2.new(0.5, 0, 1, -4),
+		Size = UDim2.fromOffset(16, 3),
+		BackgroundColor3 = RED,
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 3,
+		Parent = button,
+	}))
+	button.MouseButton1Click:Connect(function()
 		toggleTool(index)
 	end)
-	UITheme.tooltip(circle, function()
+	UITheme.tooltip(button, function()
 		local name = toolOrder[index]
 		local tool = name and currentTools()[name]
 		if not tool then
@@ -859,7 +898,7 @@ for index = 1, HOTBAR_SLOTS do
 		return UITheme.tipText(`{if style then style.DisplayName or name else name} ({index})`,
 			"Estilo de combate. Aperte o número (ou clique) para equipar ou guardar.")
 	end)
-	hotbarSlots[index] = { Holder = holder, Circle = circle, Stroke = circleStroke, Scale = circleScale, Glyph = glyph }
+	hotbarSlots[index] = { Button = button, Stroke = stroke, Scale = scale, Glyph = glyph, Underline = underline }
 end
 
 local attackGlyph -- botão de ataque do celular (mostra o estilo na mão)
@@ -867,18 +906,22 @@ local attackGlyph -- botão de ataque do celular (mostra o estilo na mão)
 local function updateHotbar()
 	local tools = currentTools()
 	local character = player.Character
+	local any = false
 	for index, slot in hotbarSlots do
 		local name = toolOrder[index]
 		local tool = name and tools[name]
 		local equipped = tool ~= nil and tool.Parent == character
 		slot.Glyph.Text = if tool then (STYLE_GLYPHS[name] or UITheme.upper(string.sub(name, 1, 2))) else ""
-		slot.Circle.BackgroundTransparency = if tool then 0.2 else 0.55
-		-- No celular as casas vazias somem (sobra espaço para o dedo)
-		slot.Holder.Visible = tool ~= nil or not touchOnly
-		slot.Stroke.Color = if equipped then RED else SLOT_LINE
-		slot.Stroke.Thickness = if equipped then 2.5 else 1.5
-		UITheme.tween(slot.Scale, 0.12, { Scale = if equipped then 1.08 else 1 })
+		slot.Button.Visible = tool ~= nil
+		any = any or tool ~= nil
+		setStroke(slot.Stroke, if equipped then RED else SLOT_LINE, if equipped then 1.5 else 1)
+		slot.Button.BackgroundTransparency = if equipped then 0.15 else 0.3
+		slot.Underline.Visible = equipped
+		UITheme.tween(slot.Scale, 0.12, { Scale = if equipped then 1.06 else 1 })
 	end
+	-- Sem estilo nenhum (logo ao nascer), a linha dos estilos e o separador somem
+	hotbarRow.Visible = any
+	rowDivider.Visible = any and skillsRow.Visible
 	if attackGlyph then
 		local styleName = CombatStyles.FromCharacter(character)
 		attackGlyph.Text = if styleName then (STYLE_GLYPHS[styleName] or UITheme.upper(string.sub(styleName, 1, 2))) else "拳"
@@ -936,26 +979,18 @@ if touchOnly then
 		Size = UDim2.fromOffset(MOBILE_ATTACK_SIZE, MOBILE_ATTACK_SIZE),
 		AutoButtonColor = false,
 		BackgroundColor3 = SLOT_BG,
-		BackgroundTransparency = 0.15,
+		BackgroundTransparency = 0.2,
 		Text = "",
 		Parent = pad,
 	}))
 	attack:SetAttribute("TutorialAnchor", "AttackButton")
-	UITheme.stroke(attack, RED, 3)
+	UITheme.stroke(attack, RED, 2.5)
 	local attackScale = new("UIScale", { Parent = attack })
-	round(new("Frame", { -- anel de dentro
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.new(1, -16, 1, -16),
-		BackgroundTransparency = 1,
-		Parent = attack,
-	}))
-	UITheme.stroke(attack:FindFirstChildOfClass("Frame"), WHITE, 1, 0.75)
 	attackGlyph = text({
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Fonts.Title,
-		TextSize = 40,
+		TextSize = 38,
 		Text = "拳",
 		Parent = attack,
 	})
@@ -972,7 +1007,7 @@ if touchOnly then
 		fireBindable("CombatAction", "Attack", false)
 	end)
 
-	-- Os slots das habilidades: os mesmos objetos, redondos e maiores, sem a tecla em cima
+	-- Os slots das habilidades: os mesmos objetos, redondos e maiores, sem a tecla no canto
 	for _, slot in slots do
 		local offset = MOBILE_LAYOUT[slot.Info.Key]
 		if offset then
@@ -982,9 +1017,6 @@ if touchOnly then
 			holder.Position = UDim2.fromOffset(offset.X, offset.Y)
 			holder.Size = UDim2.fromOffset(MOBILE_SLOT, MOBILE_SLOT)
 			slot.KeyLabel.Visible = false
-			slot.Button.AnchorPoint = Vector2.new(0.5, 0.5)
-			slot.Button.Position = UDim2.fromScale(0.5, 0.5)
-			slot.Button.Size = UDim2.fromScale(1, 1)
 			local corner = slot.Button:FindFirstChildOfClass("UICorner")
 			if corner then
 				corner.CornerRadius = UDim.new(0.5, 0)
@@ -996,59 +1028,59 @@ if touchOnly then
 	updateHotbar()
 end
 
--- ----- Botões: árvore (M), inventário (G) e configurações -----
-new("Frame", {
-	Name = "MenuDivider",
-	Size = UDim2.fromOffset(2, 40),
-	LayoutOrder = 20,
-	BackgroundColor3 = WHITE,
-	BackgroundTransparency = 0.8,
-	BorderSizePixel = 0,
-	Parent = hotbarRow,
+-- ================= Menus: árvore (M), inventário (G) e configurações =================
+-- No PC ficam num grupo pequeno em cima do minimapa (fora da linha de combate); no celular, no fim da linha de baixo.
+
+local menuHolder = new("Frame", {
+	Name = "Menu",
+	AnchorPoint = Vector2.new(1, 1),
+	Position = UDim2.new(1, -18, 1, -220),
+	Size = UDim2.fromOffset(0, MENU_SIZE),
+	AutomaticSize = Enum.AutomaticSize.X,
+	BackgroundTransparency = 1,
+	LayoutOrder = 5,
+	Parent = if touchOnly then actions else screen,
 })
+UITheme.list(menuHolder, 6, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
+if touchOnly then
+	divider(actions, 4)
+else
+	UITheme.autoScale(menuHolder, 1100, 700) -- mesma escala do minimapa
+end
 
 local menuKeyLabels = {} -- [botão] = rótulo da tecla (troca para o botão do controle)
 local function menuButton(order, key, glyph)
-	local holder = new("Frame", {
-		Size = UDim2.fromOffset(44, 74),
-		BackgroundTransparency = 1,
-		LayoutOrder = order,
-		Parent = hotbarRow,
-	})
 	local button = round(new("TextButton", {
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 6),
-		Size = UDim2.fromOffset(40, 40),
+		Size = UDim2.fromOffset(MENU_SIZE, MENU_SIZE),
 		BackgroundColor3 = SLOT_BG,
 		BackgroundTransparency = 0.3,
 		AutoButtonColor = false,
+		LayoutOrder = order,
 		Font = Fonts.Title,
-		TextSize = 18,
+		TextSize = 16,
 		TextColor3 = WHITE,
 		Text = glyph,
-		Parent = holder,
-	}))
-	local stroke = UITheme.stroke(button, SLOT_LINE, 1.5)
+		Parent = menuHolder,
+	}), UDim.new(0, 9))
+	local stroke = softStroke(button)
 	if key then
-		menuKeyLabels[button] = UITheme.keyLabel({
-			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.fromScale(0.5, 1),
-			Text = key,
-			Parent = holder,
-		})
+		local label = cornerKey(button, key)
+		label.Position = UDim2.fromOffset(4, 2)
+		label.TextSize = 9
+		menuKeyLabels[button] = label
 	end
 	button.MouseEnter:Connect(function()
-		stroke.Color = RED
+		setStroke(stroke, RED)
 	end)
 	button.MouseLeave:Connect(function()
-		stroke.Color = SLOT_LINE
+		setStroke(stroke, SLOT_LINE)
 	end)
 	return button
 end
 
-local treeButton = menuButton(21, "M", "⛓")
-local inventoryButton = menuButton(22, "G", "▦")
-local settingsButton = menuButton(23, nil, "≡")
+local treeButton = menuButton(1, "M", "⛓")
+local inventoryButton = menuButton(2, "G", "▦")
+local settingsButton = menuButton(3, nil, "≡")
 treeButton:SetAttribute("TutorialAnchor", "TreeButton")
 inventoryButton:SetAttribute("TutorialAnchor", "InventoryButton")
 settingsButton:SetAttribute("TutorialAnchor", "SettingsButton")
@@ -1062,21 +1094,36 @@ UITheme.tooltip(settingsButton, UITheme.tipText("Configurações", "Fast Mode, p
 local pointsDot = round(new("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Position = UDim2.new(1, -3, 0, 3),
-	Size = UDim2.fromOffset(18, 18),
+	Size = UDim2.fromOffset(16, 16),
 	BackgroundColor3 = RED,
 	Visible = false,
 	ZIndex = 5,
 	Parent = treeButton,
 }))
-UITheme.stroke(pointsDot, BLACK, 1.5)
 local pointsDotText = text({
 	Size = UDim2.fromScale(1, 1),
 	TextXAlignment = Enum.TextXAlignment.Center,
-	Font = Fonts.Number,
+	Font = FONT_HEAVY,
 	TextSize = 10,
 	ZIndex = 6,
 	Parent = pointsDot,
 })
+
+-- PC: o grupo fica logo em cima do minimapa, alinhado à direita dele (as duas telas têm a mesma origem)
+if not touchOnly then
+	task.spawn(function()
+		local map = playerGui:WaitForChild("Minimap", 30)
+		local holder = map and map:WaitForChild("Holder", 10)
+		if not holder then return end
+		local function placeMenu()
+			local right = holder.AbsolutePosition.X + holder.AbsoluteSize.X
+			menuHolder.Position = UDim2.fromOffset(right, holder.AbsolutePosition.Y - 10)
+		end
+		holder:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeMenu)
+		holder:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeMenu)
+		placeMenu()
+	end)
+end
 
 local function fireToggle(guiName)
 	local gui = playerGui:FindFirstChild(guiName)
@@ -1171,22 +1218,34 @@ end)
 
 -- ================= Configurações =================
 
-local settingsPanel = UITheme.panel({
+-- Abre em cima do grupo dos menus, alinhado à direita dele (posição calculada ao abrir)
+local settingsPanel = round(new("Frame", {
 	AnchorPoint = Vector2.new(1, 1),
-	Position = UDim2.new(1, 0, 0, -8),
-	Size = UDim2.fromOffset(270, 322),
+	Size = UDim2.fromOffset(270, 310),
+	BackgroundColor3 = Colors.Panel,
+	BackgroundTransparency = 0.08,
+	BorderSizePixel = 0,
 	Visible = false,
 	ZIndex = 20,
-	Parent = actions,
-})
-UITheme.padding(settingsPanel, 12, 14)
+	Parent = screen,
+}), UDim.new(0, 12))
+UITheme.stroke(settingsPanel, SLOT_LINE, 1, LINE_FADE)
+UITheme.padding(settingsPanel, 14, 16)
+local settingsScale = UITheme.autoScale(settingsPanel, 1100, 700)
+
+local function placeSettings()
+	local anchor = menuHolder.AbsolutePosition
+	local right = anchor.X + menuHolder.AbsoluteSize.X
+	local width = settingsPanel.Size.X.Offset * settingsScale.Scale
+	settingsPanel.Position = UDim2.fromOffset(math.max(width + 8, right), anchor.Y - 8)
+end
 
 text({
 	Size = UDim2.new(1, 0, 0, 22),
 	TextXAlignment = Enum.TextXAlignment.Left,
-	Font = Fonts.Marker,
-	TextSize = 18,
-	Text = "CONFIGURAÇÕES",
+	Font = FONT_HEAVY,
+	TextSize = 17,
+	Text = "Configurações",
 	ZIndex = 21,
 	Parent = settingsPanel,
 })
@@ -1197,8 +1256,8 @@ local function settingRow(y, titleText, hintText)
 		Position = UDim2.fromOffset(0, y),
 		Size = UDim2.new(1, -60, 0, 18),
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Font = Fonts.Title,
-		TextSize = 14,
+		Font = FONT_BOLD,
+		TextSize = 15,
 		Text = titleText,
 		ZIndex = 21,
 		Parent = settingsPanel,
@@ -1208,7 +1267,7 @@ local function settingRow(y, titleText, hintText)
 		Size = UDim2.new(1, -60, 0, 16),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
-		Font = Fonts.Light,
+		Font = FONT_MEDIUM,
 		TextSize = 12,
 		TextColor3 = DIM,
 		Text = hintText,
@@ -1225,7 +1284,7 @@ local function settingRow(y, titleText, hintText)
 		ZIndex = 21,
 		Parent = settingsPanel,
 	}))
-	local switchStroke = UITheme.stroke(switch, SLOT_LINE, 1.5)
+	local switchStroke = UITheme.stroke(switch, SLOT_LINE, 1, LINE_FADE)
 	local knob = round(new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 3, 0.5, 0),
@@ -1237,7 +1296,7 @@ local function settingRow(y, titleText, hintText)
 	local function set(on)
 		UITheme.tween(knob, 0.15, { Position = if on then UDim2.new(1, -19, 0.5, 0) else UDim2.new(0, 3, 0.5, 0) })
 		UITheme.tween(switch, 0.15, { BackgroundColor3 = if on then RED else Colors.PanelLight })
-		switchStroke.Color = if on then RED_BRIGHT else SLOT_LINE
+		setStroke(switchStroke, if on then RED_BRIGHT else SLOT_LINE)
 	end
 	return switch, set
 end
@@ -1303,7 +1362,7 @@ text({
 	TextYAlignment = Enum.TextYAlignment.Top,
 	TextWrapped = true,
 	RichText = true,
-	Font = Fonts.Light,
+	Font = FONT_MEDIUM,
 	TextSize = 12,
 	TextColor3 = DIM,
 	Text = `<font color="#{RED_BRIGHT:ToHex()}">Dica:</font> para ainda mais FPS, baixe a Qualidade gráfica em Esc > Configurações.`,
@@ -1313,10 +1372,10 @@ text({
 
 -- Volta ao menu principal (MainMenu: personagem, clã, códigos); ele esconde o jogo até apertar JOGAR de novo
 local mainMenuButton = UITheme.button({
-	Position = UDim2.fromOffset(0, 210),
-	Size = UDim2.new(1, 0, 0, 34),
-	Font = Fonts.Marker,
-	TextSize = 17,
+	Position = UDim2.fromOffset(0, 206),
+	Size = UDim2.new(1, 0, 0, 32),
+	Font = FONT_HEAVY,
+	TextSize = 15,
 	Text = "MENU PRINCIPAL",
 	ZIndex = 21,
 	Parent = settingsPanel,
@@ -1332,10 +1391,10 @@ end)
 
 -- Refazer o tutorial (TutorialService; a recompensa não se repete)
 local tutorialButton = UITheme.button({
-	Position = UDim2.fromOffset(0, 252),
-	Size = UDim2.new(1, 0, 0, 34),
-	Font = Fonts.Marker,
-	TextSize = 17,
+	Position = UDim2.fromOffset(0, 244),
+	Size = UDim2.new(1, 0, 0, 32),
+	Font = FONT_HEAVY,
+	TextSize = 15,
 	Text = "REFAZER TUTORIAL",
 	ZIndex = 21,
 	Parent = settingsPanel,
@@ -1346,6 +1405,7 @@ tutorialButton.MouseButton1Click:Connect(function()
 end)
 
 settingsButton.MouseButton1Click:Connect(function()
+	placeSettings()
 	settingsPanel.Visible = not settingsPanel.Visible
 end)
 
@@ -1374,7 +1434,7 @@ local levelUpSub = text({
 	Position = UDim2.new(0.5, 0, 1, 2),
 	Size = UDim2.fromOffset(700, 24),
 	TextXAlignment = Enum.TextXAlignment.Center,
-	Font = Fonts.Title,
+	Font = FONT_BOLD,
 	TextSize = 18,
 	TextTransparency = 1,
 	TextStrokeTransparency = 1,
@@ -1402,14 +1462,14 @@ end
 
 -- ================= Atualizações =================
 
--- Kanji do clã (na cor da raridade) + nome do jogador + tag do caminho
+-- Kanji do clã (na cor da raridade) + nome do jogador + o caminho, menor e apagado
 local function updateName()
 	local name = UITheme.escape(player.DisplayName)
 	local path = PathData.FromPlayer(player)
 	local info = PathData.Paths[path]
 	local clan = ClanData.Get(player:GetAttribute("Clan"))
 	local clanText = if clan then `<font color="#{ClanData.Color(clan.Id):ToHex()}">{clan.Kanji}</font> ` else ""
-	nameLabel.Text = `{clanText}{name}  <font color="#{info.Color:ToHex()}">{UITheme.upper(info.DisplayName)}</font>`
+	nameLabel.Text = `{clanText}{name}  <font size="11" color="#{info.Color:ToHex()}">{UITheme.upper(info.DisplayName)}</font>`
 end
 player:GetAttributeChangedSignal("Clan"):Connect(updateName)
 
@@ -1429,8 +1489,7 @@ local function updateLifespan()
 		lifespan = maxLifespan
 	end
 	-- Quando a barra acabou de aparecer, pula direto para o valor (sem animar desde o cheio)
-	lifespanBar.Set(lifespan / maxLifespan, nil, not wasShown)
-	lifespanLabel.Text = `⏳ tempo de vida {math.floor(lifespan)} / {math.floor(maxLifespan)}`
+	lifespanBar.Set(lifespan / maxLifespan, not wasShown)
 end
 
 local function onPathChanged()
@@ -1450,21 +1509,16 @@ local function updateGold()
 end
 
 local function updateXP()
-	local ratio
-	if level.Value >= StatConfig.MaxLevel then
-		ratio = 1
-		xpLabel.Text = "LEVEL MÁXIMO"
-	else
-		local needed = math.max(1, xpNeeded.Value)
-		ratio = math.clamp(xp.Value / needed, 0, 1)
-		xpLabel.Text = `{UITheme.formatNumber(xp.Value)} / {UITheme.formatNumber(needed)}`
+	local ratio = 1
+	if level.Value < StatConfig.MaxLevel then
+		ratio = math.clamp(xp.Value / math.max(1, xpNeeded.Value), 0, 1)
 	end
-	local lit = math.floor(ratio * RING_SEGMENTS + 0.5)
-	for i, segment in ringSegments do
-		local on = i <= lit
-		segment.BackgroundColor3 = if on then RED_BRIGHT else WHITE
-		segment.BackgroundTransparency = if on then 0 else 0.8
-	end
+	xpBar.Set(ratio)
+end
+
+local function updateLevel()
+	levelNumber.Text = `<font size="10">LV</font> {level.Value}`
+	task.defer(placeName)
 end
 
 local function updatePoints()
@@ -1478,7 +1532,7 @@ gold.Changed:Connect(function(value)
 	lastGold = value
 	updateGold()
 	if delta > 0 then
-		UITheme.floatText(goldRow, `+{UITheme.formatNumber(delta)}`, CREAM, UDim2.new(1, -40, 0, 0))
+		UITheme.floatText(goldRow, `+{UITheme.formatNumber(delta)}`, CREAM, UDim2.new(1, -30, 0, 0))
 	end
 end)
 
@@ -1488,17 +1542,17 @@ xp.Changed:Connect(function(value)
 	lastXP = value
 	updateXP()
 	if delta > 0 then
-		UITheme.floatText(ring, `+{delta} XP`, RED_BRIGHT, UDim2.new(0.5, 0, 0, -4))
+		UITheme.floatText(vitals, `+{delta} XP`, RED_BRIGHT, UDim2.fromOffset(70, -2))
 	end
 end)
 
 local lastLevel = level.Value
 level.Changed:Connect(function(value)
-	levelNumber.Text = tostring(value)
+	updateLevel()
 	if value > lastLevel then
 		showLevelUp(value)
-		ringScale.Scale = 1.18
-		UITheme.tween(ringScale, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
+		levelBadgeScale.Scale = 1.25
+		UITheme.tween(levelBadgeScale, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
 	end
 	lastLevel = value
 	updateXP()
@@ -1507,28 +1561,10 @@ end)
 xpNeeded.Changed:Connect(updateXP)
 points.Changed:Connect(updatePoints)
 
-levelNumber.Text = tostring(level.Value)
+updateLevel()
 updateGold()
 updateXP()
 updatePoints()
-
--- Bônus: mudam com os Stats e os atributos Tree<Efeito> (árvore e itens)
-local function watchStat(value)
-	if value:IsA("IntValue") then
-		value.Changed:Connect(updateBonuses)
-	end
-	updateBonuses()
-end
-statsFolder.ChildAdded:Connect(watchStat)
-for _, value in statsFolder:GetChildren() do
-	watchStat(value)
-end
-player.AttributeChanged:Connect(function(name)
-	if string.sub(name, 1, 4) == "Tree" then
-		updateBonuses()
-	end
-end)
-updateBonuses()
 
 -- Hotbar: muda quando um estilo entra/sai da mochila ou do personagem. Cada vez que o jogador renasce o Roblox troca
 -- a mochila por uma nova: as conexões passam para ela (presa na antiga, a hotbar perdia o estilo guardado depois de
@@ -1667,20 +1703,30 @@ end
 updateCombatSlots("Punhos", CombatStyles.Styles.Punhos)
 refreshKeyLabels()
 
+-- Contorno de volta ao normal da casa (fino e apagado; nos poderes, a cor do caminho)
+local function resetStroke(slot)
+	slot.Stroke.Color = slot.BaseColor
+	slot.Stroke.Thickness = 1
+	slot.Stroke.Transparency = slot.BaseTransparency
+end
+
 -- Contorno aceso enquanto a ação está ativa (guarda levantada, soco carregando)
 local function setActive(slot, active, color)
 	if active then
 		slot.Stroke.Color = color
+		slot.Stroke.Thickness = 1.5
+		slot.Stroke.Transparency = 0
 		slot.WasActive = true
 	elseif slot.WasActive then
 		slot.WasActive = false
-		slot.Stroke.Color = slot.BaseColor
+		resetStroke(slot)
 	end
 end
 
 -- HUD a até 30 Hz: evita refazer custos, textos e cores a cada frame em monitores de alta frequência.
 local hudElapsed = 0
 local HUD_INTERVAL = 1 / 30
+local LOW_HEALTH_TRACK = Color3.fromRGB(90, 0, 8)
 RunService.RenderStepped:Connect(function(dt)
 	hudElapsed += dt
 	if hudElapsed < HUD_INTERVAL then return end
@@ -1695,7 +1741,7 @@ RunService.RenderStepped:Connect(function(dt)
 
 	local maxStamina = player:GetAttribute("MaxStamina") or 100
 	local stamina = player:GetAttribute("PredictedStamina") or player:GetAttribute("Stamina") or maxStamina
-	staminaBar.Set(stamina / math.max(1, maxStamina), nil, true)
+	staminaBar.Set(stamina / math.max(1, maxStamina), true)
 
 	for _, slot in slots do
 		local info = slot.Info
@@ -1743,22 +1789,21 @@ RunService.RenderStepped:Connect(function(dt)
 		slot.CooldownText.Text = if remaining > 0 then string.format("%.1f", remaining) else ""
 		slot.Icon.TextTransparency = if usable and remaining == 0 then 0 else 0.6
 
-		-- Pisca quando a recarga termina
-		if slot.WasCooling and remaining == 0 then
+		-- Acende rápido quando a recarga termina
+		if slot.WasCooling and remaining == 0 and not slot.WasActive then
 			slot.Stroke.Color = WHITE
-			slot.Stroke.Thickness = 2.5
-			UITheme.tween(slot.Stroke, 0.45, { Thickness = 1.5, Color = slot.BaseColor })
+			slot.Stroke.Thickness = 2
+			slot.Stroke.Transparency = 0
+			UITheme.tween(slot.Stroke, 0.45, { Thickness = 1, Color = slot.BaseColor, Transparency = slot.BaseTransparency })
 		end
 		slot.WasCooling = remaining > 0
 	end
 
-	-- Vida baixa: a borda da barra pulsa em vermelho
-	if hpStroke then
-		if hpBar.Ratio < 0.3 then
-			local pulse = (math.sin(os.clock() * 6) + 1) / 2
-			hpStroke.Color = BLACK:Lerp(RED_BRIGHT, pulse)
-		else
-			hpStroke.Color = BLACK
-		end
+	-- Vida baixa: o trilho da barra pulsa em vermelho escuro
+	if hpBar.Ratio < 0.3 then
+		local pulse = (math.sin(os.clock() * 6) + 1) / 2
+		hpBar.Frame.BackgroundColor3 = TRACK:Lerp(LOW_HEALTH_TRACK, pulse)
+	else
+		hpBar.Frame.BackgroundColor3 = TRACK
 	end
 end)

@@ -1,4 +1,4 @@
--- Missões: tracker das missões ativas (direita, no meio da tela) e diálogo dos NPCs de missão.
+-- Missões: tracker das missões ativas (direita, no meio da tela, sem moldura) e diálogo dos NPCs de missão.
 -- O servidor manda o estado via Remotes.QuestEvent e os diálogos via Remotes.QuestDialog.
 -- Se o NPC for de um caminho (Fase 4), o diálogo traz data.PathOffer e mostra um cartão com "VER CAMINHO".
 local Players = game:GetService("Players")
@@ -28,19 +28,35 @@ local function autoLabel(props)
 end
 
 -- ================= Tracker =================
+-- Sem moldura (2026-10-05, HUD mais limpa): um fundo escuro que some para a esquerda, o nome da missão em branco e cada
+-- objetivo com o progresso em negrito e uma linha fina.
+
+local FONT_HEAVY = Enum.Font.BuilderSansExtraBold
+local FONT_BOLD = Enum.Font.BuilderSansBold
+local FONT_MEDIUM = Enum.Font.BuilderSansMedium
 
 local trackerGui = UITheme.screen("QuestTracker", 1, playerGui)
 
-local tracker = UITheme.panel({
+local tracker = UITheme.new("Frame", {
 	AnchorPoint = Vector2.new(1, 0.5),
 	Position = UDim2.new(1, -16, 0.45, 0),
-	Size = UDim2.fromOffset(280, 0),
+	Size = UDim2.fromOffset(260, 0),
 	AutomaticSize = Enum.AutomaticSize.Y,
-	BackgroundTransparency = 0.2,
+	BackgroundColor3 = Colors.Black,
+	BackgroundTransparency = 0.3,
+	BorderSizePixel = 0,
 	Visible = false,
 	Parent = trackerGui,
 })
-UITheme.padding(tracker, 10, 12, 12, 12)
+UITheme.corner(tracker, UDim.new(0, 10))
+UITheme.new("UIGradient", {
+	Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.85),
+		NumberSequenceKeypoint.new(1, 0.25),
+	}),
+	Parent = tracker,
+})
+UITheme.padding(tracker, 10, 14, 12, 14)
 UITheme.list(tracker, 10)
 tracker:SetAttribute("TutorialAnchor", "QuestTracker") -- o tutorial destaca a lista de missões
 local trackerScale = UITheme.autoScale(tracker, 1100, 700)
@@ -57,25 +73,25 @@ if (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
 end
 
 local header = UITheme.new("Frame", {
-	Size = UDim2.new(1, 0, 0, 22),
+	Size = UDim2.new(1, 0, 0, 16),
 	BackgroundTransparency = 1,
 	LayoutOrder = 0,
 	Parent = tracker,
 })
 UITheme.label({
-	Size = UDim2.new(1, -40, 1, 0),
-	Font = Fonts.Display,
-	TextSize = 17,
-	TextColor3 = Colors.Orange,
-	Text = "📋 MISSÕES",
+	Size = UDim2.new(1, -60, 1, 0),
+	Font = FONT_HEAVY,
+	TextSize = 12,
+	TextColor3 = Colors.TextDim,
+	Text = "MISSÕES",
 	Parent = header,
 })
 local toggleHint = UITheme.label({
 	AnchorPoint = Vector2.new(1, 0),
 	Position = UDim2.fromScale(1, 0),
-	Size = UDim2.new(0, 40, 1, 0),
+	Size = UDim2.new(0, 60, 1, 0),
 	TextXAlignment = Enum.TextXAlignment.Right,
-	Font = Fonts.Title,
+	Font = FONT_BOLD,
 	TextSize = 12,
 	TextColor3 = Colors.TextDim,
 	Parent = header,
@@ -95,12 +111,12 @@ local collapsed = false
 local lastQuests = {}
 local lastProgress = {} -- [questId..index] = progresso, para destacar o que acabou de mudar
 
--- "[N] −" com teclado; só "−" / "+" (maior, para o dedo) em aparelhos sem teclado
+-- "N −" com teclado; só "−" / "+" (maior, para o dedo) em aparelhos sem teclado
 local function updateToggleHint(count)
 	local keyboard = UserInputService.KeyboardEnabled
-	local key = if keyboard then "[N] " else ""
+	local key = if keyboard then "N  " else ""
 	toggleHint.TextSize = if keyboard then 12 else 18
-	toggleHint.Text = if collapsed then `{key}+ ({count})` else `{key}−`
+	toggleHint.Text = if collapsed then `{key}+ {count}` else `{key}−`
 end
 updateToggleHint(0)
 
@@ -124,13 +140,12 @@ local function renderTracker(quests)
 			LayoutOrder = index,
 			Parent = tracker,
 		})
-		UITheme.list(block, 3)
+		UITheme.list(block, 4)
 
 		autoLabel({
-			Font = Fonts.Title,
+			Font = FONT_BOLD,
 			TextSize = 15,
-			RichText = true,
-			Text = `<font color="#{Colors.Accent:ToHex()}">◆</font> {quest.Name}`,
+			Text = quest.Name,
 			LayoutOrder = 0,
 			Parent = block,
 		})
@@ -141,11 +156,13 @@ local function renderTracker(quests)
 			local changed = lastProgress[key] ~= nil and lastProgress[key] ~= objective.Progress
 			lastProgress[key] = objective.Progress
 
+			local count = if done then "✓" else `{objective.Progress}/{objective.Amount}`
 			local text = autoLabel({
-				Font = Fonts.Body,
+				Font = FONT_MEDIUM,
 				TextSize = 13,
+				RichText = true,
 				TextColor3 = if done then Colors.Green else Colors.TextDim,
-				Text = `{if done then "✔" else "•"} {objective.Text}: {objective.Progress}/{objective.Amount}`,
+				Text = `{UITheme.escape(objective.Text)}  <font color="#{(if done then Colors.Green else Colors.Text):ToHex()}"><b>{count}</b></font>`,
 				LayoutOrder = i * 2 - 1,
 				Parent = block,
 			})
@@ -154,12 +171,25 @@ local function renderTracker(quests)
 				UITheme.tween(text, 0.8, { TextColor3 = if done then Colors.Green else Colors.TextDim })
 			end
 
-			local bar = UITheme.bar({
-				Size = UDim2.new(1, 0, 0, 5),
-				LayoutOrder = i * 2,
-				Parent = block,
-			}, if done then { Colors.Green, Colors.Green } else { Colors.Orange, Colors.Accent })
-			bar.Set(objective.Progress / math.max(1, objective.Amount), nil, true)
+			-- Linha fina do progresso (some quando o objetivo está pronto)
+			if not done then
+				local track = UITheme.new("Frame", {
+					Size = UDim2.new(1, 0, 0, 3),
+					BackgroundColor3 = Colors.White,
+					BackgroundTransparency = 0.85,
+					BorderSizePixel = 0,
+					LayoutOrder = i * 2,
+					Parent = block,
+				})
+				UITheme.corner(track, UDim.new(0, 2))
+				local fill = UITheme.new("Frame", {
+					Size = UDim2.fromScale(math.clamp(objective.Progress / math.max(1, objective.Amount), 0, 1), 1),
+					BackgroundColor3 = Colors.Orange,
+					BorderSizePixel = 0,
+					Parent = track,
+				})
+				UITheme.corner(fill, UDim.new(0, 2))
+			end
 		end
 	end
 end

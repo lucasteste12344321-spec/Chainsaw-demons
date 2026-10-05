@@ -490,6 +490,18 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 - Testado em Play (2026-10-02): com 100% contra o treino do Treinador, 19 desvios em 22 s sem perder vida; esquerda
   toca 0,28 s com o passo de 2,2 studs para a esquerda, direita é cortada em 0,76 s com o passo para a direita.
 
+## HUD mais limpa (Claude, 2026-10-05, pedido do usuário: "mais moderna e menos poluída")
+- `HUB_GUI`: sem molduras/degradês pesados, cantos arredondados, contorno quase transparente e fonte Builder Sans
+  (`Enum.Font.BuilderSans*`) nos textos e números; kanji continuam na fonte do tema.
+- Embaixo à esquerda: selo do level + nome/clã/caminho + gold numa linha; vida com o número dentro; fôlego, tempo de
+  vida (Caçador) e XP em linhas finas. Os bônus em pílulas saíram da tela: estão no balão do level (e no inventário).
+- Linha de baixo única: estilos (só as casas com estilo) | F Z X C Q | V B. A tecla fica no canto de cada casa.
+- Menus (M, G, configurações) num grupo pequeno em cima do minimapa (PC; a posição vem do `Minimap.Holder`); no
+  celular ficam no fim da linha de baixo. O painel de configurações abre em cima desse grupo.
+- `QuestGUI`: lista de missões sem moldura (fundo escuro que some para a esquerda, progresso em negrito, linha fina).
+- Âncoras do tutorial mantidas (Vitals, Skills, Hotbar, Slot_<Tecla>, TreeButton, InventoryButton, SettingsButton,
+  AttackButton, QuestTracker). Sem teste em Play ainda.
+
 ## Justiça no PvP (Claude, 2026-10-05)
 - Números em `CombatStyles.PvP`; só vale com vítima jogador (inimigos como antes).
 - Imunidade: saindo de um atordoamento pesado (>= `HeavyStun`, 1 s: finalizador, uppercut, quebra de guarda, parry)
