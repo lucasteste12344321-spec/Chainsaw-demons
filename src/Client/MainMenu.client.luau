@@ -1,6 +1,6 @@
 -- Menu principal (a primeira tela depois do carregamento; substitui a antiga tela de título do TeamScript):
 --   JOGAR, PERSONAGEM (criador com prévia 3D: pele, rosto, cabelo, cor do cabelo, camisa e calça), CLÃ (sorteio com
---   raridade; giros por código ou comprados com Gold), CÓDIGOS e CONFIGURAÇÕES.
+--   raridade; giros por código ou comprados com Gold), CÓDIGOS, PASSES (abre a loja do GamepassShop) e CONFIGURAÇÕES.
 -- Primeiro acesso (atributo CharacterCreated = false): abre direto no criador e, depois de salvar, mostra o clã que
 -- saiu no sorteio de nascença. Quem salva, sorteia e resgata é o servidor (CharacterService); esta tela só pede e mostra.
 -- Enquanto está aberto: atributo MenuOpen = true no LocalPlayer (os scripts de tecla ignoram as teclas) e o controle
@@ -396,11 +396,12 @@ end
 
 -- ================= Botões e peças =================
 
--- Botão comprido da coluna da esquerda (barra laranja, kanji e texto de pincel). primary = laranja (JOGAR)
+-- Botão da coluna da esquerda (barra laranja, kanji e texto de pincel). primary = laranja (JOGAR).
+-- Mais baixos e estreitos desde 2026-10-05 (o usuário achou os botões grandes demais).
 local function slabButton(parent, order, glyph, textValue, primary)
-	local height = if primary then 64 else 52
+	local height = if primary then 54 else 42
 	local button = new("TextButton", {
-		Size = UDim2.fromOffset(400, height),
+		Size = UDim2.fromOffset(330, height),
 		BackgroundColor3 = if primary then ACCENT else CARD,
 		BackgroundTransparency = if primary then 0 else 0.12,
 		AutoButtonColor = false,
@@ -420,31 +421,31 @@ local function slabButton(parent, order, glyph, textValue, primary)
 		Parent = button,
 	})
 	local glyphLabel = label({
-		Position = UDim2.fromOffset(14, 0),
-		Size = UDim2.new(0, 40, 1, 0),
+		Position = UDim2.fromOffset(10, 0),
+		Size = UDim2.new(0, 36, 1, 0),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Fonts.Title,
-		TextSize = if primary then 28 else 22,
+		TextSize = if primary then 24 else 18,
 		TextColor3 = if primary then WHITE else ACCENT,
 		Text = glyph,
 		Parent = button,
 	})
 	local textLabel = label({
-		Position = UDim2.fromOffset(64, 0),
-		Size = UDim2.new(1, -84, 1, 0),
+		Position = UDim2.fromOffset(54, 0),
+		Size = UDim2.new(1, -70, 1, 0),
 		Font = Fonts.Marker,
-		TextSize = if primary then 32 else 25,
+		TextSize = if primary then 27 else 20,
 		TextColor3 = WHITE,
 		Text = textValue,
 		Parent = button,
 	})
 	button.MouseEnter:Connect(function()
-		UITheme.tween(textLabel, 0.12, { Position = UDim2.fromOffset(74, 0) })
+		UITheme.tween(textLabel, 0.12, { Position = UDim2.fromOffset(62, 0) })
 		UITheme.tween(bar, 0.12, { BackgroundTransparency = 0, Size = UDim2.new(0, 7, 1, 0) })
 		stroke.Color = if primary then LIGHT else ACCENT
 	end)
 	button.MouseLeave:Connect(function()
-		UITheme.tween(textLabel, 0.12, { Position = UDim2.fromOffset(64, 0) })
+		UITheme.tween(textLabel, 0.12, { Position = UDim2.fromOffset(54, 0) })
 		UITheme.tween(bar, 0.12, { BackgroundTransparency = if primary then 0.3 else 0.55, Size = UDim2.new(0, 4, 1, 0) })
 		stroke.Color = if primary then BLACK else LINE
 	end)
@@ -456,7 +457,7 @@ local function badge(parent)
 	local frame = round(new("Frame", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -14, 0.5, 0),
-		Size = UDim2.fromOffset(28, 28),
+		Size = UDim2.fromOffset(24, 24),
 		BackgroundColor3 = ACCENT,
 		Visible = false,
 		Parent = parent,
@@ -662,18 +663,20 @@ local buttonList = new("Frame", {
 	BackgroundTransparency = 1,
 	Parent = home,
 })
-UITheme.list(buttonList, 10)
+UITheme.list(buttonList, 8)
 local playButton, playText = slabButton(buttonList, 1, "始", "JOGAR", true)
 local characterButton = slabButton(buttonList, 2, "顔", "PERSONAGEM")
 local clanButton = slabButton(buttonList, 3, "家", "CLÃ")
 local codesButton = slabButton(buttonList, 4, "符", "CÓDIGOS")
-local settingsButton = slabButton(buttonList, 5, "設", "CONFIGURAÇÕES")
+local passesButton = slabButton(buttonList, 5, "券", "PASSES")
+local settingsButton = slabButton(buttonList, 6, "設", "CONFIGURAÇÕES")
 local spinBadge, spinBadgeText = badge(clanButton)
 UITheme.tooltip(characterButton, UITheme.tipText("Personagem", "Pele, rosto, cabelo e roupas"))
 UITheme.tooltip(clanButton, function()
 	return UITheme.tipText("Clã", `Seu sobrenome dá um bônus pequeno. Giros guardados: {spinsLeft()}`)
 end)
 UITheme.tooltip(codesButton, UITheme.tipText("Códigos", "Resgate códigos para ganhar giros de clã"))
+UITheme.tooltip(passesButton, UITheme.tipText("Passes e VIP", "Benefícios permanentes, giros diários e servidor VIP"))
 
 label({
 	Position = UDim2.fromOffset(4, 660),
@@ -1810,7 +1813,7 @@ local function refreshHome()
 		statusLabel.Text = ""
 	end
 	playText.Text = if not isCreated() then "CRIAR PERSONAGEM" elseif hasPlayed then "VOLTAR AO JOGO" else "JOGAR"
-	playText.TextSize = if isCreated() then 32 else 26
+	playText.TextSize = if isCreated() then 27 else 22
 	local spins = spinsLeft()
 	spinBadge.Visible = spins > 0
 	spinBadgeText.Text = if spins > 99 then "99+" else tostring(spins)
@@ -1969,6 +1972,14 @@ end)
 codesButton.MouseButton1Click:Connect(function()
 	codeResult.Text = ""
 	showSimplePage(codesPage)
+end)
+-- A loja de passes é do GamepassShop (ScreenGui por cima do menu); ela escuta o BindableEvent "Toggle"
+passesButton.MouseButton1Click:Connect(function()
+	local shop = playerGui:FindFirstChild("GamepassShop")
+	local toggle = shop and shop:FindFirstChild("Toggle")
+	if toggle and toggle:IsA("BindableEvent") then
+		toggle:Fire()
+	end
 end)
 settingsButton.MouseButton1Click:Connect(function()
 	for _, refresh in toggleRefreshers do
@@ -2149,7 +2160,7 @@ if isCreated() then
 	logoScale.Scale = 0.7
 	UITheme.tween(logoScale, 0.45, { Scale = 1 }, Enum.EasingStyle.Back)
 	-- Botões entrando um por um
-	for index, button in { playButton, characterButton, clanButton, codesButton, settingsButton } do
+	for index, button in { playButton, characterButton, clanButton, codesButton, passesButton, settingsButton } do
 		local scale = button:FindFirstChildOfClass("UIScale") or new("UIScale", { Parent = button })
 		scale.Scale = 0.6
 		task.delay(0.08 * index, function()

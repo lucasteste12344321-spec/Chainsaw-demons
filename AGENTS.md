@@ -496,8 +496,12 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 - Embaixo à esquerda: selo do level + nome/clã/caminho + gold numa linha; vida com o número dentro; fôlego, tempo de
   vida (Caçador) e XP em linhas finas. Os bônus em pílulas saíram da tela: estão no balão do level (e no inventário).
 - Linha de baixo única: estilos (só as casas com estilo) | F Z X C Q | V B. A tecla fica no canto de cada casa.
-- Menus (M, G, configurações) num grupo pequeno em cima do minimapa (PC; a posição vem do `Minimap.Holder`); no
-  celular ficam no fim da linha de baixo. O painel de configurações abre em cima desse grupo.
+- Menus em botões redondos (M, G, pescaria 釣, passes ★, configurações) num grupo em cima do minimapa (PC; a posição
+  vem do `Minimap.Holder`); no celular ficam no fim da linha de baixo. O painel de configurações abre em cima do grupo.
+  A pescaria manda `FishingAction` "Bag"; os passes disparam o BindableEvent `GamepassShop.Toggle`.
+- Botões soltos que saíram (2026-10-05): "PESCARIA" (Fishing.client) e "PASSES" (GamepassShop.client, agora no repo).
+  O painel de pesca ficou compacto (em cima da linha de habilidades; a cesta abre no centro), o cartão do evento
+  regional (WorldActivities.client) ficou pequeno embaixo da bússola e o menu principal ganhou PASSES e botões menores.
 - `QuestGUI`: lista de missões sem moldura (fundo escuro que some para a esquerda, progresso em negrito, linha fina).
 - Âncoras do tutorial mantidas (Vitals, Skills, Hotbar, Slot_<Tecla>, TreeButton, InventoryButton, SettingsButton,
   AttackButton, QuestTracker). Sem teste em Play ainda.
@@ -527,6 +531,9 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 
 ## Pedidos entre agentes
 
+- [Claude→Codex] 2026-10-05: a pedido do usuário (HUD mais limpa), mexi no visual de `Fishing.client`,
+  `WorldActivities.client` e `GamepassShop.client` (este não estava no repo; entrou a partir da cópia do Studio). A lógica
+  e os remotes são os mesmos; só saíram os botões soltos (a HUD abre a cesta e a loja) e os painéis ficaram menores.
 - [Claude→Codex] 2026-10-05: correção pedida pelo usuário no rewind (dash puxava para trás correndo com 200 ms de ping).
   `Rewind.Origin` agora mede a distância até o caminho guardado (`History:DistanceToPath`, de `OriginLookback` 0,35 s
   antes do envio até a amostra mais nova), não até um ponto só: a posição do personagem chega ao servidor com o atraso

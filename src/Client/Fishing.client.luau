@@ -10,14 +10,31 @@ local Data = require(RS.FishingData)
 local UI = require(RS.UITheme)
 local C = UI.Colors
 local gui = UI.screen("Fishing", 65, player:WaitForChild("PlayerGui"))
-local panel = UI.panel({Name="FishingPanel", Parent=gui, AnchorPoint=Vector2.new(.5,1), Position=UDim2.fromScale(.5,.96), Size=UDim2.fromOffset(430,330), Visible=false})
+-- Painel compacto (2026-10-05, pedido do usuário: ocupava o meio da tela). Pescando, fica pequeno em cima da linha de
+-- habilidades da HUD; a cesta (menu) abre no centro. A cesta abre pelo botão redondo 釣 do grupo de menus da HUD
+-- (HUB_GUI manda FishingAction "Bag"), não tem mais botão próprio na tela.
+local ACTIVE_SIZE, MENU_SIZE = Vector2.new(320, 236), Vector2.new(440, 478)
+local panel = UI.new("Frame", {Name="FishingPanel", Parent=gui, AnchorPoint=Vector2.new(.5,1), Position=UDim2.new(.5,0,1,-84),
+	Size=UDim2.fromOffset(ACTIVE_SIZE.X,ACTIVE_SIZE.Y), BackgroundColor3=C.Panel, BackgroundTransparency=.08, BorderSizePixel=0, Visible=false})
+UI.corner(panel, UDim.new(0,12)); UI.stroke(panel, C.White, 1, .86)
 local scale = UI.new("UIScale", {Parent=panel})
-local title = UI.label({Parent=panel,Position=UDim2.fromOffset(18,12),Size=UDim2.new(1,-76,0,32),Text="RIO KURO",Font=UI.Fonts.Display,TextSize=24})
-local close = UI.button({Parent=panel,Position=UDim2.new(1,-48,0,12),Size=UDim2.fromOffset(32,30),Text="X"})
-local hint = UI.label({Parent=panel,Position=UDim2.fromOffset(18,50),Size=UDim2.new(1,-36,0,57),TextWrapped=true,TextSize=15})
-local body = UI.new("Frame",{Parent=panel,Position=UDim2.fromOffset(18,110),Size=UDim2.new(1,-36,0,145),BackgroundTransparency=1})
-local actionButton = UI.button({Parent=panel,Position=UDim2.new(0,18,1,-62),Size=UDim2.new(1,-36,0,44),Text="LANÇAR"}, C.Blue)
-local basketButton = UI.button({Name="FishingBasket",Parent=gui,AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-16,1,-180),Size=UDim2.fromOffset(100,32),Text="PESCARIA",TextSize=12}, C.PanelLight)
+local title = UI.label({Parent=panel,Position=UDim2.fromOffset(16,10),Size=UDim2.new(1,-60,0,24),Text="RIO KURO",Font=Enum.Font.BuilderSansExtraBold,TextSize=18})
+local close = UI.new("TextButton", {Parent=panel,AnchorPoint=Vector2.new(1,0),Position=UDim2.new(1,-10,0,10),Size=UDim2.fromOffset(26,26),
+	BackgroundColor3=C.PanelLight,BackgroundTransparency=.3,AutoButtonColor=false,Font=UI.Fonts.Title,TextSize=16,TextColor3=C.TextDim,Text="×"})
+UI.corner(close, UDim.new(.5,0))
+local hint = UI.label({Parent=panel,Position=UDim2.fromOffset(16,36),Size=UDim2.new(1,-32,0,34),TextWrapped=true,TextSize=13,TextColor3=C.TextDim,
+	Font=Enum.Font.BuilderSansMedium,TextYAlignment=Enum.TextYAlignment.Top})
+local body = UI.new("Frame",{Parent=panel,Position=UDim2.fromOffset(16,74),Size=UDim2.new(1,-32,0,112),BackgroundTransparency=1})
+local actionButton = UI.button({Parent=panel,Position=UDim2.new(0,16,1,-44),Size=UDim2.new(1,-32,0,32),Text="LANÇAR",TextSize=14,
+	Font=Enum.Font.BuilderSansExtraBold}, C.Blue)
+-- Pescando: pequeno, embaixo no centro (em cima da HUD); cesta: no centro da tela
+local function layout(menuMode)
+	local size = if menuMode then MENU_SIZE else ACTIVE_SIZE
+	panel.Size = UDim2.fromOffset(size.X, size.Y)
+	panel.AnchorPoint = if menuMode then Vector2.new(.5,.5) else Vector2.new(.5,1)
+	panel.Position = if menuMode then UDim2.fromScale(.5,.5) else UDim2.new(.5,0,1,-84)
+	body.Size = UDim2.new(1,-32,0,if menuMode then 343 else 112)
+end
 local phase, sessionId, spotId, cached, charging, holding, chargeStart = "Closed", nil, nil, nil, false, false, 0
 local progressFill, tensionFill, tensionText, chargeFill
 local pointer
@@ -26,7 +43,7 @@ local function label(parent,y,text,size,color)
  return UI.label({Parent=parent,Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,0,0,25),Text=text,TextSize=size or 14,TextColor3=color or C.Text})
 end
 local function bar(y,color)
- local bg=UI.new("Frame",{Parent=body,Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,0,0,16),BackgroundColor3=C.PanelLight,BorderSizePixel=0})
+ local bg=UI.new("Frame",{Parent=body,Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,0,0,10),BackgroundColor3=C.PanelLight,BorderSizePixel=0})
  UI.corner(bg,UDim.new(0,3))
  local fill=UI.new("Frame",{Parent=bg,Size=UDim2.fromScale(0,1),BackgroundColor3=color,BorderSizePixel=0})
  UI.corner(fill,UDim.new(0,3)); return fill
@@ -59,15 +76,14 @@ local function bind()
 end
 local function menu(data)
  local d=data.Data; cached=d
- panel.Size=UDim2.fromOffset(480,530); title.Text="CESTA DE PESCA"
+ layout(true); title.Text="CESTA DE PESCA"
  hint.Text=string.format("%s  •  %d capturas  •  cesta %d/%d\nVenda na banca de Daichi. Cozinhe com Nori no abrigo.",Data.Rods[d.RodTier].Name,d.Catches,Data.BagCount(d),Data.BagLimit)
- body.Size=UDim2.new(1,-36,0,343)
  for i,id in Data.Order do
   local fish=Data.Fish[id]
   label(body,(i-1)*32,string.format("%s  ×%d  |  %s  |  %.2f kg",fish.Name,d.Counts[id] or 0,fish.Rarity,d.Records[id] or 0),13,fish.Color)
  end
  local function button(y,text,callback,enabled)
-  local b=UI.button({Parent=body,Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,0,0,34),Text=text,TextSize=13},if enabled then C.PanelLight else C.Background)
+  local b=UI.button({Parent=body,Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,0,0,32),Text=text,TextSize=12},if enabled then C.PanelLight else C.Background)
   b.Active=enabled; b.AutoButtonColor=enabled; b.TextTransparency=if enabled then 0 else .5
   b.Activated:Connect(function() if enabled then callback() end end)
  end
@@ -97,32 +113,32 @@ Remotes.FishingState.OnClientEvent:Connect(function(data)
  charging=false; release(); phase=data.Phase; sessionId=data.Id or sessionId; spotId=data.SpotId or spotId
  if data.Data then cached=data.Data end
  body:ClearAllChildren(); progressFill=nil; tensionFill=nil; chargeFill=nil
- panel.Visible=true; panel.Size=UDim2.fromOffset(430,330); body.Size=UDim2.new(1,-36,0,145)
+ panel.Visible=true; layout(false)
  actionButton.Active=true; actionButton.TextTransparency=0; title.Text="RIO KURO"; bind()
  if phase=="Menu" then menu(data)
  elseif phase=="Ready" then
   hint.Text=if data.Hotspot then "Cardume ativo! Maior chance de peixes incomuns e raros." else "Segure ESPAÇO, RT ou o botão abaixo e solte para lançar."
-  label(body,8,"FORÇA DO LANÇAMENTO",13,C.TextDim); chargeFill=bar(40,C.Blue)
-  label(body,78,"E no píer: pescar  •  caminhar: cancelar",13,C.TextDim)
+  label(body,4,"FORÇA DO LANÇAMENTO",13,C.TextDim); chargeFill=bar(32,C.Blue)
+  label(body,56,"E no píer: pescar  •  caminhar: cancelar",13,C.TextDim)
   actionButton.Text="SEGURE PARA LANÇAR"
  elseif phase=="Casting" or phase=="Waiting" then
   hint.Text=if phase=="Casting" then "A linha está indo para a água..." else "Observe a boia. Fisgue assim que ela afundar!"
-  label(body,44,"A correnteza esconde mais do que parece.",14,C.TextDim); actionButton.Text="AGUARDANDO..."
+  label(body,30,"A correnteza esconde mais do que parece.",13,C.TextDim); actionButton.Text="AGUARDANDO..."
  elseif phase=="Bite" then
   hint.Text="MORDEU! Aperte ESPAÇO, RT ou o botão para fisgar."
-  label(body,24,"FISGUE AGORA!",28,C.Gold); actionButton.Text="FISGAR!"
+  label(body,24,"FISGUE AGORA!",24,C.Gold); actionButton.Text="FISGAR!"
  elseif phase=="Reeling" then
   hint.Text="Segure para recolher. Solte para aliviar. Mantenha a tensão longe das duas extremidades."
-  label(body,0,"CAPTURA",12,C.TextDim); progressFill=bar(28,C.Blue)
-  tensionText=label(body,58,"Alterne entre recolher e aliviar",13,C.Gold); tensionFill=bar(92,C.Green)
+  label(body,0,"CAPTURA",12,C.TextDim); progressFill=bar(26,C.Blue)
+  tensionText=label(body,46,"Alterne entre recolher e aliviar",13,C.Gold); tensionFill=bar(74,C.Green)
   progressFill.Size=UDim2.fromScale(data.Progress or .12,1); tensionFill.Size=UDim2.fromScale(data.Tension or .4,1)
   actionButton.Text="SEGURE PARA RECOLHER"
  elseif phase=="Caught" then
   local fish=Data.Fish[data.Fish]; title.Text="BOA CAPTURA!"
   hint.Text=fish.Name.."  •  "..fish.Rarity
-  label(body,14,string.format("%.2f kg",data.Kg),32,fish.Color)
-  label(body,64,string.format("Cesta %d/%d  •  +10 XP",Data.BagCount(data.Data),Data.BagLimit),15,C.TextDim)
-  label(body,96,"Peixe guardado. Venda ou cozinhe quando quiser.",13,C.TextDim)
+  label(body,10,string.format("%.2f kg",data.Kg),26,fish.Color)
+  label(body,50,string.format("Cesta %d/%d  •  +10 XP",Data.BagCount(data.Data),Data.BagLimit),14,C.TextDim)
+  label(body,78,"Peixe guardado. Venda ou cozinhe quando quiser.",13,C.TextDim)
   actionButton.Text="PESCAR NOVAMENTE"
  elseif phase=="Ended" then hint.Text=data.Reason; actionButton.Text="TENTAR NOVAMENTE"
  end
@@ -138,10 +154,9 @@ actionButton.Activated:Connect(function()
  elseif phase=="Caught" or phase=="Ended" then send("Reopen",spotId) end
 end)
 close.Activated:Connect(hide)
-basketButton.Activated:Connect(function() if not player:GetAttribute("MenuOpen") then send("Bag") end end)
 UIS.WindowFocusReleased:Connect(function() charging=false; release() end)
 player.CharacterAdded:Connect(hide)
-player:GetAttributeChangedSignal("MenuOpen"):Connect(function() basketButton.Visible=not player:GetAttribute("MenuOpen"); if player:GetAttribute("MenuOpen") then hide() end end)
+player:GetAttributeChangedSignal("MenuOpen"):Connect(function() if player:GetAttribute("MenuOpen") then hide() end end)
 RunService.RenderStepped:Connect(function()
  if not panel.Visible then return end
  local camera=workspace.CurrentCamera

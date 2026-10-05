@@ -6,7 +6,8 @@
 --     tela: aparecem no balão do level e no inventário.
 --   embaixo no centro, numa linha só: estilos de combate (1 a 5, só as casas com estilo), as habilidades (F guarda,
 --     Z/X/C do estilo, Q dash) e os poderes do caminho (V/B). A tecla fica no canto de cada casa.
---   menus (árvore M, inventário G, configurações) num grupo pequeno em cima do minimapa, fora da linha de combate
+--   menus em botões redondos pequenos (árvore M, inventário G, pescaria, passes e configurações) num grupo em cima do
+--     minimapa, fora da linha de combate. A pescaria e os passes não têm mais botão solto na tela.
 --   animações de ganho (XP, gold, LEVEL UP) e a borda de sangue com a vida baixa
 --   no celular (sem teclado): as habilidades viram botões redondos grandes no canto de baixo à direita, em volta de um
 --     botão de ataque (M1), ao lado do pulo do Roblox; a hotbar fica maior e os menus vão para a linha de baixo. Para
@@ -73,9 +74,9 @@ local HOTBAR_KEYS = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, En
 local STYLE_GLYPHS = { Punhos = "拳", Katana = "刀" }
 local SKILL_GLYPHS = { Punhos = { Z = "連", X = "溜" } }
 
-local SLOT_SIZE = 46 -- casas da linha de baixo (estilos, habilidades e poderes)
+local SLOT_SIZE = 42 -- casas da linha de baixo (estilos, habilidades e poderes)
 local SLOT_GAP = 6
-local MENU_SIZE = 34
+local MENU_SIZE = if touchOnly then 38 else 32 -- no celular um pouco maior (dedo)
 
 local screen = UITheme.screen("HUD", 1, playerGui)
 
@@ -616,7 +617,7 @@ local function createSlot(info, order)
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Fonts.Title,
-		TextSize = 21,
+		TextSize = 19,
 		Text = info.Glyph,
 		ZIndex = 2,
 		Parent = button,
@@ -673,7 +674,7 @@ local function createSlot(info, order)
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = FONT_HEAVY,
-		TextSize = 16,
+		TextSize = 15,
 		TextStrokeTransparency = 0.5,
 		ZIndex = 6,
 		Parent = button,
@@ -870,7 +871,7 @@ for index = 1, HOTBAR_SLOTS do
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Fonts.Title,
-		TextSize = 22,
+		TextSize = 20,
 		Parent = button,
 	})
 	cornerKey(button, tostring(index))
@@ -1028,8 +1029,9 @@ if touchOnly then
 	updateHotbar()
 end
 
--- ================= Menus: árvore (M), inventário (G) e configurações =================
--- No PC ficam num grupo pequeno em cima do minimapa (fora da linha de combate); no celular, no fim da linha de baixo.
+-- ================= Menus: árvore (M), inventário (G), pescaria, passes e configurações =================
+-- Botões redondos pequenos. No PC ficam num grupo em cima do minimapa (fora da linha de combate); no celular, no fim da
+-- linha de baixo.
 
 local menuHolder = new("Frame", {
 	Name = "Menu",
@@ -1057,17 +1059,34 @@ local function menuButton(order, key, glyph)
 		AutoButtonColor = false,
 		LayoutOrder = order,
 		Font = Fonts.Title,
-		TextSize = 16,
+		TextSize = 15,
 		TextColor3 = WHITE,
 		Text = glyph,
 		Parent = menuHolder,
-	}), UDim.new(0, 9))
+	}))
 	local stroke = softStroke(button)
 	if key then
-		local label = cornerKey(button, key)
-		label.Position = UDim2.fromOffset(4, 2)
-		label.TextSize = 9
-		menuKeyLabels[button] = label
+		-- Tecla numa bolinha escura no canto de baixo, à direita
+		local keyDot = round(new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(1, -4, 1, -4),
+			Size = UDim2.fromOffset(15, 15),
+			BackgroundColor3 = BLACK,
+			BackgroundTransparency = 0.15,
+			BorderSizePixel = 0,
+			ZIndex = 4,
+			Parent = button,
+		}))
+		menuKeyLabels[button] = text({
+			Size = UDim2.fromScale(1, 1),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = FONT_BOLD,
+			TextSize = 9,
+			TextColor3 = DIM,
+			Text = key,
+			ZIndex = 5,
+			Parent = keyDot,
+		})
 	end
 	button.MouseEnter:Connect(function()
 		setStroke(stroke, RED)
@@ -1080,7 +1099,10 @@ end
 
 local treeButton = menuButton(1, "M", "⛓")
 local inventoryButton = menuButton(2, "G", "▦")
-local settingsButton = menuButton(3, nil, "≡")
+local fishingButton = menuButton(3, nil, "釣")
+local passesButton = menuButton(4, nil, "★")
+local settingsButton = menuButton(5, nil, "≡")
+passesButton.TextColor3 = CREAM
 treeButton:SetAttribute("TutorialAnchor", "TreeButton")
 inventoryButton:SetAttribute("TutorialAnchor", "InventoryButton")
 settingsButton:SetAttribute("TutorialAnchor", "SettingsButton")
@@ -1088,6 +1110,8 @@ UITheme.tooltip(treeButton, UITheme.tipText("Árvore de habilidades (M)",
 	"Gaste os pontos de level em vida, força, guarda... e libere as técnicas dos estilos."))
 UITheme.tooltip(inventoryButton, UITheme.tipText("Inventário (G)",
 	"Itens dos chefes: vista para ganhar os bônus e mostrar no personagem."))
+UITheme.tooltip(fishingButton, UITheme.tipText("Pescaria", "Abre a cesta: peixes, vara, sopas e a venda para o Daichi."))
+UITheme.tooltip(passesButton, UITheme.tipText("Passes e VIP", "Benefícios permanentes, giros diários e servidor VIP."))
 UITheme.tooltip(settingsButton, UITheme.tipText("Configurações", "Fast Mode, proteção de aliados e corrida automática."))
 
 -- Bolinha com os pontos livres da árvore
@@ -1137,6 +1161,16 @@ treeButton.MouseButton1Click:Connect(function()
 end)
 inventoryButton.MouseButton1Click:Connect(function()
 	fireToggle("Inventory")
+end)
+-- Cesta de pesca: o servidor responde com o estado "Menu" e o Fishing.client abre o painel
+fishingButton.MouseButton1Click:Connect(function()
+	if not player:GetAttribute("MenuOpen") then
+		Remotes.FishingAction:FireServer("Bag")
+	end
+end)
+-- Loja de passes (GamepassShop.client; o menu principal também abre por lá)
+passesButton.MouseButton1Click:Connect(function()
+	fireToggle("GamepassShop")
 end)
 
 -- ================= Controle (Xbox) =================
@@ -1417,7 +1451,7 @@ local levelUpLabel = text({
 	Size = UDim2.fromOffset(700, 80),
 	TextXAlignment = Enum.TextXAlignment.Center,
 	Font = Fonts.Marker,
-	TextSize = 64,
+	TextSize = 52,
 	Text = "LEVEL UP!",
 	TextTransparency = 1,
 	Parent = screen,
