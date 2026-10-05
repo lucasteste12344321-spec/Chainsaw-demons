@@ -10,6 +10,7 @@ local PathData = require(ReplicatedStorage:WaitForChild("PathData"))
 local DodgeData = require(ReplicatedStorage:WaitForChild("DodgeData"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 local StatConfig = require(ReplicatedStorage:WaitForChild("StatConfig"))
+local CombatStyles = require(ReplicatedStorage:WaitForChild("CombatStyles"))
 local PlayerData = require(script.Parent:WaitForChild("PlayerData"))
 local CombatState = require(script.Parent:WaitForChild("CombatState"))
 
@@ -178,7 +179,8 @@ local function applyDamage(humanoid, damage)
 	return math.max(0, before - humanoid.Health)
 end
 
--- Dano de um jogador (estilo de combate ou poder). Devolve (dano causado, resultado), com resultado
+-- Dano de um jogador (estilo de combate ou poder). Em jogador, aplica também o ataque em grupo e conta o combo seguido
+-- para o quebra-combo (CombatStyles.PvP, CombatState). Devolve (dano causado, resultado), com resultado
 -- "Hit", "Blocked", "Broken" (quebrou a guarda), "Parried" ou "Dodged" (nil se o golpe não valia).
 -- opts (todos opcionais):
 --   ScaleWithForca: soma StatConfig.DamageBonus(Força do atacante) ao dano base, vezes ForcaScale (padrão 1)
@@ -201,6 +203,10 @@ function CombatRules.Damage(attacker, victimHumanoid, amount, opts)
 	local victimPlayer = Players:GetPlayerFromCharacter(victimModel)
 	if victimPlayer then
 		damage *= 1 - StatConfig.DamageReduction(PlayerData.GetStat(victimPlayer, "Defesa"))
+		-- Ataque em grupo (2+ jogadores na mesma vítima): cada golpe vale menos (CombatStyles.PvP)
+		if CombatState.NoteAttacker(victimHumanoid, attacker) then
+			damage *= CombatStyles.PvP.TeamDamage
+		end
 	end
 
 	local dodged, byChance = dodges(victimModel, victimPlayer)
@@ -223,6 +229,10 @@ function CombatRules.Damage(attacker, victimHumanoid, amount, opts)
 	-- A marca precisa existir antes de TakeDamage disparar Humanoid.Died (XP, Gold e missões)
 	victimHumanoid:SetAttribute("LastAttacker", attacker.UserId)
 	local dealt = applyDamage(victimHumanoid, damage)
+	-- Combo seguido em jogador (fora da guarda) libera o quebra-combo dele
+	if victimPlayer and block == "None" then
+		CombatState.NoteComboDamage(victimHumanoid, dealt)
+	end
 
 	-- Roubo de vida do atacante (Infernal do Sangue), sem passar da vida máxima
 	if dealt > 0 then

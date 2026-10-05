@@ -1346,6 +1346,18 @@ function handlers.GuardBreak(data)
 	end
 end
 
+-- Quebra-combo (CombatStyles.PvP): o atordoado saiu do combo com o dash
+function handlers.ComboBreaker(data)
+	local root = rootOf(data.Character)
+	if not root then return end
+	burst(root.Position, PARRY_COLOR, 6, 0.3)
+	flash(data.Character, PARRY_COLOR, 0.3)
+	floatText(data.Character, "QUEBRA-COMBO!", PARRY_COLOR)
+	if data.Character == player.Character then
+		shake(0.3)
+	end
+end
+
 -- ----- Esquiva automática (DodgeData) -----
 -- Todos veem o "ESQUIVOU" e o rastro; quem desviou toca a animação do lado (replica sozinha) e dá o passo (o cliente é
 -- dono do próprio personagem). Sem Side (invencível no avanço da Katana): só o texto.

@@ -15,10 +15,15 @@ local CombatStyles = require(ReplicatedStorage:WaitForChild("CombatStyles"))
 local CombatState = {}
 
 local DEFAULT_BLOCK = CombatStyles.Styles.Punhos.Block
+local PVP = CombatStyles.PvP
 
 local states = {}
 local stunned = {}
 local interruptHandlers = {}
+-- Jogadores que apanham de outros jogadores (CombatStyles.PvP): [humanoid] = { attackers = { [Player] = os.clock() },
+-- immuneUntil, combo (dano seguido), comboAt }. Recarga do quebra-combo por jogador (sobrevive ao renascer).
+local pvp = {}
+local breakerReadyAt = {}
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -257,7 +262,7 @@ function CombatState.TryBlock(victimModel, attackerModel, guardDamage, opts)
 	if not opts.Unparryable and t - state.blockStart <= cfg.ParryWindow + treeEffect(victimPlayer, "ParryWindow") then
 		local attackerHumanoid = attackerModel and attackerModel:FindFirstChildOfClass("Humanoid")
 		if attackerHumanoid then
-			CombatState.Stun(attackerHumanoid, cfg.ParryStun)
+			CombatState.Stun(attackerHumanoid, cfg.ParryStun, true)
 		end
 		local attackerPlayer = attackerModel and Players:GetPlayerFromCharacter(attackerModel)
 		if attackerPlayer and states[attackerPlayer] then
@@ -277,7 +282,7 @@ function CombatState.TryBlock(victimModel, attackerModel, guardDamage, opts)
 		CombatState.StopBlock(victimPlayer)
 		local humanoid = victimModel:FindFirstChildOfClass("Humanoid")
 		if humanoid then
-			CombatState.Stun(humanoid, cfg.BreakStun)
+			CombatState.Stun(humanoid, cfg.BreakStun, true)
 		end
 		CombatState.FX("GuardBreak", { Character = victimModel })
 		publishGuard(victimPlayer, state)
@@ -308,10 +313,98 @@ function CombatState.StunRemaining(humanoid)
 	return if state then math.max(0, state.expires - os.clock()) else 0
 end
 
-function CombatState.Stun(humanoid, duration)
+local function pvpRecord(humanoid)
+	local record = pvp[humanoid]
+	if not record then
+		record = { attackers = {}, immuneUntil = 0, combo = 0, comboAt = 0 }
+		pvp[humanoid] = record
+	end
+	return record
+end
+
+-- Quantos jogadores diferentes bateram nessa vítima dentro de PvP.TeamWindow
+local function attackerCount(record, clock)
+	local count = 0
+	for attacker, at in record.attackers do
+		if clock - at > PVP.TeamWindow or attacker.Parent ~= Players then
+			record.attackers[attacker] = nil
+		else
+			count += 1
+		end
+	end
+	return count
+end
+
+-- Golpe de um jogador em outro (CombatRules.Damage, antes do dano). Devolve true se a vítima está apanhando de 2+
+-- jogadores ao mesmo tempo (ataque em grupo: dano e atordoamento menores).
+function CombatState.NoteAttacker(victimHumanoid, attackerPlayer)
+	local record = pvpRecord(victimHumanoid)
+	local clock = os.clock()
+	record.attackers[attackerPlayer] = clock
+	return attackerCount(record, clock) >= 2
+end
+
+local function setBreakerReady(player, ready)
+	if (player:GetAttribute("ComboBreakerReady") == true) ~= ready then
+		player:SetAttribute("ComboBreakerReady", if ready then true else nil)
+	end
+end
+
+-- Dano de jogador que a vítima (jogador) levou: soma no combo seguido e libera o quebra-combo ao passar de
+-- PvP.BreakerFraction da vida máxima (se a recarga já passou)
+function CombatState.NoteComboDamage(victimHumanoid, dealt)
+	local player = Players:GetPlayerFromCharacter(victimHumanoid.Parent)
+	if not player or dealt <= 0 then return end
+	local record = pvpRecord(victimHumanoid)
+	record.combo += dealt
+	record.comboAt = os.clock()
+	if record.combo >= victimHumanoid.MaxHealth * PVP.BreakerFraction and now() >= (breakerReadyAt[player] or 0) then
+		setBreakerReady(player, true)
+	end
+end
+
+-- O dash do jogador pode quebrar o combo agora? (DashService, quando ele está atordoado)
+function CombatState.CanBreakCombo(player)
+	return player:GetAttribute("ComboBreakerReady") == true and now() >= (breakerReadyAt[player] or 0)
+end
+
+-- Usa o quebra-combo: tira o atordoamento, dá a imunidade e começa a recarga
+function CombatState.BreakCombo(player)
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return end
+	breakerReadyAt[player] = now() + PVP.BreakerCooldown
+	setBreakerReady(player, false)
+	local record = pvpRecord(humanoid)
+	record.combo = 0
+	record.immuneUntil = os.clock() + PVP.StunImmunity
+	local state = stunned[humanoid]
+	if state then
+		state.expires = 0
+		state.heavy = false
+	end
+	character:SetAttribute("Stunned", nil)
+	CombatState.FX("ComboBreaker", { Character = character })
+end
+
+-- force: atordoa mesmo com a imunidade e sem a redução do ataque em grupo (parry e quebra de guarda: punições
+-- pela ação de quem é atordoado)
+function CombatState.Stun(humanoid, duration, force)
 	local character = humanoid.Parent
 	if not character or humanoid.Health <= 0 then return end
 	local player = Players:GetPlayerFromCharacter(character)
+	local clock = os.clock()
+	local heavy = duration >= PVP.HeavyStun
+	if player and not force then
+		local record = pvp[humanoid]
+		if record then
+			-- Imune logo depois de um atordoamento pesado ou do quebra-combo
+			if clock < record.immuneUntil then return end
+			if attackerCount(record, clock) >= 2 then
+				duration *= PVP.TeamStun
+			end
+		end
+	end
 	local state = stunned[humanoid]
 	if not state then
 		state = {
@@ -324,7 +417,10 @@ function CombatState.Stun(humanoid, duration)
 		}
 		stunned[humanoid] = state
 	end
-	state.expires = math.max(state.expires, os.clock() + duration)
+	state.expires = math.max(state.expires, clock + duration)
+	if heavy then
+		state.heavy = true
+	end
 	character:SetAttribute("Stunned", true)
 	if not state.isPlayer then
 		humanoid.WalkSpeed = 0
@@ -358,6 +454,22 @@ RunService.Heartbeat:Connect(function(dt)
 				humanoid.JumpPower = state.jumpPower
 				humanoid.JumpHeight = state.jumpHeight
 			end
+			-- Jogador saindo de um atordoamento pesado fica um pouco imune (não recomeça o combo na hora)
+			if state.isPlayer and state.heavy and humanoid.Parent and humanoid.Health > 0 then
+				pvpRecord(humanoid).immuneUntil = clock + PVP.StunImmunity
+			end
+		end
+	end
+	-- Combo seguido zera depois de BreakerGap sem apanhar e sem atordoamento (e o quebra-combo some com ele)
+	for humanoid, record in pvp do
+		if not humanoid.Parent or humanoid.Health <= 0 then
+			pvp[humanoid] = nil
+			local player = humanoid.Parent and Players:GetPlayerFromCharacter(humanoid.Parent)
+			if player then setBreakerReady(player, false) end
+		elseif record.combo > 0 and not stunned[humanoid] and clock - record.comboAt > PVP.BreakerGap then
+			record.combo = 0
+			local player = Players:GetPlayerFromCharacter(humanoid.Parent)
+			if player then setBreakerReady(player, false) end
 		end
 	end
 
@@ -391,6 +503,7 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	states[player] = nil
+	breakerReadyAt[player] = nil
 end)
 
 return CombatState

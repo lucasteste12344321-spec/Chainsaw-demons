@@ -76,11 +76,13 @@ local function onDash(player, character, seq, direction, timestamp, origin)
 	local function deny() publish(player, state, seq, false) end
 	local root = character:FindFirstChild("HumanoidRootPart")
 	local hum = character:FindFirstChildOfClass("Humanoid")
-	if not root or not root:IsA("BasePart") or not hum or hum.Health <= 0 or hum.SeatPart
-		or root.Anchored or character:GetAttribute("Stunned") == true or CombatState.IsLocked(player)
+	-- Quebra-combo (CombatStyles.PvP): atordoado depois de apanhar muito seguido, o dash sai mesmo assim
+	local breaking = character:GetAttribute("Stunned") == true and CombatState.CanBreakCombo(player)
+	if not root or not root:IsA("BasePart") or not hum or hum.Health <= 0 or hum.SeatPart or root.Anchored
+		or (not breaking and (character:GetAttribute("Stunned") == true or CombatState.IsLocked(player)))
 		or now < state.ReadyAt then deny(); return end
 	local slow = character:GetAttribute("CombatSpeed")
-	if type(slow) == "number" and slow < 0.6 then deny(); return end
+	if not breaking and type(slow) == "number" and slow < 0.6 then deny(); return end
 	if typeof(direction) ~= "Vector3" or not History.Finite(direction.X) or not History.Finite(direction.Y)
 		or not History.Finite(direction.Z) or math.abs(direction.Y) > 0.01
 		or direction.Magnitude < 0.9 or direction.Magnitude > 1.1 then deny(); return end
@@ -103,6 +105,7 @@ local function onDash(player, character, seq, direction, timestamp, origin)
 	-- A decisão e o desconto não cedem execução: pedidos simultâneos não gastam o mesmo saldo.
 	state.Stamina -= cost
 	state.ReadyAt = now + Config.DashCooldown
+	if breaking then CombatState.BreakCombo(player) end
 	CombatState.InterruptForDash(player)
 	CombatState.SetBusy(player, now + math.max(0, Config.DashTime - (now - sentAt)))
 	publish(player, state, seq, true, { Start = origin.Position, Direction = direction, Distance = distance })

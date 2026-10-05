@@ -378,6 +378,24 @@ CombatStyles.HitTolerance = 2
 -- Tempo máximo entre o golpe e o acerto que o cliente manda (maior que qualquer windup/marcador + ping)
 CombatStyles.HitDeadline = 1.5
 
+-- Justiça no PvP (só quando a vítima é jogador; inimigos continuam como antes). CombatState e CombatRules.
+CombatStyles.PvP = {
+	-- Imunidade: depois de um atordoamento pesado (finalizador, uppercut, quebra de guarda) o jogador fica StunImmunity s
+	-- sem poder ser atordoado de novo (o dano entra), para dar tempo de dash/guarda e não recomeçar o combo
+	HeavyStun = 1,
+	StunImmunity = 0.5,
+	-- Ataque em grupo: com golpes de 2+ jogadores diferentes na mesma vítima dentro de TeamWindow s, cada golpe
+	-- dá TeamDamage do dano e TeamStun do atordoamento
+	TeamWindow = 2,
+	TeamDamage = 0.6,
+	TeamStun = 0.7,
+	-- Quebra-combo: levar BreakerFraction da vida máxima seguida (sem BreakerGap s de folga) libera um dash mesmo
+	-- atordoado (atributo ComboBreakerReady no player); usar tira o stun, dá a imunidade e recarrega em BreakerCooldown s
+	BreakerFraction = 0.25,
+	BreakerGap = 1.5,
+	BreakerCooldown = 25,
+}
+
 -- Onde fica a peça base do VFX da Rajada (crash4): VFXForward à frente e VFXHeight acima da raiz, deitada,
 -- com a face de cima (+Y) apontando para a frente e o X para baixo (o mesmo giro do modelo). Usada pelo efeito
 -- (CombatFX) e pela hitbox (CombatService), para os dois baterem.

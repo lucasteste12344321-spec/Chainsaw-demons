@@ -490,6 +490,18 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 - Testado em Play (2026-10-02): com 100% contra o treino do Treinador, 19 desvios em 22 s sem perder vida; esquerda
   toca 0,28 s com o passo de 2,2 studs para a esquerda, direita é cortada em 0,76 s com o passo para a direita.
 
+## Justiça no PvP (Claude, 2026-10-05)
+- Números em `CombatStyles.PvP`; só vale com vítima jogador (inimigos como antes).
+- Imunidade: saindo de um atordoamento pesado (>= `HeavyStun`, 1 s: finalizador, uppercut, quebra de guarda, parry)
+  o jogador fica `StunImmunity` (0,5 s) sem novo stun (o dano entra). `CombatState.Stun(humanoid, duration, force)`:
+  `force` (parry e quebra de guarda) ignora a imunidade e o ataque em grupo.
+- Ataque em grupo: 2+ jogadores batendo na mesma vítima em `TeamWindow` (2 s) → dano x`TeamDamage` (0,6) e stun
+  x`TeamStun` (0,7) (`CombatState.NoteAttacker`, chamado pelo `CombatRules.Damage`).
+- Quebra-combo: `BreakerFraction` (25%) da vida máxima levada seguida (fora da guarda; zera após `BreakerGap` 1,5 s sem
+  apanhar nem stun) põe `ComboBreakerReady` no player; o dash sai mesmo atordoado (DashService e movimento), tira o stun,
+  dá a imunidade e recarrega em `BreakerCooldown` (25 s). Efeito `CombatFX` "ComboBreaker". Falta indicador na HUD.
+- Sem teste em Play ainda.
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.

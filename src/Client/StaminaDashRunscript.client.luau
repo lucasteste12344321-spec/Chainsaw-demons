@@ -66,6 +66,7 @@ local running = false
 local ctrlHeld = false
 local dashVelocity, dashAttachment
 local dashEnds = 0
+local breakerDash = false -- o dash atual é um quebra-combo (sai atordoado; o stun não corta ele)
 local nextDashAt = 0
 local dashSeq = 0
 local pendingDash, dashLimit, staminaSnapshot
@@ -173,6 +174,7 @@ end
 local function stopDash(cutAnimation)
 	local wasDashing = dashVelocity ~= nil
 	dashLimit = nil
+	breakerDash = false
 	if dashVelocity then dashVelocity:Destroy() dashVelocity = nil end
 	if dashAttachment then dashAttachment:Destroy() dashAttachment = nil end
 	if cutAnimation then
@@ -195,9 +197,10 @@ local function alive()
 	return humanoid ~= nil and humanoid.Parent ~= nil and humanoid.Health > 0 and rootPart ~= nil
 end
 
--- Parado: morto, atordoado ou com o menu principal aberto (MenuOpen, do MainMenu)
+-- Parado: morto, atordoado (menos no dash do quebra-combo) ou com o menu principal aberto (MenuOpen, do MainMenu)
 local function blocked()
-	return not alive() or character:GetAttribute("Stunned") == true or player:GetAttribute("MenuOpen") == true
+	return not alive() or (character:GetAttribute("Stunned") == true and not breakerDash)
+		or player:GetAttribute("MenuOpen") == true
 end
 
 -- Lentidão do combate (CombatSpeed, escrito pelo servidor): socando anda um pouco mais devagar e sem correr;
@@ -214,7 +217,7 @@ end
 
 local function updateMovement()
 	if not alive() then return end
-	local stunned = character:GetAttribute("Stunned") == true
+	local stunned = character:GetAttribute("Stunned") == true and not breakerDash
 	if stunned then stopActions() end
 	local slow = combatSlow()
 	if slow < 1 and running then
@@ -346,14 +349,17 @@ local function dash()
 	local now = workspace:GetServerTimeNow()
 	local readyAt = if staminaSnapshot and staminaSnapshot.Character == character then staminaSnapshot.ReadyAt
 		else player:GetAttribute("DashReadyAt") or 0
-	if blocked() or inCombatStance() or dashVelocity or pendingDash or stamina < cost or os.clock() < nextDashAt
-		or now < readyAt or now < (player:GetAttribute("CombatLockUntil") or 0)
-		or now < (player:GetAttribute("PredictedCombatLockUntil") or 0) then return end
+	-- Quebra-combo (servidor: ComboBreakerReady): atordoado, o dash sai mesmo assim e ignora as travas do combate
+	local breaking = alive() and character:GetAttribute("Stunned") == true
+		and player:GetAttribute("ComboBreakerReady") == true and player:GetAttribute("MenuOpen") ~= true
+	if (not breaking and (blocked() or inCombatStance() or now < (player:GetAttribute("CombatLockUntil") or 0)
+		or now < (player:GetAttribute("PredictedCombatLockUntil") or 0)))
+		or dashVelocity or pendingDash or stamina < cost or os.clock() < nextDashAt or now < readyAt then return end
 	local direction, animationName = dashDirection()
 	-- Colado numa parede nessa direção: nem sai (não gasta stamina nem a recarga)
 	if wallAhead(direction, 1.5) then return end
 	dashSeq += 1
-	pendingDash = { Seq = dashSeq, Character = character, Cost = cost, Time = now, Start = rootPart.CFrame }
+	pendingDash = { Seq = dashSeq, Character = character, Cost = cost, Time = now, Start = rootPart.CFrame, Breaker = breaking }
 	dashLimit = { Start = rootPart.Position, Direction = direction, Distance = DASH_DISTANCE }
 	Remotes.DashRequest:FireServer(character, dashSeq, direction, now, rootPart.CFrame)
 	CombatAnimations.CancelAttack() -- dash cancela o fim do soco
@@ -384,13 +390,15 @@ local function dash()
 	dashVelocity.VectorVelocity = direction * (DASH_DISTANCE / DASH_TIME)
 	dashVelocity.Parent = rootPart
 	dashEnds = os.clock() + DASH_TIME
+	breakerDash = breaking
 end
 
 local function rejectDash(request)
 	if request.Character ~= character or not alive() then return end
 	stopDash(true)
-	-- Só desfaz o deslocamento previsto desse dash; não puxa um personagem morto/atordoado por outro golpe.
-	if character:GetAttribute("Stunned") ~= true
+	-- Só desfaz o deslocamento previsto desse dash; não puxa um personagem morto/atordoado por outro golpe
+	-- (o quebra-combo recusado volta: ele saiu já atordoado).
+	if (character:GetAttribute("Stunned") ~= true or request.Breaker)
 		and (rootPart.Position - request.Start.Position).Magnitude <= DASH_DISTANCE + NetConfig.OriginTolerance then
 		rootPart.CFrame = request.Start
 		settleAfterDash(true)
@@ -436,9 +444,12 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		ctrlHeld = true
 		return
 	end
-	if processed or blocked() then return end
+	if processed then return end
+	-- O dash confere o bloqueio sozinho (o quebra-combo sai mesmo atordoado)
 	if DASH_KEYS[input.KeyCode] then
 		dash()
+	elseif blocked() then
+		return
 	end
 	updateMovement()
 end)
