@@ -37,7 +37,15 @@ for i, key in Config.Order do
 		if not ok then prompting = false; refresh() end
 	end)
 	if pass.Id > 0 then task.spawn(function()
-		local ok, product = pcall(Marketplace.GetProductInfoAsync, Marketplace, pass.Id, Enum.InfoType.GamePass)
+		-- GetProductInfoAsync não existe nos apps antigos de celular: aí vale o GetProductInfo (o nome antigo)
+		local ok, product = pcall(function()
+			return Marketplace:GetProductInfoAsync(pass.Id, Enum.InfoType.GamePass)
+		end)
+		if not ok then
+			ok, product = pcall(function()
+				return Marketplace:GetProductInfo(pass.Id, Enum.InfoType.GamePass)
+			end)
+		end
 		if ok then info[key] = product end
 		if refresh then refresh() end
 	end) end

@@ -622,6 +622,15 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   de meia carga), Saque, Kon!, e o arremesso do 5º M1, do Soco carregado, do Saque, do Contra-agarrão, da Mordida e do Bote.
   O Infernal do Sangue (Codex) recebe `ctx.Destruction` no PathSkills (pedido abaixo).
 
+## Passes e servidor VIP (revisão do Claude, 2026-10-05)
+- Arquivos (do Studio, entraram no repo em 2026-10-05): `GamepassConfig`/`GamepassOdds` (Shared), `GamepassEntitlements`,
+  `Gamepasses.server`, `VIPServers`, `VIPRewardRules` (Server), `GamepassShop.client`. Dono do passe só no servidor
+  (`UserOwnsGamePassAsync` + `PromptGamePassPurchaseFinished`); 2× XP/Gold no `PlayerData.AddXP/AddGold` (códigos não);
+  VIP: 2× chance dos drops de chefe (inclusive o `StyleDrop`) só sem `RandomItemsRestricted`, 5 giros/dia por
+  `UpdateAsync` (`VIPRewardRules.Merge`), servidor reservado só do dono (`CheckArrival` manda quem não é dono para o
+  público; amigos não entram). Revisão: a loja usava só `GetProductInfoAsync` (não existe nos apps antigos de celular;
+  agora cai no `GetProductInfo`) e a tela de chances não mostrava a Motosserra nem o nome do chefe (`GamepassOdds`).
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.

@@ -3,6 +3,7 @@ local Config = require(RS.GamepassConfig)
 local Bosses = require(RS.BossData)
 local Items = require(RS.ItemData)
 local Clans = require(RS.ClanData)
+local Styles = require(RS.CombatStyles)
 local Odds = {}
 -- Largest remainder: the displayed outcomes sum to 100.0000%, including no item.
 local function percentages(rows)
@@ -40,8 +41,16 @@ function Odds.Text(restricted, owned)
 		"",
 	}
 	for key, boss in Bosses.Bosses do
+		-- Estilo de combate que o chefe ensina (StyleDrop): sorteio à parte, só para quem ainda não tem
+		local styleDrop = boss.StyleDrop
+		if styleDrop then
+			local style = Styles.Styles[styleDrop.Style]
+			table.insert(lines, string.format("%s — estilo %s (sorteio à parte, só para quem ainda não tem): normal %.2f%% · VIP %.2f%%",
+				boss.Title or key, style and style.DisplayName or styleDrop.Style, styleDrop.Chance * 100,
+				Config.DropChance(styleDrop.Chance, true, restricted) * 100))
+		end
 		if boss.Drops and #boss.Drops > 0 then
-			table.insert(lines, key .. " — chances por item (sorteios independentes):")
+			table.insert(lines, (boss.Title or key) .. " — chances por item (sorteios independentes):")
 			for _, drop in boss.Drops do
 				local item = Items.Get(drop.Item)
 				local boosted = Config.DropChance(drop.Chance, true, restricted)
