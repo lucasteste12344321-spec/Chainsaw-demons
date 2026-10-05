@@ -14,6 +14,7 @@
 --                              (até sair do jogo; o normal vem do PolicyService no CharacterService)
 --   /treinador <treino|duelo>  chama a cópia do Treinador para testar (sem contar em missão; perto do NPC Treinador)
 --   /destruir [raio]           explode o mapa na sua frente (Destruction) e mostra por que cada peça quebrou ou não
+--   /infernal [Tipo]           vira Infernal do tipo (padrão Sangue), sem level nem missão
 --   /chefe <Nome>              faz um chefe aparecer agora (ex.: /chefe Denji; o global não espera o horário)
 --   /hibrido [Infernal] [Contrato]  modo híbrido: contrato no V/B e poderes do Infernal no H/J, seja qual for o caminho
 --                              (padrão Sangue e Raposa; /hibrido off desliga; vale até sair do jogo)
@@ -322,4 +323,19 @@ Admins.BindCommand("/destruir", function(player, argument)
 		summary = "DESLIGADA (workspace.DestructionDisabled). " .. summary
 	end
 	PlayerData.Notify(player, "Destruição", `Quebrou {broken}. Perto: {summary}`, 10)
+end)
+
+Admins.BindCommand("/infernal", function(player, argument)
+	local wanted = if argument and argument ~= "" then argument else "Sangue"
+	local fiendTypeId
+	for id in PathData.FiendTypes do
+		if string.lower(id) == string.lower(wanted) then
+			fiendTypeId = id
+		end
+	end
+	if not fiendTypeId or not PathModule.AdminFiend(player, fiendTypeId) then
+		PlayerData.Notify(player, "Infernal", "Use /infernal <Tipo> (só tipos ativos, ex.: Sangue).", 5)
+		return
+	end
+	PlayerData.Notify(player, "Infernal", `Agora você é Infernal do tipo {fiendTypeId}.`, 5)
 end)

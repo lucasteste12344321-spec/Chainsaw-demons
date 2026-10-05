@@ -420,6 +420,21 @@ function PathModule.AdminHunter(player, contractId)
 	return true
 end
 
+-- Comando de admin (ItemCommands /infernal): vira Infernal do tipo na hora, sem level nem missão
+function PathModule.AdminFiend(player, fiendTypeId)
+	local state = getState(player)
+	local fiendType = PathData.FiendTypes[fiendTypeId]
+	if not state or not fiendType or fiendType.Enabled == false then
+		return false
+	end
+	state.Path = "Fiend"
+	state.Contracts = {}
+	state.FiendType = fiendTypeId
+	state.Lifespan = PathData.MaxLifespan
+	commitChange(player, state)
+	return true
+end
+
 -- Recompensa de missão: novo contrato (Unlock = "Quest") para um Caçador, respeitando MaxContracts
 function PathModule.AddContract(player, contractId)
 	local contract = if type(contractId) == "string" then PathData.Contracts[contractId] else nil
