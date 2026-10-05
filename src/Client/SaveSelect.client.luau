@@ -340,7 +340,8 @@ local function buildCard(slot, summary, unlocked)
 			TextSize = 20,
 			Text = "LOCKED",
 		})
-		local pass = GamepassConfig.Passes.ExtraSlots
+		-- GamepassConfig antigo (sem o passe) não pode quebrar a tela: vira "COMING SOON"
+		local pass = GamepassConfig.Passes.ExtraSlots or { Id = 0, Name = "+2 Save Slots" }
 		text(card, {
 			AnchorPoint = Vector2.new(0.5, 0),
 			Position = UDim2.new(0.5, 0, 0.55, 30),
