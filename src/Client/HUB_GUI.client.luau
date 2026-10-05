@@ -1315,11 +1315,12 @@ treeButton.MouseButton1Click:Connect(function()
 	fireToggle("SkillTree")
 end)
 -- Aparelho do caminho (Device.client: tablet do Caçador / Kog do Infernal): missões diárias e chefe global, tecla T.
--- Bolinha vermelha com missão para resgatar (atributo DailyClaimable do DailyService).
+-- Bolinha vermelha com algo para resgatar (atributos DailyClaimable do DailyService e MilestoneClaimable do
+-- MilestoneService).
 do
 	local deviceButton = menuButton(0, "T", "▣")
-	UITheme.tooltip(deviceButton, UITheme.tipText("Daily quests (T)",
-		"Tablet (Hunter and Human) or Kog (Fiend): 3 quests per day, streak bonus and the global boss schedule."))
+	UITheme.tooltip(deviceButton, UITheme.tipText("Device (T)",
+		"Tablet (Hunter and Human) or Kog (Fiend): daily quests, milestones and the global boss schedule."))
 	deviceButton.MouseButton1Click:Connect(function()
 		fireToggle("Device")
 	end)
@@ -1333,10 +1334,11 @@ do
 		Parent = deviceButton,
 	}))
 	local function updateDot()
-		dailyDot.Visible = player:GetAttribute("DailyClaimable") == true
+		dailyDot.Visible = player:GetAttribute("DailyClaimable") == true or player:GetAttribute("MilestoneClaimable") == true
 		deviceButton.Text = if player:GetAttribute("Path") == "Fiend" then "金" else "▣"
 	end
 	player:GetAttributeChangedSignal("DailyClaimable"):Connect(updateDot)
+	player:GetAttributeChangedSignal("MilestoneClaimable"):Connect(updateDot)
 	player:GetAttributeChangedSignal("Path"):Connect(updateDot)
 	updateDot()
 end

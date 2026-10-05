@@ -1,6 +1,7 @@
--- Aparelho do caminho: o TABLET do Caçador (e do Humano, antes de escolher) ou o KOG do Infernal. Mostra as missões
--- diárias (DailyService, Remotes.DailyAction/DailyState) e o chefe global (atributos GlobalBoss_* do ReplicatedStorage,
--- escritos pelo BossService), e é por ele que chegam os avisos do chefe (Remotes.DeviceAlert).
+-- Aparelho do caminho: o TABLET do Caçador (e do Humano, antes de escolher) ou o KOG do Infernal. Duas abas: DAILY
+-- (missões diárias, DailyService, Remotes.DailyAction/DailyState, e o chefe global pelos atributos GlobalBoss_* do
+-- ReplicatedStorage) e MILESTONES (marcos, MilestoneService/MilestoneData, Remotes.MilestoneAction/MilestoneState).
+-- É por ele que chegam os avisos do chefe (Remotes.DeviceAlert).
 -- Abre com T, pelo botão da HUD (HUB_GUI) ou pelo BindableEvent Device.Toggle.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +10,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local UI = require(ReplicatedStorage:WaitForChild("UITheme"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
+local MilestoneData = require(ReplicatedStorage:WaitForChild("MilestoneData"))
 
 local player = Players.LocalPlayer
 local C = UI.Colors
@@ -67,7 +69,22 @@ local close = UI.button({ Parent = screen, Position = UDim2.new(1, if TOUCH then
 	Size = if TOUCH then UDim2.fromOffset(40, 34) else UDim2.fromOffset(30, 28), Text = "X",
 	TextSize = 14 }, C.PanelLight)
 
-local body = UI.new("ScrollingFrame", { Parent = screen, Position = UDim2.fromOffset(12, 42), Size = UDim2.new(1, -24, 1, -54),
+-- Abas
+local TAB_H = if TOUCH then 38 else 30
+local tabs = {}
+local tabRow = UI.new("Frame", { Parent = screen, Position = UDim2.fromOffset(12, 40), Size = UDim2.new(1, -24, 0, TAB_H),
+	BackgroundTransparency = 1 })
+UI.list(tabRow, 8, Enum.FillDirection.Horizontal)
+for index, info in { { Id = "Daily", Text = "DAILY" }, { Id = "Milestones", Text = "MILESTONES" } } do
+	local tab = UI.button({ Parent = tabRow, LayoutOrder = index, Size = UDim2.new(0.5, -4, 1, 0), Text = info.Text,
+		TextSize = if TOUCH then 14 else 12 }, C.PanelLight)
+	local dot = UI.new("Frame", { Parent = tab, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -8, 0, 6),
+		Size = UDim2.fromOffset(10, 10), BackgroundColor3 = C.Accent, BorderSizePixel = 0, Visible = false })
+	UI.corner(dot, UDim.new(1, 0))
+	tabs[info.Id] = { Button = tab, Dot = dot }
+end
+
+local body = UI.new("ScrollingFrame", { Parent = screen, Position = UDim2.fromOffset(12, 48 + TAB_H), Size = UDim2.new(1, -24, 1, -(60 + TAB_H)),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, AutomaticCanvasSize = Enum.AutomaticSize.Y,
 	CanvasSize = UDim2.new() })
 UI.list(body, 8)
@@ -75,6 +92,9 @@ UI.list(body, 8)
 UI.fitTouchPanel(bezel, 520, 560, body)
 
 local state = nil -- DailyState
+local milestoneState = nil -- MilestoneState: { Tracks = { { Id, Progress, Claimed } } }
+local currentTab = "Daily"
+local selectedTrack = MilestoneData.Tracks[1].Id
 
 local function formatTime(seconds)
 	seconds = math.max(0, math.floor(seconds))
@@ -116,6 +136,7 @@ local function speech(order, text)
 end
 
 local bossLabel -- texto do chefe global (atualizado a cada segundo)
+local render, renderMilestones -- (definidas mais abaixo; uma chama a outra)
 
 local function bossText()
 	for name, value in ReplicatedStorage:GetAttributes() do
@@ -131,7 +152,91 @@ local function bossText()
 	return "No global boss scheduled."
 end
 
-local function render()
+-- Aba MILESTONES: escolha da trilha e os níveis dela (como a referência do usuário: texto (x/meta), barra, prêmio e
+-- o botão de resgatar; em ordem)
+local function trackState(id)
+	if not milestoneState then return nil end
+	for _, entry in milestoneState.Tracks do
+		if entry.Id == id then return entry end
+	end
+	return nil
+end
+
+local function trackClaimable(track)
+	local entry = trackState(track.Id)
+	local nextTier = entry and track.Tiers[entry.Claimed + 1]
+	return nextTier ~= nil and entry.Progress >= nextTier.Goal
+end
+
+function renderMilestones(style)
+	local order = 1
+	if style.Speaker then
+		speech(order, "Big goals, big pay. Bring me proof and I will pay up.")
+		order += 1
+	end
+	-- Trilhas (botões com o kanji)
+	local picker = UI.new("Frame", { Parent = body, LayoutOrder = order, Size = UDim2.new(1, -6, 0, if TOUCH then 46 else 40),
+		BackgroundTransparency = 1 })
+	order += 1
+	UI.list(picker, 6, Enum.FillDirection.Horizontal)
+	local count = #MilestoneData.Tracks
+	for index, track in MilestoneData.Tracks do
+		local active = track.Id == selectedTrack
+		local button = UI.button({ Parent = picker, LayoutOrder = index, Size = UDim2.new(1 / count, -6 * (count - 1) / count, 1, 0),
+			Text = track.Glyph, TextSize = if TOUCH then 22 else 18, Font = UI.Fonts.Title },
+			if active then style.Accent else C.PanelLight)
+		button.TextColor3 = if active then C.Black else C.Text
+		UI.tooltip(button, UI.tipText(track.Name, string.format(track.Text, track.Tiers[1].Goal)))
+		if trackClaimable(track) then
+			local dot = UI.new("Frame", { Parent = button, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -7, 0, 7),
+				Size = UDim2.fromOffset(10, 10), BackgroundColor3 = C.Accent, BorderSizePixel = 0 })
+			UI.corner(dot, UDim.new(1, 0))
+		end
+		button.Activated:Connect(function()
+			selectedTrack = track.Id
+			render()
+		end)
+	end
+
+	local track = MilestoneData.Get(selectedTrack) or MilestoneData.Tracks[1]
+	local entry = trackState(track.Id)
+	UI.label({ Parent = body, LayoutOrder = order, Size = UDim2.new(1, -6, 0, 22), TextSize = 15, Font = UI.Fonts.Title,
+		Text = if entry then `{string.upper(track.Name)} · {entry.Claimed}/{#track.Tiers}` else `{string.upper(track.Name)} · loading...` })
+	order += 1
+	if not entry then return end
+
+	for index, tier in track.Tiers do
+		local claimed = index <= entry.Claimed
+		local reached = entry.Progress >= tier.Goal
+		local canClaim = not claimed and reached and index == entry.Claimed + 1
+		local shown = math.min(entry.Progress, tier.Goal)
+		local frame = card(order, CARD_H + 8)
+		order += 1
+		textLine(frame, { Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -(BUTTON_W + 24), 0, 20), TextSize = 14,
+			Text = `{MilestoneData.TierText(track, tier)} ({UI.formatNumber(shown)}/{UI.formatNumber(tier.Goal)})`,
+			TextColor3 = if claimed then C.TextDim else C.Text })
+		local barBack = UI.new("Frame", { Parent = frame, Position = UDim2.fromOffset(10, 30), Size = UDim2.new(1, -(BUTTON_W + 24), 0, 8),
+			BackgroundColor3 = C.Black, BackgroundTransparency = 0.2, BorderSizePixel = 0 })
+		UI.corner(barBack, UDim.new(1, 0))
+		local fill = UI.new("Frame", { Parent = barBack, Size = UDim2.fromScale(math.clamp(shown / tier.Goal, 0, 1), 1),
+			BackgroundColor3 = style.Accent, BorderSizePixel = 0 })
+		UI.corner(fill, UDim.new(1, 0))
+		textLine(frame, { Position = UDim2.fromOffset(10, 42), Size = UDim2.new(1, -(BUTTON_W + 24), 0, 18), TextSize = 12,
+			Font = UI.Fonts.Title, TextColor3 = C.Gold, Text = MilestoneData.RewardText(tier) })
+		local button = UI.button({ Parent = frame, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
+			Size = UDim2.fromOffset(BUTTON_W, BUTTON_H), TextSize = if TOUCH then 14 else 12,
+			Text = if claimed then "✓ CLAIMED" elseif canClaim then "CLAIM" elseif reached then "CLAIM PREVIOUS" else "LOCKED" },
+			if canClaim then style.Accent else C.PanelLight)
+		if canClaim then
+			button.TextColor3 = C.Black
+			button.Activated:Connect(function()
+				Remotes.MilestoneAction:FireServer("Claim", track.Id)
+			end)
+		end
+	end
+end
+
+function render()
 	local style = styleOf()
 	bezel.BackgroundColor3 = style.Bezel
 	bezelStroke.Color = style.Accent
@@ -141,7 +246,16 @@ local function render()
 	local pathName = if player:GetAttribute("Path") == "Hunter" then "HUNTER" elseif style.Speaker then "FIEND" else "HUMAN"
 	title.Text = if style.Speaker then style.Name else `{style.Name} · {pathName}`
 	title.TextColor3 = style.Accent
+	for id, tab in tabs do
+		local active = id == currentTab
+		tab.Button.BackgroundColor3 = if active then style.Accent else C.PanelLight
+		tab.Button.TextColor3 = if active then C.Black else C.Text
+	end
 	clearBody()
+	if currentTab == "Milestones" then
+		renderMilestones(style)
+		return
+	end
 
 	local order = 1
 	if style.Speaker then
@@ -218,6 +332,7 @@ local function show(visible)
 	bezel.Visible = visible
 	if visible then
 		Remotes.DailyAction:FireServer("State")
+		Remotes.MilestoneAction:FireServer("State")
 		render()
 	end
 end
@@ -229,6 +344,24 @@ Remotes.DailyState.OnClientEvent:Connect(function(data)
 	state = data
 	if bezel.Visible then render() end
 end)
+Remotes.MilestoneState.OnClientEvent:Connect(function(data)
+	if type(data) ~= "table" or type(data.Tracks) ~= "table" then return end
+	milestoneState = data
+	if bezel.Visible then render() end
+end)
+for id, tab in tabs do
+	tab.Button.Activated:Connect(function()
+		currentTab = id
+		render()
+	end)
+end
+local function updateTabDots()
+	tabs.Daily.Dot.Visible = player:GetAttribute("DailyClaimable") == true
+	tabs.Milestones.Dot.Visible = player:GetAttribute("MilestoneClaimable") == true
+end
+player:GetAttributeChangedSignal("DailyClaimable"):Connect(updateTabDots)
+player:GetAttributeChangedSignal("MilestoneClaimable"):Connect(updateTabDots)
+updateTabDots()
 player:GetAttributeChangedSignal("Path"):Connect(function()
 	if bezel.Visible then render() end
 end)

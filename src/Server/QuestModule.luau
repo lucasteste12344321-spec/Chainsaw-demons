@@ -24,8 +24,8 @@ WorldQuestData.Register(QuestData)
 
 local QuestModule = {}
 
--- Ouvintes de progresso (missões diárias, DailyService): fn(player, kind, target). kind: "Kill" (target = tipo do
--- inimigo), "Fish" (peixe), "Power" (id do poder)
+-- Ouvintes de progresso (missões diárias, DailyService; marcos, MilestoneService): fn(player, kind, target). kind:
+-- "Kill" (target = tipo do inimigo), "Fish" (peixe), "Power" (id do poder), "Quest" (id da missão concluída)
 local listeners = {}
 function QuestModule.Listen(callback)
 	table.insert(listeners, callback)
@@ -289,6 +289,7 @@ local function complete(player, quest)
 
 	state.Active[quest.Id] = nil
 	state.Completed[quest.Id] = (state.Completed[quest.Id] or 0) + 1
+	emit(player, "Quest", quest.Id)
 
 	local rewards = quest.Rewards or {}
 	local text = rewardText(rewards)

@@ -693,6 +693,14 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   Master Swordsman, Mestre dos Pactos = Pact Master, Treinador = Trainer, Caçador Veterano = Veteran Hunter, Demônio
   Ancião = Elder Devil, Rei Goblin = Goblin King, Goblin Ladrão = Goblin Thief, Ratazana = Canal Rat.
 
+## Marcos / Milestones (Claude, 2026-10-05, pedido do usuário com imagem de referência)
+- `src/Shared/MilestoneData.luau` (trilhas: Kills, Bosses, Quests, Fish, Level; cada nível com `Goal`, `Gold`, `Spins?`)
+  e `src/Server/MilestoneService.server.luau`. Por save em `profile.Milestones` (`Counts` de abates e chefes, contados a
+  partir desta versão; `Claimed` = níveis resgatados por trilha). Peixes, missões e level vêm do que o perfil já tinha.
+  Resgate em ordem (`Remotes.MilestoneAction` "State"/"Claim" trackId, resposta `MilestoneState`). Atributo
+  `MilestoneClaimable` (bolinha no botão do aparelho na HUD e na aba). O `QuestModule.Listen` ganhou o tipo "Quest".
+- Cliente: aba MILESTONES no aparelho (`Device.client`, tecla T), ao lado da DAILY.
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.
