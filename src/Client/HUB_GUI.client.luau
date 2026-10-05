@@ -387,10 +387,10 @@ end
 local function levelTip()
 	local lines = {}
 	if level.Value >= StatConfig.MaxLevel then
-		table.insert(lines, "Level máximo.")
+		table.insert(lines, "Max level.")
 	else
 		table.insert(lines, `XP: {UITheme.formatNumber(xp.Value)} / {UITheme.formatNumber(xpNeeded.Value)}`)
-		table.insert(lines, `Cada level dá {StatConfig.PointsPerLevel} ponto na árvore de habilidades (M).`)
+		table.insert(lines, `Every level gives {StatConfig.PointsPerLevel} point in the skill tree (M).`)
 	end
 	local effects = currentBonuses()
 	local bonusLines = {}
@@ -402,7 +402,7 @@ local function levelTip()
 		end
 	end
 	if #bonusLines > 0 then
-		table.insert(lines, `\n<font color="#{WHITE:ToHex()}"><b>Bônus ativos</b></font>`)
+		table.insert(lines, `\n<font color="#{WHITE:ToHex()}"><b>Active bonuses</b></font>`)
 		table.insert(lines, table.concat(bonusLines, "\n"))
 	end
 	return UITheme.tipText(`Level {level.Value}`, table.concat(lines, "\n"))
@@ -410,8 +410,8 @@ end
 
 UITheme.tooltip(topRow, levelTip)
 UITheme.tooltip(xpBar.Frame, levelTip)
-UITheme.tooltip(hpBar.Frame, UITheme.tipText("Vida", "A regeneração da árvore e dos itens recupera fora de combate."))
-UITheme.tooltip(staminaBar.Frame, UITheme.tipText("Fôlego", "O dash gasta; recupera sozinho."))
+UITheme.tooltip(hpBar.Frame, UITheme.tipText("Health", "Regeneration from the tree and items heals you out of combat."))
+UITheme.tooltip(staminaBar.Frame, UITheme.tipText("Stamina", "Dashing uses it; it recovers on its own."))
 UITheme.tooltip(lifespanBar.Frame, function()
 	local maxLifespan = player:GetAttribute("MaxLifespan")
 	if type(maxLifespan) ~= "number" or maxLifespan <= 0 then
@@ -421,10 +421,10 @@ UITheme.tooltip(lifespanBar.Frame, function()
 	if type(lifespan) ~= "number" then
 		lifespan = maxLifespan
 	end
-	return UITheme.tipText(`Tempo de vida {math.floor(lifespan)} / {math.floor(maxLifespan)}`,
-		"Os poderes do Caçador gastam tempo de vida. Ele recupera sozinho.")
+	return UITheme.tipText(`Lifespan {math.floor(lifespan)} / {math.floor(maxLifespan)}`,
+		"Hunter powers cost lifespan. It recovers on its own.")
 end)
-UITheme.tooltip(goldRow, UITheme.tipText("Gold", "Vem dos inimigos e das missões."))
+UITheme.tooltip(goldRow, UITheme.tipText("Gold", "Comes from enemies and quests."))
 
 -- Altura do bloco conforme o tempo de vida (Caçador) aparece ou não
 local function layoutVitals(showLifespan)
@@ -514,7 +514,7 @@ local function updateBonuses()
 			end
 			chip.Icon.Visible = false
 			chip.Value.Text = `+{#shown - MAX_BUFF_CHIPS}`
-			chip.Tip = UITheme.tipText("Mais bônus", table.concat(lines, "\n"))
+			chip.Tip = UITheme.tipText("More bonuses", table.concat(lines, "\n"))
 			chip.Frame.Visible = true
 		else
 			chip.Frame.Visible = false
@@ -614,11 +614,11 @@ local SKILLS = {
 -- Poderes do caminho (PathData.GetSkill) nas teclas V e B; por dentro os slots continuam "Z" e "X". O teclado é
 -- tratado pelo PowerInput.client.luau.
 local POWERS = {
-	{ Key = "V", Name = "Poder", Glyph = "?", Attribute = "PowerZReadyAt", Power = "Z" },
-	{ Key = "B", Name = "Poder", Glyph = "?", Attribute = "PowerXReadyAt", Power = "X" },
+	{ Key = "V", Name = "Power", Glyph = "?", Attribute = "PowerZReadyAt", Power = "Z" },
+	{ Key = "B", Name = "Power", Glyph = "?", Attribute = "PowerXReadyAt", Power = "X" },
 	-- Modo híbrido de admin (/hibrido): os poderes do Infernal em H e J (só aparecem nele)
-	{ Key = "H", Name = "Poder", Glyph = "?", Attribute = "PowerHZReadyAt", Power = "HZ" },
-	{ Key = "J", Name = "Poder", Glyph = "?", Attribute = "PowerHXReadyAt", Power = "HX" },
+	{ Key = "H", Name = "Power", Glyph = "?", Attribute = "PowerHZReadyAt", Power = "HZ" },
+	{ Key = "J", Name = "Power", Glyph = "?", Attribute = "PowerHXReadyAt", Power = "HX" },
 }
 
 -- Toques nos slots: os scripts donos das ações escutam BindableEvents ao lado dos LocalScripts.
@@ -678,34 +678,34 @@ powerDivider.Visible = false
 local function slotTip(slot)
 	local info = slot.Info
 	if info.Block then
-		return UITheme.tipText("Defesa (F)", "Segure para levantar a guarda. Logo no começo dela, o golpe inimigo vira "
-			.. "parry. A barrinha embaixo é a guarda: se esvaziar, ela quebra e você fica atordoado.")
+		return UITheme.tipText("Block (F)", "Hold to raise your guard. Right at the start of it, an enemy hit becomes a "
+			.. "parry. The small bar below is your guard: if it runs out, it breaks and you are stunned.")
 	elseif info.StaminaCost then
-		return UITheme.tipText("Dash (Q)", "Avança para onde você está andando. Recarga de 1 s e gasta fôlego (a barra branca).\n"
-			.. "Apanhando muito seguido de outro jogador, a casa acende em laranja: o dash sai mesmo atordoado e quebra o combo "
-			.. "(recarga de 25 s, no canto da casa).")
+		return UITheme.tipText("Dash (Q)", "Dash in the direction you are moving. 1 s cooldown and uses stamina (the white bar).\n"
+			.. "When another player hits you many times in a row, the slot lights up orange: the dash works even while stunned and breaks the combo "
+			.. "(25 s cooldown, shown in the corner of the slot).")
 	elseif info.Skill then
 		local _, style = CombatStyles.FromCharacter(player.Character)
 		style = style or CombatStyles.Styles.Punhos
 		local skill = style and style.Skills[info.Skill]
 		if not skill then
-			return UITheme.tipText(`Skill ({info.Key})`, "O estilo equipado não tem skill nessa tecla.")
+			return UITheme.tipText(`Skill ({info.Key})`, "The equipped style has no skill on this key.")
 		end
 		local lines = { skill.Description or "" }
 		if skill.Cooldown then
-			table.insert(lines, `Recarga: {UITheme.formatSeconds(skill.Cooldown)}`)
+			table.insert(lines, `Cooldown: {UITheme.formatSeconds(skill.Cooldown)}`)
 		end
 		if skill.Technique and player:GetAttribute("Tech_" .. skill.Technique) ~= true then
-			table.insert(lines, `<font color="#{RED_BRIGHT:ToHex()}">Travada: desbloqueie na árvore de habilidades (M).</font>`)
+			table.insert(lines, `<font color="#{RED_BRIGHT:ToHex()}">Locked: unlock it in the skill tree (M).</font>`)
 		end
 		return UITheme.tipText(`{skill.Name} ({info.Key})`, table.concat(lines, "\n"))
 	elseif info.Power then
 		local skill = slot.Skill
 		if not skill then
-			return UITheme.tipText(`Contrato vazio ({info.Key})`, "O 2º contrato vem de missões de Caçador.")
+			return UITheme.tipText(`Empty contract ({info.Key})`, "Make a contract to get a power on this key.")
 		end
 		local costText = UITheme.skillCost(skill)
-		return UITheme.tipText(`{skill.Name} ({info.Key})`, `{UITheme.skillStats(skill)}\nCusto: {costText}`)
+		return UITheme.tipText(`{skill.Name} ({info.Key})`, `{UITheme.skillStats(skill)}\nCost: {costText}`)
 	end
 	return nil
 end
@@ -879,7 +879,7 @@ local function createSlot(info, order)
 			TextSize = 12,
 			TextColor3 = BREAKER_COLOR,
 			TextStrokeTransparency = 0.4,
-			Text = "QUEBRAR!",
+			Text = "BREAK!",
 			Visible = false,
 			ZIndex = 9,
 			Parent = holder,
@@ -1042,11 +1042,11 @@ for index = 1, HOTBAR_SLOTS do
 		local name = toolOrder[index]
 		local tool = name and currentTools()[name]
 		if not tool then
-			return UITheme.tipText(`Casa {index}`, "Vazia: os estilos de combate que você ganhar aparecem aqui.")
+			return UITheme.tipText(`Slot {index}`, "Empty: the combat styles you earn show up here.")
 		end
 		local style = CombatStyles.Styles[name]
 		return UITheme.tipText(`{if style then style.DisplayName or name else name} ({index})`,
-			"Estilo de combate. Aperte o número (ou clique) para equipar ou guardar.")
+			"Combat style. Press the number (or click) to equip or put it away.")
 	end)
 	hotbarSlots[index] = { Button = button, Stroke = stroke, Scale = scale, Glyph = glyph, Underline = underline }
 end
@@ -1260,14 +1260,14 @@ passesButton.TextColor3 = CREAM
 treeButton:SetAttribute("TutorialAnchor", "TreeButton")
 inventoryButton:SetAttribute("TutorialAnchor", "InventoryButton")
 settingsButton:SetAttribute("TutorialAnchor", "SettingsButton")
-UITheme.tooltip(treeButton, UITheme.tipText("Árvore de habilidades (M)",
-	"Gaste os pontos de level em vida, força, guarda... e libere as técnicas dos estilos."))
-UITheme.tooltip(inventoryButton, UITheme.tipText("Inventário (G)",
-	"Itens dos chefes: vista para ganhar os bônus e mostrar no personagem."))
-UITheme.tooltip(fishingButton, UITheme.tipText("Pescaria", "Abre a cesta: peixes, vara, sopas e a venda para o Daichi."))
-UITheme.tooltip(passesButton, UITheme.tipText("Passes e VIP", "Benefícios permanentes, giros diários e servidor VIP."))
-UITheme.tooltip(groupButton, UITheme.tipText("Entre no grupo", "Entre no grupo do jogo e ganhe 300 Gold e 1 giro de clã (uma vez)."))
-UITheme.tooltip(settingsButton, UITheme.tipText("Configurações", "Fast Mode, proteção de aliados e corrida automática."))
+UITheme.tooltip(treeButton, UITheme.tipText("Skill tree (M)",
+	"Spend level points on health, strength, guard... and unlock style techniques."))
+UITheme.tooltip(inventoryButton, UITheme.tipText("Inventory (G)",
+	"Boss items: wear them to get their bonuses and show them on your character."))
+UITheme.tooltip(fishingButton, UITheme.tipText("Fishing", "Opens your basket: fish, rod, soups and selling to Daichi."))
+UITheme.tooltip(passesButton, UITheme.tipText("Passes & VIP", "Permanent perks, daily spins and a VIP server."))
+UITheme.tooltip(groupButton, UITheme.tipText("Join the group", "Join the game's group and get 300 Gold and 1 clan spin (once)."))
+UITheme.tooltip(settingsButton, UITheme.tipText("Settings", "Fast Mode, ally protection and auto run."))
 
 -- Bolinha com os pontos livres da árvore
 local pointsDot = round(new("Frame", {
@@ -1318,8 +1318,8 @@ end)
 -- Bolinha vermelha com missão para resgatar (atributo DailyClaimable do DailyService).
 do
 	local deviceButton = menuButton(0, "T", "▣")
-	UITheme.tooltip(deviceButton, UITheme.tipText("Missões diárias (T)",
-		"Tablet (Caçador e Humano) ou Kog (Infernal): 3 missões por dia, bônus de sequência e o horário do chefe global."))
+	UITheme.tooltip(deviceButton, UITheme.tipText("Daily quests (T)",
+		"Tablet (Hunter and Human) or Kog (Fiend): 3 quests per day, streak bonus and the global boss schedule."))
 	deviceButton.MouseButton1Click:Connect(function()
 		fireToggle("Device")
 	end)
@@ -1503,7 +1503,7 @@ text({
 	TextXAlignment = Enum.TextXAlignment.Left,
 	Font = FONT_HEAVY,
 	TextSize = 17,
-	Text = "Configurações",
+	Text = "Settings",
 	ZIndex = 21,
 	Parent = settingsPanel,
 })
@@ -1560,7 +1560,7 @@ local function settingRow(y, titleText, hintText)
 end
 
 -- Fast Mode (só neste cliente)
-local fastSwitch, setFastSwitch = settingRow(32, "Fast Mode", "Mais FPS · fica salvo")
+local fastSwitch, setFastSwitch = settingRow(32, "Fast Mode", "More FPS · saved")
 fastSwitch.MouseButton1Click:Connect(function()
 	FastMode.Toggle()
 end)
@@ -1570,7 +1570,7 @@ end)
 setFastSwitch(FastMode.IsEnabled())
 
 -- Proteção de aliados (atributo AllyProtection, escrito pelo servidor; padrão ligado)
-local allySwitch, setAllySwitch = settingRow(78, "Proteção de aliados", "Sem dano no mesmo time")
+local allySwitch, setAllySwitch = settingRow(78, "Ally protection", "No damage within your team")
 local function allyProtectionOn()
 	return player:GetAttribute("AllyProtection") ~= false
 end
@@ -1600,7 +1600,7 @@ end)
 showAlly(allyShown)
 
 -- Corrida automática: quem aplica e salva é o StaminaDashRunscript (MovementAction); o estado vem do atributo AutoRun
-local autoRunSwitch, setAutoRunSwitch = settingRow(124, "Corrida automática", "Corre ao andar · Ctrl anda")
+local autoRunSwitch, setAutoRunSwitch = settingRow(124, "Auto run", "Run while moving · Ctrl walks")
 local function autoRunOn()
 	return player:GetAttribute("AutoRun") ~= false
 end
@@ -1623,7 +1623,7 @@ text({
 	Font = FONT_MEDIUM,
 	TextSize = 12,
 	TextColor3 = DIM,
-	Text = `<font color="#{RED_BRIGHT:ToHex()}">Dica:</font> para ainda mais FPS, baixe a Qualidade gráfica em Esc > Configurações.`,
+	Text = `<font color="#{RED_BRIGHT:ToHex()}">Tip:</font> for even more FPS, lower Graphics Quality in Esc > Settings.`,
 	ZIndex = 21,
 	Parent = settingsPanel,
 })
@@ -1634,7 +1634,7 @@ local mainMenuButton = UITheme.button({
 	Size = UDim2.new(1, 0, 0, 32),
 	Font = FONT_HEAVY,
 	TextSize = 15,
-	Text = "MENU PRINCIPAL",
+	Text = "MAIN MENU",
 	ZIndex = 21,
 	Parent = settingsPanel,
 }, RED)
@@ -1653,7 +1653,7 @@ local tutorialButton = UITheme.button({
 	Size = UDim2.new(1, 0, 0, 32),
 	Font = FONT_HEAVY,
 	TextSize = 15,
-	Text = "REFAZER TUTORIAL",
+	Text = "REDO TUTORIAL",
 	ZIndex = 21,
 	Parent = settingsPanel,
 }, Colors.PanelLight)
@@ -1703,7 +1703,7 @@ local levelUpToken = 0
 local function showLevelUp(newLevel)
 	levelUpToken += 1
 	local token = levelUpToken
-	levelUpSub.Text = `Level {newLevel}  ·  +{StatConfig.PointsPerLevel} ponto de habilidade (M)`
+	levelUpSub.Text = `Level {newLevel}  ·  +{StatConfig.PointsPerLevel} skill point (M)`
 	levelUpScale.Scale = 0.5
 	levelUpLabel.TextTransparency = 0
 	levelUpStroke.Transparency = 0
