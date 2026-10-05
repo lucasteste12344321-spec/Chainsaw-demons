@@ -29,7 +29,7 @@ Icons.Ids = {
 	regen = 115382951061101, -- + de regeneração
 	guard = 80923888386725, -- escudo grande (guarda)
 	guardRegen = 75053545325504,
-	wall = 79724601418936, -- tijolos
+	-- wall: a imagem dos tijolos (79724601418936) foi recusada na moderação do Roblox; o efeito usa o kanji 壁
 	crown = 101339961586863, -- coroa (chefes)
 	skillTree = 129056943300683, -- árvore com nós
 }
@@ -48,7 +48,6 @@ Icons.EffectIcons = {
 	GuardMax = "guard",
 	GuardRegen = "guardRegen",
 	ParryWindow = "parry",
-	BlockTaken = "wall",
 	StaminaRegen = "staminaRegen",
 	DashCost = "dash",
 	XPBonus = "xp",
