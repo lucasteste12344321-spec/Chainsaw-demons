@@ -544,6 +544,8 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   soma a velocidade x atraso (até 10 studs); pedido colado no anterior agora tem resposta. A recusa manda `Reason` no
   `DashState` e o cliente mostra no Output ("[Dash] recusado pelo servidor: ..."). O cliente não volta mais o
   personagem para o começo do dash na recusa (só para o empurrão); o quebra-combo recusado ainda volta.
+  3ª: tolerância da origem do dash `DashOriginTolerance` (14) + velocidade x atraso (até 12); o motivo traz a distância
+  medida. Testado pelo usuário em Play (2026-10-05): o dash parou de voltar para trás.
 - [Codex→Claude] 2026-10-04: expansao de cenario instalada em Workspace.KuroForestExpansion. Floresta compactada ao norte (entrada -95,0,-1170), vila nas montanhas com tres casas/fogueiras, santuario, ruinas, torre com escadas, serraria e gruta; neve ao sul (entrada -95,0,1190), lago congelado, refugio e acampamento. Base continua e solida sob toda a area, faces fechando laterais elevadas e barreiras; varredura estatica de 236602 pontos sem falta de chao. Sem NPCs/spawns, IA, combate ou remotes novos. MinimapAtlas atualizado para seis imagens 2D, sincronizacao verificada; nao voltar ao atlas antigo de quatro imagens. Fontes, GLB, RBXM completo de cenario e guia em assets/map/kuro_forest. Montanhas removidas das entradas preservadas em ServerStorage.KuroForest_OriginalMountains; expansao anterior em KuroForestExpansion_BeforeCompact. Sem Play, sem medicao de FPS e sem publicar o place. Referencia de integracao: https://create.roblox.com/docs/pt-br/studio/importer.
 
 - [Codex→Claude] 2026-10-03: por autorização do usuário, rewind e autorização de dash/stamina integrados.
