@@ -54,12 +54,17 @@ local function release(state)
 		state.track.TimePosition = math.max(state.track.TimePosition, Config.AimHoldTime)
 		state.track:AdjustSpeed(1)
 	end
-	Players.LocalPlayer:SetAttribute("PredictedRootUntil", workspace:GetServerTimeNow() + 0.4) -- parado já na hora
+	-- Parado até o fim do gesto do Kon (a animação continua depois de soltar)
+	local left = if state.track then math.max(state.track.Length, Config.AimDuration or 0) - state.track.TimePosition else 0
+	Players.LocalPlayer:SetAttribute("PredictedRootUntil", workspace:GetServerTimeNow() + math.max(0.4, left))
 	Remotes.UsePower:FireServer(state.slot, state.target)
 	cleanup(state, false)
 end
 function Aim.Cancel()
-	if active then cleanup(active, true) end
+	if active then
+		cleanup(active, true)
+		player:SetAttribute("PredictedRootUntil", 0) -- desistiu: anda de novo
+	end
 end
 function Aim.Release(slot)
 	if active and active.slot == slot then
@@ -118,9 +123,22 @@ function Aim.Begin(slot)
 	params.FilterDescendantsInstances = excluded
 	params.RespectCanCollide = true
 	state.connection = RunService.RenderStepped:Connect(function()
-		if player.Character ~= character or not root.Parent or humanoid.Health <= 0 or character:GetAttribute("Stunned") or not Aim.IsFox(slot) then cleanup(state, true); return end
+		if player.Character ~= character or not root.Parent or humanoid.Health <= 0 or character:GetAttribute("Stunned") or not Aim.IsFox(slot) then
+			cleanup(state, true)
+			player:SetAttribute("PredictedRootUntil", 0)
+			return
+		end
 		local elapsed = os.clock() - state.started
-		if elapsed > Config.MaxHoldTime then cleanup(state, true); return end
+		if elapsed > Config.MaxHoldTime then
+			cleanup(state, true)
+			player:SetAttribute("PredictedRootUntil", 0)
+			return
+		end
+		-- Mirando a Mordida: parado (StaminaDashRunscript lê o PredictedRootUntil); renova antes de vencer
+		local now = workspace:GetServerTimeNow()
+		if (player:GetAttribute("PredictedRootUntil") or 0) - now < 0.25 then
+			player:SetAttribute("PredictedRootUntil", now + 0.6)
+		end
 		local camera = workspace.CurrentCamera
 		if not camera then return end
 		local ray = aimRay(camera)
