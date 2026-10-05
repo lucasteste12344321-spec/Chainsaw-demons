@@ -22,7 +22,10 @@ local function claim(player, automatic)
 	local ok, reason = Data.ClaimVIPDaily(player)
 	claims[player] = nil
 	if player.Parent and (ok or not automatic) then
-		Remotes.Notify:FireClient(player, "VIP", if ok then "+5 giros de clã diários recebidos!" else reason, 5)
+		-- Conta restrita (RandomItemsRestricted): os giros valem como créditos de escolha direta do clã, sem sorteio
+		local restricted = player:GetAttribute("RandomItemsRestricted") ~= false
+		local gift = if restricted then "créditos de clã" else "giros de clã"
+		Remotes.Notify:FireClient(player, "VIP", if ok then `+{Config.DailySpins} {gift} diários recebidos!` else reason, 5)
 	end
 	snapshot(player)
 end
