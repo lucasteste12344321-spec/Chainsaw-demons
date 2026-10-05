@@ -54,6 +54,7 @@ ItemData.Items = {
 
 	-- Drops do chefe global Denji / Lord Chainsaw. Source: o Accessory vem de dentro do modelo do chefe (o BossService
 	-- copia para VFX.Items.<Id> ao iniciar, se ainda não existir lá); o Denji é do tamanho de jogador.
+	-- Não cai mais (pedido do usuário, 2026-10-05): fica aqui só para quem já tinha continuar com ele
 	DenjiHair = {
 		Name = "Cabelo do Denji",
 		Rarity = "Raro",

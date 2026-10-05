@@ -160,7 +160,6 @@ BossData.Bosses = {
 		StyleDrop = { Style = "Motosserra", Chance = 0.1 },
 		-- Os acessórios do modelo do Denji (ItemData, Source)
 		Drops = {
-			{ Item = "DenjiHair", Chance = 0.25 },
 			{ Item = "DenjiEyepatch", Chance = 0.12 },
 			{ Item = "Pochita", Chance = 0.03 },
 		},

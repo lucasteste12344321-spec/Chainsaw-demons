@@ -191,8 +191,8 @@ Para o mapa se ligar a esses sistemas, siga estas convenções (tudo opcional, e
   `GlobalBoss_Denji` do ReplicatedStorage. Admin: `/chefe Denji` (BindableFunction `BossService.BossControl`).
   `IdleGrace` (30 s): sem alvo, espera parado antes de voltar e se curar (antes resetava ao se afastar um pouco).
   `LeashRange` 250 nos dois (chefe com alvo usa o LeashRange sem multiplicar; com 90 voltava para casa curado).
-  Drop: `StyleDrop` (Motosserra, 10%, só para quem não tem) e `Drops`: Cabelo do Denji (Hat, 25%), Tapa-olho (Head,
-  12%) e Pochita (ShoulderLeft, 3%). Itens com `Source = { Template, Accessory }` no `ItemData`: o BossService copia o
+  Drop: `StyleDrop` (Motosserra, 10%, só para quem não tem) e `Drops`: Tapa-olho (Head, 12%) e Pochita (ShoulderLeft,
+  3%); o Cabelo do Denji saiu dos drops (continua no ItemData para quem já tinha). Itens com `Source = { Template, Accessory }` no `ItemData`: o BossService copia o
   Accessory de dentro do modelo do chefe para `VFX.Items.<Id>` ao iniciar (sem as soldas antigas). O `FaceAccessory`
   do Denji ficou de fora.
 - Estilo **Motosserra** (`CombatStyles.Motosserra`, glifo 鋸): por enquanto com as animações e as mecânicas da Katana
