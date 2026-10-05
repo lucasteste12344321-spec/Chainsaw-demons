@@ -18,14 +18,14 @@ local panel = UI.new("Frame", {Name="FishingPanel", Parent=gui, AnchorPoint=Vect
 	Size=UDim2.fromOffset(ACTIVE_SIZE.X,ACTIVE_SIZE.Y), BackgroundColor3=C.Panel, BackgroundTransparency=.08, BorderSizePixel=0, Visible=false})
 UI.corner(panel, UDim.new(0,12)); UI.stroke(panel, C.White, 1, .86)
 local scale = UI.new("UIScale", {Parent=panel})
-local title = UI.label({Parent=panel,Position=UDim2.fromOffset(16,10),Size=UDim2.new(1,-60,0,24),Text="RIO KURO",Font=Enum.Font.BuilderSansExtraBold,TextSize=18})
+local title = UI.label({Parent=panel,Position=UDim2.fromOffset(16,10),Size=UDim2.new(1,-60,0,24),Text="KURO RIVER",Font=Enum.Font.BuilderSansExtraBold,TextSize=18})
 local close = UI.new("TextButton", {Parent=panel,AnchorPoint=Vector2.new(1,0),Position=UDim2.new(1,-10,0,10),Size=UDim2.fromOffset(26,26),
 	BackgroundColor3=C.PanelLight,BackgroundTransparency=.3,AutoButtonColor=false,Font=UI.Fonts.Title,TextSize=16,TextColor3=C.TextDim,Text="×"})
 UI.corner(close, UDim.new(.5,0))
 local hint = UI.label({Parent=panel,Position=UDim2.fromOffset(16,36),Size=UDim2.new(1,-32,0,34),TextWrapped=true,TextSize=13,TextColor3=C.TextDim,
 	Font=Enum.Font.BuilderSansMedium,TextYAlignment=Enum.TextYAlignment.Top})
 local body = UI.new("Frame",{Parent=panel,Position=UDim2.fromOffset(16,74),Size=UDim2.new(1,-32,0,112),BackgroundTransparency=1})
-local actionButton = UI.button({Parent=panel,Position=UDim2.new(0,16,1,-44),Size=UDim2.new(1,-32,0,32),Text="LANÇAR",TextSize=14,
+local actionButton = UI.button({Parent=panel,Position=UDim2.new(0,16,1,-44),Size=UDim2.new(1,-32,0,32),Text="CAST",TextSize=14,
 	Font=Enum.Font.BuilderSansExtraBold}, C.Blue)
 -- Pescando: pequeno, embaixo no centro (em cima da HUD); cesta: no centro da tela
 local function layout(menuMode)
@@ -52,7 +52,7 @@ local function release()
  if holding then holding=false; if sessionId then send("Reel",sessionId,false) end end
  if charging then
   charging=false
-  if phase=="Ready" then send("Start",spotId,math.clamp((os.clock()-chargeStart)/1.1,0,1)); actionButton.Text="LANÇANDO..." end
+  if phase=="Ready" then send("Start",spotId,math.clamp((os.clock()-chargeStart)/1.1,0,1)); actionButton.Text="CASTING..." end
  end
  pointer=nil
 end
@@ -62,7 +62,7 @@ local function hide()
 end
 local function press()
  if player:GetAttribute("MenuOpen") then return end
- if phase=="Ready" then charging=true; chargeStart=os.clock(); actionButton.Text="SOLTE PARA LANÇAR"
+ if phase=="Ready" then charging=true; chargeStart=os.clock(); actionButton.Text="RELEASE TO CAST"
  elseif phase=="Bite" then send("Hook",sessionId)
  elseif phase=="Reeling" and not holding then holding=true; send("Reel",sessionId,true)
  end
@@ -76,8 +76,8 @@ local function bind()
 end
 local function menu(data)
  local d=data.Data; cached=d
- layout(true); title.Text="CESTA DE PESCA"
- hint.Text=string.format("%s  •  %d capturas  •  cesta %d/%d\nVenda na banca de Daichi. Cozinhe com Nori no abrigo.",Data.Rods[d.RodTier].Name,d.Catches,Data.BagCount(d),Data.BagLimit)
+ layout(true); title.Text="FISHING BASKET"
+ hint.Text=string.format("%s  •  %d catches  •  basket %d/%d\nSell at Daichi's stall. Cook with Nori at the shelter.",Data.Rods[d.RodTier].Name,d.Catches,Data.BagCount(d),Data.BagLimit)
  for i,id in Data.Order do
   local fish=Data.Fish[id]
   label(body,(i-1)*32,string.format("%s  ×%d  |  %s  |  %.2f kg",fish.Name,d.Counts[id] or 0,fish.Rarity,d.Records[id] or 0),13,fish.Color)
@@ -87,15 +87,15 @@ local function menu(data)
   b.Active=enabled; b.AutoButtonColor=enabled; b.TextTransparency=if enabled then 0 else .5
   b.Activated:Connect(function() if enabled then callback() end end)
  end
- if not d.HasRod then button(198,"PEGAR VARA GRATUITA COM DAICHI",function() send("ClaimRod") end,data.CanTrade)
+ if not d.HasRod then button(198,"GET A FREE ROD FROM DAICHI",function() send("ClaimRod") end,data.CanTrade)
  else
   local nextRod=Data.Rods[d.RodTier+1]
-  button(198,if nextRod then string.format("MELHORAR VARA  •  %d Gold / %d capturas",nextRod.Price,nextRod.Catches) else "VARA NO NÍVEL MÁXIMO",function() send("Upgrade") end,data.CanTrade and nextRod~=nil)
+  button(198,if nextRod then string.format("UPGRADE ROD  •  %d Gold / %d catches",nextRod.Price,nextRod.Catches) else "ROD AT MAX LEVEL",function() send("Upgrade") end,data.CanTrade and nextRod~=nil)
  end
- button(238,string.format("COZINHAR SOPA  •  2 carpas + 1 truta  |  sopas: %d/20",d.Meals or 0),function() send("Cook") end,data.CanCook)
- button(278,"TOMAR SOPA  •  recupera 25% de vida fora de combate",function() send("Eat") end,(d.Meals or 0)>0)
- label(body,314,"Enguia: à noite. Cardumes e varas melhores favorecem raros.",12,C.TextDim)
- actionButton.Text=string.format("VENDER TODOS  •  %d Gold",data.Value or Data.SaleValue(d))
+ button(238,string.format("COOK SOUP  •  2 carp + 1 trout  |  soups: %d/20",d.Meals or 0),function() send("Cook") end,data.CanCook)
+ button(278,"EAT SOUP  •  heals 25% health out of combat",function() send("Eat") end,(d.Meals or 0)>0)
+ label(body,314,"Eels: at night. Fish schools and better rods favor rare fish.",12,C.TextDim)
+ actionButton.Text=string.format("SELL ALL  •  %d Gold",data.Value or Data.SaleValue(d))
  actionButton.Active=data.CanTrade==true; actionButton.TextTransparency=if data.CanTrade then 0 else .5
 end
 Remotes.FishingState.OnClientEvent:Connect(function(data)
@@ -106,7 +106,7 @@ Remotes.FishingState.OnClientEvent:Connect(function(data)
  if data.Phase=="Reeling" and phase=="Reeling" and sessionId==data.Id then
   if progressFill then progressFill.Size=UDim2.fromScale(data.Progress,1); tensionFill.Size=UDim2.fromScale(data.Tension,1)
    tensionFill.BackgroundColor3=if data.Tension>.85 then C.Accent elseif data.Tension<.12 then C.Gold else C.Green
-   tensionText.Text=if data.Tension>.8 then "SOLTE — tensão alta!" elseif data.Tension<.15 then "RECOLHA — linha frouxa!" else "Alterne entre recolher e aliviar"
+   tensionText.Text=if data.Tension>.8 then "EASE OFF — high tension!" elseif data.Tension<.15 then "REEL IN — slack line!" else "Alternate between reeling and easing off"
   end
   return
  end
@@ -114,33 +114,33 @@ Remotes.FishingState.OnClientEvent:Connect(function(data)
  if data.Data then cached=data.Data end
  body:ClearAllChildren(); progressFill=nil; tensionFill=nil; chargeFill=nil
  panel.Visible=true; layout(false)
- actionButton.Active=true; actionButton.TextTransparency=0; title.Text="RIO KURO"; bind()
+ actionButton.Active=true; actionButton.TextTransparency=0; title.Text="KURO RIVER"; bind()
  if phase=="Menu" then menu(data)
  elseif phase=="Ready" then
-  hint.Text=if data.Hotspot then "Cardume ativo! Maior chance de peixes incomuns e raros." else "Segure ESPAÇO, RT ou o botão abaixo e solte para lançar."
-  label(body,4,"FORÇA DO LANÇAMENTO",13,C.TextDim); chargeFill=bar(32,C.Blue)
-  label(body,56,"E no píer: pescar  •  caminhar: cancelar",13,C.TextDim)
-  actionButton.Text="SEGURE PARA LANÇAR"
+  hint.Text=if data.Hotspot then "Active school! Better chance of uncommon and rare fish." else "Hold SPACE, RT or the button below and release to cast."
+  label(body,4,"CAST POWER",13,C.TextDim); chargeFill=bar(32,C.Blue)
+  label(body,56,"E at the pier: fish  •  walk away: cancel",13,C.TextDim)
+  actionButton.Text="HOLD TO CAST"
  elseif phase=="Casting" or phase=="Waiting" then
-  hint.Text=if phase=="Casting" then "A linha está indo para a água..." else "Observe a boia. Fisgue assim que ela afundar!"
-  label(body,30,"A correnteza esconde mais do que parece.",13,C.TextDim); actionButton.Text="AGUARDANDO..."
+  hint.Text=if phase=="Casting" then "The line is heading for the water..." else "Watch the bobber. Hook it as soon as it sinks!"
+  label(body,30,"The current hides more than it seems.",13,C.TextDim); actionButton.Text="WAITING..."
  elseif phase=="Bite" then
-  hint.Text="MORDEU! Aperte ESPAÇO, RT ou o botão para fisgar."
-  label(body,24,"FISGUE AGORA!",24,C.Gold); actionButton.Text="FISGAR!"
+  hint.Text="BITE! Press SPACE, RT or the button to hook it."
+  label(body,24,"HOOK IT NOW!",24,C.Gold); actionButton.Text="HOOK!"
  elseif phase=="Reeling" then
-  hint.Text="Segure para recolher. Solte para aliviar. Mantenha a tensão longe das duas extremidades."
-  label(body,0,"CAPTURA",12,C.TextDim); progressFill=bar(26,C.Blue)
-  tensionText=label(body,46,"Alterne entre recolher e aliviar",13,C.Gold); tensionFill=bar(74,C.Green)
+  hint.Text="Hold to reel in. Release to ease off. Keep the tension away from both ends."
+  label(body,0,"CATCH",12,C.TextDim); progressFill=bar(26,C.Blue)
+  tensionText=label(body,46,"Alternate between reeling and easing off",13,C.Gold); tensionFill=bar(74,C.Green)
   progressFill.Size=UDim2.fromScale(data.Progress or .12,1); tensionFill.Size=UDim2.fromScale(data.Tension or .4,1)
-  actionButton.Text="SEGURE PARA RECOLHER"
+  actionButton.Text="HOLD TO REEL IN"
  elseif phase=="Caught" then
-  local fish=Data.Fish[data.Fish]; title.Text="BOA CAPTURA!"
+  local fish=Data.Fish[data.Fish]; title.Text="NICE CATCH!"
   hint.Text=fish.Name.."  •  "..fish.Rarity
   label(body,10,string.format("%.2f kg",data.Kg),26,fish.Color)
-  label(body,50,string.format("Cesta %d/%d  •  +10 XP",Data.BagCount(data.Data),Data.BagLimit),14,C.TextDim)
-  label(body,78,"Peixe guardado. Venda ou cozinhe quando quiser.",13,C.TextDim)
-  actionButton.Text="PESCAR NOVAMENTE"
- elseif phase=="Ended" then hint.Text=data.Reason; actionButton.Text="TENTAR NOVAMENTE"
+  label(body,50,string.format("Basket %d/%d  •  +10 XP",Data.BagCount(data.Data),Data.BagLimit),14,C.TextDim)
+  label(body,78,"Fish stored. Sell or cook it whenever you want.",13,C.TextDim)
+  actionButton.Text="FISH AGAIN"
+ elseif phase=="Ended" then hint.Text=data.Reason; actionButton.Text="TRY AGAIN"
  end
 end)
 actionButton.InputBegan:Connect(function(input)

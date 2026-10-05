@@ -30,7 +30,7 @@ local panel = UI.panel({
 if not TOUCH then
 	UI.autoScale(panel, 640, 600)
 end
-UI.label({ Parent = panel, Position = UDim2.fromOffset(20, 12), Size = UDim2.fromOffset(400, 34), Text = "SERVIDOR VIP",
+UI.label({ Parent = panel, Position = UDim2.fromOffset(20, 12), Size = UDim2.fromOffset(400, 34), Text = "VIP SERVER",
 	Font = UI.Fonts.Display, TextSize = 25 })
 local close = UI.button({ Parent = panel, Position = UDim2.new(1, if TOUCH then -56 else -50, 0, 12),
 	Size = if TOUCH then UDim2.fromOffset(42, 36) else UDim2.fromOffset(32, 30), Text = "X" })
@@ -38,9 +38,9 @@ local subtitle = UI.label({ Parent = panel, Position = UDim2.fromOffset(20, 48),
 	TextColor3 = C.TextDim })
 
 -- Abas
-local TABS = { "SERVIDOR", "LISTAS", "ENTRAR" }
+local TABS = { "SERVER", "LISTS", "JOIN" }
 local tabButtons = {}
-local currentTab = "SERVIDOR"
+local currentTab = "SERVER"
 for index, name in TABS do
 	tabButtons[name] = UI.button({ Parent = panel, Position = UDim2.fromOffset(20 + (index - 1) * 140, 76),
 		Size = UDim2.fromOffset(130, if TOUCH then 38 else 30), Text = name, TextSize = 13 }, C.PanelLight)
@@ -64,9 +64,9 @@ local invite = UI.panel({ Name = "Invite", Parent = gui, AnchorPoint = Vector2.n
 	Size = UDim2.fromOffset(420, 92), Visible = false })
 local inviteText = UI.label({ Parent = invite, Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -28, 0, 36), TextSize = 15,
 	TextWrapped = true })
-local accept = UI.button({ Parent = invite, Position = UDim2.fromOffset(14, 50), Size = UDim2.fromOffset(190, 32), Text = "ACEITAR",
+local accept = UI.button({ Parent = invite, Position = UDim2.fromOffset(14, 50), Size = UDim2.fromOffset(190, 32), Text = "ACCEPT",
 	TextSize = 13 })
-local decline = UI.button({ Parent = invite, Position = UDim2.fromOffset(216, 50), Size = UDim2.fromOffset(190, 32), Text = "RECUSAR",
+local decline = UI.button({ Parent = invite, Position = UDim2.fromOffset(216, 50), Size = UDim2.fromOffset(190, 32), Text = "DECLINE",
 	TextSize = 13 }, C.PanelLight)
 
 local state = { Players = {}, Allowed = {} }
@@ -120,34 +120,34 @@ local function row(order, text, buttons)
 	return frame
 end
 
-local ROLE_NAMES = { Owner = "dono", Mod = "mod" }
+local ROLE_NAMES = { Owner = "owner", Mod = "mod" }
 
 local function renderServer()
 	if state.Reserved then
 		local role = state.Role
 		if role then
-			actionButton(if state.PvP then "PVP: LIGADO" else "PVP: DESLIGADO", 170, function()
+			actionButton(if state.PvP then "PVP: ON" else "PVP: OFF", 170, function()
 				send("PvP", not state.PvP)
 			end, if state.PvP then C.Accent else C.PanelLight)
 		end
-		actionButton("VOLTAR AO PÚBLICO", 190, function() send("Leave") end, C.PanelLight)
-		header("Jogadores aqui", 1)
+		actionButton("BACK TO PUBLIC", 190, function() send("Leave") end, C.PanelLight)
+		header("Players here", 1)
 		if #state.Players == 0 then
-			note("Só você está aqui. Convide pelo painel no servidor público ou libere amigos na aba LISTAS.", 2)
+			note("Only you are here. Invite people from the panel on a public server or allow friends on the LISTS tab.", 2)
 		end
 		for index, other in state.Players do
 			local buttons = {}
 			local canKick = role == "Owner" or (role == "Mod" and other.Role == nil)
 			if other.Role ~= "Owner" and canKick then
-				table.insert(buttons, { "EXPULSAR", function() send("Kick", other.UserId) end, C.PanelLight })
+				table.insert(buttons, { "KICK", function() send("Kick", other.UserId) end, C.PanelLight })
 			end
 			if role == "Owner" then
 				if other.Role == "Mod" then
-					table.insert(buttons, { "TIRAR MOD", function() send("ModRemove", other.UserId) end, C.PanelLight })
+					table.insert(buttons, { "REMOVE MOD", function() send("ModRemove", other.UserId) end, C.PanelLight })
 				else
-					table.insert(buttons, { "DAR MOD", function() send("ModAdd", other.UserId) end })
+					table.insert(buttons, { "GIVE MOD", function() send("ModAdd", other.UserId) end })
 				end
-				table.insert(buttons, { "BANIR", function() send("Ban", other.UserId) end })
+				table.insert(buttons, { "BAN", function() send("Ban", other.UserId) end })
 			end
 			local label = other.Name .. (if other.Role then `  ({ROLE_NAMES[other.Role]})` else "")
 			row(index + 1, label, buttons)
@@ -157,17 +157,17 @@ local function renderServer()
 
 	-- Servidor público
 	if not state.IsVIP then
-		note("Com o passe VIP você tem um servidor só seu: leva amigos, escolhe quem entra, liga ou desliga o PvP e "
-			.. "tem mods. Sem o passe, você ainda entra no servidor de quem te liberou (aba ENTRAR) ou convidou.", 1)
+		note("With the VIP pass you get a server of your own: bring friends, choose who gets in, turn PvP on or off and "
+			.. "have mods. Without the pass, you can still join the server of anyone who allowed you (JOIN tab) or invited you.", 1)
 		return
 	end
-	actionButton("IR PARA MEU SERVIDOR", 210, function() send("Go") end)
-	header("Convidar quem está aqui", 1)
-	note("O convite vale por 2 minutos. LIBERAR deixa a pessoa entrar quando quiser (aba ENTRAR dela).", 2)
+	actionButton("GO TO MY SERVER", 210, function() send("Go") end)
+	header("Invite people here", 1)
+	note("Invites last 2 minutes. ALLOW lets the person join whenever they want (from their JOIN tab).", 2)
 	for index, other in state.Players do
 		row(index + 2, other.Name, {
-			{ "CONVIDAR", function() send("Invite", other.UserId) end },
-			{ "LIBERAR", function() send("WhitelistAdd", other.UserId) end, C.PanelLight },
+			{ "INVITE", function() send("Invite", other.UserId) end },
+			{ "ALLOW", function() send("WhitelistAdd", other.UserId) end, C.PanelLight },
 		})
 	end
 end
@@ -175,14 +175,14 @@ end
 local nameBox
 local function renderLists()
 	if not state.IsVIP then
-		note("As listas são do dono do passe VIP.", 1)
+		note("The lists belong to the VIP pass owner.", 1)
 		return
 	end
 	nameBox = UI.new("TextBox", { Parent = actions, Size = UDim2.fromOffset(220, ACTION_H), BackgroundColor3 = C.Black,
 		BackgroundTransparency = 0.4, BorderSizePixel = 0, Font = UI.Fonts.Body, TextSize = 14, TextColor3 = C.Text,
-		PlaceholderText = "nome do jogador", ClearTextOnFocus = false, Text = "" })
+		PlaceholderText = "player name", ClearTextOnFocus = false, Text = "" })
 	UI.corner(nameBox, UDim.new(0, 4))
-	actionButton("LIBERAR", 100, function()
+	actionButton("ALLOW", 100, function()
 		if nameBox.Text ~= "" then send("WhitelistAdd", nameBox.Text) end
 	end)
 	actionButton("MOD", 80, function()
@@ -202,19 +202,19 @@ local function renderLists()
 			order += 1
 		end
 	end
-	section("Liberados", state.Whitelist or {}, "TIRAR", "WhitelistRemove", "Ninguém ainda. Liberados entram quando quiserem.")
-	section("Mods", state.Mods or {}, "TIRAR", "ModRemove", "Nenhum mod. Mods expulsam e ligam/desligam o PvP.")
-	section("Banidos", state.Banned or {}, "DESBANIR", "Unban", "Ninguém banido.")
+	section("Allowed", state.Whitelist or {}, "REMOVE", "WhitelistRemove", "Nobody yet. Allowed players can join whenever they want.")
+	section("Mods", state.Mods or {}, "REMOVE", "ModRemove", "No mods. Mods can kick and toggle PvP.")
+	section("Banned", state.Banned or {}, "UNBAN", "Unban", "Nobody banned.")
 end
 
 local function renderJoin()
 	if #(state.Allowed or {}) == 0 then
-		note("Nenhum servidor VIP liberou você ainda. Peça para um amigo com VIP te liberar ou te convidar.", 1)
+		note("No VIP server has allowed you yet. Ask a friend with VIP to allow or invite you.", 1)
 		return
 	end
-	header("Servidores que liberaram você", 1)
+	header("Servers that allowed you", 1)
 	for index, entry in state.Allowed do
-		row(index + 1, `Servidor de {entry.Name}`, { { "ENTRAR", function() send("Join", entry.UserId) end } })
+		row(index + 1, `{entry.Name}'s server`, { { "JOIN", function() send("Join", entry.UserId) end } })
 	end
 end
 
@@ -225,14 +225,14 @@ local function render()
 		button.BackgroundColor3 = if name == currentTab then C.Accent else C.PanelLight
 	end
 	if state.Reserved then
-		local role = if state.Role then ` · você é {ROLE_NAMES[state.Role]}` else ""
-		subtitle.Text = `Você está no servidor VIP de {state.OwnerName or "?"}{role}`
+		local role = if state.Role then ` · you are {ROLE_NAMES[state.Role]}` else ""
+		subtitle.Text = `You are on {state.OwnerName or "?"}'s VIP server{role}`
 	else
-		subtitle.Text = if state.IsVIP then "Servidor público · você tem o passe VIP" else "Servidor público"
+		subtitle.Text = if state.IsVIP then "Public server · you have the VIP pass" else "Public server"
 	end
-	if currentTab == "SERVIDOR" then
+	if currentTab == "SERVER" then
 		renderServer()
-	elseif currentTab == "LISTAS" then
+	elseif currentTab == "LISTS" then
 		renderLists()
 	else
 		renderJoin()
@@ -242,7 +242,7 @@ end
 local function renderInvite()
 	local data = state.Invite
 	if data and inviteSeen ~= data.OwnerId then
-		inviteText.Text = `{data.OwnerName} te convidou para o servidor VIP dele.`
+		inviteText.Text = `{data.OwnerName} invited you to their VIP server.`
 		invite.Visible = true
 	elseif not data then
 		invite.Visible = false
