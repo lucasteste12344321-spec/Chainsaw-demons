@@ -42,7 +42,7 @@ local SPIN_SPEED = 0.9 -- radianos por segundo dos itens girando
 local PREVIEW_SPIN = 0.35 -- giro do personagem quando ninguém está arrastando
 local PREVIEW_REFRESH = 0.35 -- espera o servidor vestir o item antes de copiar o personagem de novo
 local SLOT_GLYPHS = { Head = "頭", Hat = "角", Neck = "首", ShoulderLeft = "肩", ShoulderRight = "肩" }
-local STYLE_GLYPHS = { Punhos = "拳", Katana = "刀" }
+local STYLE_GLYPHS = { Punhos = "拳", Katana = "刀", Motosserra = "鋸" }
 local STYLE_PREFIX = "style:" -- ids dos cartões de estilo (os de item são o Id do ItemData)
 -- Telas escondidas enquanto o inventário está aberto (o minimapa some junto com a HUD)
 local HIDE_WHILE_OPEN = { "HUD", "QuestTracker", "BossBar" }
@@ -176,7 +176,7 @@ text({
 	TextXAlignment = Enum.TextXAlignment.Left,
 	Font = Fonts.Marker,
 	TextSize = 32,
-	Text = "INVENTÁRIO",
+	Text = "INVENTORY",
 	Parent = panel,
 })
 local countLabel = text({
@@ -255,7 +255,7 @@ text({
 	Font = Fonts.Light,
 	TextSize = 11,
 	TextColor3 = DIM,
-	Text = "arraste para girar",
+	Text = "drag to rotate",
 	Parent = characterView,
 })
 
@@ -314,7 +314,7 @@ local emptyLabel = text({
 	Font = Fonts.Body,
 	TextSize = 15,
 	TextColor3 = DIM,
-	Text = "Nenhum item ainda. Derrote chefes (o Rei Goblin, por exemplo) para conseguir drops.",
+	Text = "No items yet. Defeat bosses (the Goblin King, for example) to get drops.",
 	Position = UDim2.fromOffset(300, 215), -- abaixo da fileira dos estilos
 	Visible = false,
 	Parent = right,
@@ -382,7 +382,7 @@ local equipButton = UITheme.button({
 	Size = UDim2.fromOffset(158, 40),
 	Font = Fonts.Marker,
 	TextSize = 20,
-	Text = "EQUIPAR",
+	Text = "EQUIP",
 	Parent = details,
 }, RED)
 
@@ -592,15 +592,15 @@ local function paintStyle(name)
 	detailsName.Text = displayName
 	local stateText, stateColor
 	if fusion == name then
-		stateText, stateColor = "FUNDIDO COM O CONTRATO", FUSION_COLOR
+		stateText, stateColor = "FUSED WITH THE CONTRACT", FUSION_COLOR
 	elseif fusion then
-		stateText, stateColor = "BLOQUEADO PELA FUSÃO", DIM
+		stateText, stateColor = "LOCKED BY THE FUSION", DIM
 	elseif equipped then
-		stateText, stateColor = "EQUIPADO", RED
+		stateText, stateColor = "EQUIPPED", RED
 	else
-		stateText, stateColor = "GUARDADO", DIM
+		stateText, stateColor = "STORED", DIM
 	end
-	detailsRarity.Text = `<font color="#{stateColor:ToHex()}">ESTILO DE LUTA  ·  {stateText}</font>`
+	detailsRarity.Text = `<font color="#{stateColor:ToHex()}">COMBAT STYLE  ·  {stateText}</font>`
 	local node = SkillTreeData.Get(name)
 	local lines = { if node and node.Flavor then node.Flavor else "" }
 	local skills = {}
@@ -611,21 +611,21 @@ local function paintStyle(name)
 		end
 	end
 	if #skills > 0 then
-		table.insert(lines, "Técnicas  " .. table.concat(skills, "   "))
+		table.insert(lines, "Techniques  " .. table.concat(skills, "   "))
 	end
 	if fusion and fusion ~= name then
-		table.insert(lines, "Com a fusão do contrato, só o estilo fundido pode ser usado.")
+		table.insert(lines, "With the contract fusion, only the fused style can be used.")
 	elseif not fusion then
-		table.insert(lines, if equipped then "Guardar tira o estilo da hotbar (1 a 5)." else "Equipar põe o estilo de volta na hotbar.")
+		table.insert(lines, if equipped then "Storing removes the style from the hotbar (1 to 5)." else "Equipping puts the style back on the hotbar.")
 	end
 	detailsDescription.Size = UDim2.fromOffset(410, 96)
 	detailsDescription.Text = table.concat(lines, "\n")
 	bonusPills(detailsBonuses, {}, 0)
 	if fusion then
-		equipButton.Text = if fusion == name then "FUNDIDO" else "BLOQUEADO"
+		equipButton.Text = if fusion == name then "FUSED" else "LOCKED"
 		equipButton.BackgroundColor3 = GREY
 	else
-		equipButton.Text = if equipped then "GUARDAR" else "EQUIPAR"
+		equipButton.Text = if equipped then "STORE" else "EQUIP"
 		equipButton.BackgroundColor3 = if equipped then GREY else RED
 	end
 end
@@ -651,7 +651,7 @@ local function paintDetails(equipped)
 	detailsDescription.Text = item.Description or ""
 	bonusPills(detailsBonuses, item.Effects or {}, 0)
 	local worn = isEquipped(equipped, selectedId)
-	equipButton.Text = if worn then "TIRAR" else "EQUIPAR"
+	equipButton.Text = if worn then "REMOVE" else "EQUIP"
 	equipButton.BackgroundColor3 = if worn then Color3.fromRGB(46, 46, 52) else RED
 end
 
@@ -746,7 +746,7 @@ local function makeCard(entry, order, equipped)
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Fonts.Title,
 		TextSize = 9,
-		Text = "EQUIPADO",
+		Text = "EQUIPPED",
 		Parent = tag,
 	})
 	card.MouseEnter:Connect(function()
@@ -764,7 +764,7 @@ local function makeCard(entry, order, equipped)
 	end)
 	local slot = ItemData.GetSlot(item.Slot)
 	UITheme.tooltip(card, UITheme.tipText(item.Name,
-		`<font color="#{color:ToHex()}">{item.Rarity}</font> · {if slot then slot.Name else "-"}\nClique para ver os bônus e vestir.`))
+		`<font color="#{color:ToHex()}">{item.Rarity}</font> · {if slot then slot.Name else "-"}\nClick to see its bonuses and wear it.`))
 	cards[entry.Id] = { Frame = card, Stroke = stroke, Tag = tag }
 end
 
@@ -815,7 +815,7 @@ local function makeStyleCard(name, order, equippedList, fusion)
 		BorderSizePixel = 0,
 		Parent = card,
 	})
-	local tagText = if fusion == name then "FUNDIDO" elseif locked then "BLOQUEADO" elseif equipped then "EQUIPADO" else "GUARDADO"
+	local tagText = if fusion == name then "FUSED" elseif locked then "LOCKED" elseif equipped then "EQUIPPED" else "STORED"
 	local tag = round(new("Frame", {
 		Position = UDim2.fromOffset(6, 6),
 		Size = UDim2.fromOffset(66, 16),
@@ -843,7 +843,7 @@ local function makeStyleCard(name, order, equippedList, fusion)
 	card.Activated:Connect(function()
 		selectItem(id)
 	end)
-	UITheme.tooltip(card, UITheme.tipText(displayName, `Estilo de luta · {string.lower(tagText)}\nClique para ver as técnicas e guardar ou equipar.`))
+	UITheme.tooltip(card, UITheme.tipText(displayName, `Combat style · {string.lower(tagText)}\nClick to see its techniques and store or equip it.`))
 	cards[id] = { Frame = card, Stroke = stroke, Tag = tag }
 end
 
@@ -914,7 +914,7 @@ function renderAll()
 		makeCard(entry, 100 + index, equipped)
 	end
 	emptyLabel.Visible = #list == 0
-	countLabel.Text = if total == 1 then "1 item" else `{total} itens`
+	countLabel.Text = if total == 1 then "1 item" else `{total} items`
 
 	for _, child in slotRow:GetChildren() do
 		if child:IsA("GuiObject") then
@@ -937,7 +937,7 @@ function renderAll()
 			Font = Fonts.Body,
 			TextSize = 12,
 			TextColor3 = DIM,
-			Text = "Vista um item para ganhar os bônus dele.",
+			Text = "Wear an item to get its bonuses.",
 			Parent = bonusArea,
 		})
 	end

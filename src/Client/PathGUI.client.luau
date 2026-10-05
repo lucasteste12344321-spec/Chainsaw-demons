@@ -264,7 +264,7 @@ local cancelButton = UITheme.button({
 	Size = UDim2.fromOffset(150, 44),
 	Font = Fonts.Display,
 	TextSize = 16,
-	Text = "VOLTAR",
+	Text = "BACK",
 	Parent = confirmBox,
 }, Colors.PanelLight)
 local confirmButton = UITheme.button({
@@ -401,17 +401,17 @@ local function sacrificeLines(path)
 	if path == "Hunter" then
 		local regenPerMinute = math.floor(PathData.LifespanRegen * 60 + 0.5)
 		return {
-			"❤ Cada contrato tira uma parte da sua <b>vida máxima</b> enquanto existir.",
-			`⏳ Usar um poder gasta <b>Tempo de Vida</b> (máximo {PathData.MaxLifespan}, recupera {regenPerMinute} por minuto).`,
-			`📜 Você começa com 1 contrato. Os outros vêm de missões (até {PathData.MaxContracts}).`,
-			`🤝 Você continua no time <b>{teamName("Hunter")}</b>.`,
+			"❤ Each contract takes part of your <b>max health</b> while it lasts.",
+			`⏳ Using a power costs <b>Lifespan</b> (max {PathData.MaxLifespan}, recovers {regenPerMinute} per minute).`,
+			`📜 You can hold {PathData.MaxContracts} contract, and it grows stronger with mastery.`,
+			`🤝 You stay on the <b>{teamName("Hunter")}</b> team.`,
 		}
 	elseif path == "Fiend" then
 		return {
-			`💪 Corpo de demônio: <b>+{UITheme.formatPercent(PathData.FiendPassive.MaxHPBonus)}</b> de vida máxima.`,
-			"🩸 Os poderes custam o seu próprio <b>sangue</b>: gastam vida e não funcionam com a vida baixa.",
-			"🚫 Infernais <b>não podem</b> fazer contratos com demônios.",
-			`🔥 Você sai do time {teamName("None")} e entra no time <b>{teamName("Fiend")}</b>.`,
+			`💪 Devil body: <b>+{UITheme.formatPercent(PathData.FiendPassive.MaxHPBonus)}</b> max health.`,
+			"🩸 Powers cost your own <b>blood</b>: they use health and do not work when your health is low.",
+			"🚫 Fiends <b>cannot</b> make contracts with devils.",
+			`🔥 You leave the {teamName("None")} team and join the <b>{teamName("Fiend")}</b> team.`,
 		}
 	end
 	return {}
@@ -419,7 +419,7 @@ end
 
 local function sacrificeBox(path, order)
 	local frame = box(order, Colors.AccentDark)
-	line(frame, "O PREÇO DESTE CAMINHO", 0, Colors.Accent, Fonts.Display, 14)
+	line(frame, "THE PRICE OF THIS PATH", 0, Colors.Accent, Fonts.Display, 14)
 	for index, text in sacrificeLines(path) do
 		line(frame, text, index, Colors.Text, Fonts.Body, 14)
 	end
@@ -446,7 +446,7 @@ local function skillBlock(parent, skill, slotKey, order, color)
 	line(frame, `<font color="{hex(color)}">[{PathData.KeyLabel(slotKey)}]</font> {skill.Icon} {skill.Name}{kindText}`, 1, Colors.Text, Fonts.Title, 14)
 	line(frame, UITheme.skillStats(skill), 2, Colors.TextDim, Fonts.Body, 12)
 	local costText, costColor = UITheme.skillCost(skill)
-	line(frame, `Custo: {costText}`, 3, costColor, Fonts.Title, 12)
+	line(frame, `Cost: {costText}`, 3, costColor, Fonts.Title, 12)
 	return frame
 end
 
@@ -536,16 +536,16 @@ local function contractCard(parent, contractId, order, width, color, selectable)
 
 	local hpCost = contract.HPCost or 0
 	if hpCost > 0 then
-		UITheme.chip(card, `❤ −{UITheme.formatPercent(hpCost)} de vida máxima`, Colors.Health[1], 3, 12)
+		UITheme.chip(card, `❤ −{UITheme.formatPercent(hpCost)} max health`, Colors.Health[1], 3, 12)
 	else
-		UITheme.chip(card, "❤ Sem perda de vida máxima", Colors.Green, 3, 12)
+		UITheme.chip(card, "❤ No max health loss", Colors.Green, 3, 12)
 	end
 
 	-- Contrato com formas (ContractData): passivo e os dois poderes da forma V1 (teclas V e B)
 	local hasForms = ContractData.HasForms(contractId)
 	local passive = UITheme.passiveText(if hasForms then ContractData.Passive(contractId, "V1") else contract.Passive)
 	if passive then
-		line(card, `✨ Passivo: {passive}`, 4, Colors.Gold, Fonts.Title, 13)
+		line(card, `✨ Passive: {passive}`, 4, Colors.Gold, Fonts.Title, 13)
 	end
 
 	if hasForms then
@@ -557,7 +557,7 @@ local function contractCard(parent, contractId, order, width, color, selectable)
 		end
 		local fusionStyle = ContractData.Get(contractId).FusionStyle
 		if fusionStyle then
-			line(card, `🔥 Com maestria, funde com o estilo {fusionStyle} (Mestre dos Pactos).`, 8, color, Fonts.Title, 12)
+			line(card, `🔥 With mastery, it fuses with the {if fusionStyle == "Punhos" then "Fists" else fusionStyle} style (Pact Master).`, 8, color, Fonts.Title, 12)
 		end
 	elseif contract.Skill then
 		skillBlock(card, contract.Skill, "Z", 5, color)
@@ -571,11 +571,11 @@ local function fiendCard(parent, fiendId, order, width, color, selectable)
 	local card = entry.Card
 
 	line(card, fiendType.Description, 2, Colors.TextDim, Fonts.Light, 13)
-	UITheme.chip(card, `❤ +{UITheme.formatPercent(PathData.FiendPassive.MaxHPBonus)} de vida máxima`, Colors.Green, 3, 12)
+	UITheme.chip(card, `❤ +{UITheme.formatPercent(PathData.FiendPassive.MaxHPBonus)} max health`, Colors.Green, 3, 12)
 
 	local passive = UITheme.passiveText(fiendType.Passive)
 	if passive then
-		line(card, `✨ Passivo: {passive}`, 4, Colors.Gold, Fonts.Title, 13)
+		line(card, `✨ Passive: {passive}`, 4, Colors.Gold, Fonts.Title, 13)
 	end
 
 	for index, slotKey in { "Z", "X" } do
@@ -623,7 +623,7 @@ local function updateGoldLine()
 	local gold = goldValue()
 	local enough = gold >= resetCostOf(current)
 	goldLine.TextColor3 = if enough then Colors.Green else Colors.Accent
-	goldLine.Text = `Seu Gold: 💰 {UITheme.formatNumber(gold)}` .. (if enough then "" else "  (não é suficiente)")
+	goldLine.Text = `Your Gold: 💰 {UITheme.formatNumber(gold)}` .. (if enough then "" else "  (not enough)")
 end
 
 local function updateFooter()
@@ -633,25 +633,25 @@ local function updateFooter()
 
 	if current.Mode == "Choose" then
 		warningLabel.TextColor3 = Colors.Gold
-		warningLabel.Text = `⚠ A escolha é <b>PERMANENTE</b>. Para desistir depois, só pagando `
-			.. `{UITheme.formatNumber(cost)} de Gold no NPC do caminho.`
+		warningLabel.Text = `⚠ This choice is <b>PERMANENT</b>. To give it up later you must pay `
+			.. `{UITheme.formatNumber(cost)} Gold to the path's NPC.`
 		if selectedId then
-			setAction("ESCOLHER ▶", info.Color, true)
+			setAction("CHOOSE ▶", info.Color, true)
 		else
-			setAction(if current.Path == "Hunter" then "ESCOLHA UM CONTRATO" else "ESCOLHA UM TIPO", Colors.PanelLight, false)
+			setAction(if current.Path == "Hunter" then "PICK A CONTRACT" else "PICK A TYPE", Colors.PanelLight, false)
 		end
 	elseif current.Mode == "Reset" then
 		warningLabel.TextColor3 = Colors.Accent
-		warningLabel.Text = "⚠ O Gold gasto não volta e você perde os poderes do caminho."
+		warningLabel.Text = "⚠ The Gold you spend is not refunded and you lose the path's powers."
 		if goldValue() >= cost then
-			setAction("RENUNCIAR", Colors.AccentDark, true)
+			setAction("RENOUNCE", Colors.AccentDark, true)
 		else
-			setAction("GOLD INSUFICIENTE", Colors.PanelLight, false)
+			setAction("NOT ENOUGH GOLD", Colors.PanelLight, false)
 		end
 	else
 		warningLabel.TextColor3 = Colors.TextDim
-		warningLabel.Text = "Volte aqui quando cumprir os requisitos."
-		setAction("FECHAR", Colors.PanelLight, true)
+		warningLabel.Text = "Come back when you meet the requirements."
+		setAction("CLOSE", Colors.PanelLight, true)
 	end
 end
 
@@ -720,7 +720,7 @@ end
 local function renderChoose(data, info)
 	line(content, info.Description, 1, Colors.Text, Fonts.Light, 15)
 	sacrificeBox(data.Path, 2)
-	sectionTitle(if data.Path == "Hunter" then "ESCOLHA SEU CONTRATO" else "ESCOLHA SEU TIPO DE INFERNAL", 3)
+	sectionTitle(if data.Path == "Hunter" then "CHOOSE YOUR CONTRACT" else "CHOOSE YOUR FIEND TYPE", 3)
 	optionsRow(data, 4, true)
 end
 
@@ -730,7 +730,7 @@ local function renderReset(data, info)
 
 	-- O que o jogador tem hoje
 	local mine = box(1, color)
-	line(mine, `Você segue o caminho do <b><font color="{hex(color)}">{info.DisplayName}</font></b>.`, 0, Colors.Text, Fonts.Title, 15)
+	line(mine, `You follow the path of the <b><font color="{hex(color)}">{info.DisplayName}</font></b>.`, 0, Colors.Text, Fonts.Title, 15)
 	if path == "Hunter" then
 		for index, contractId in contracts do
 			local contract = PathData.Contracts[contractId]
@@ -747,35 +747,35 @@ local function renderReset(data, info)
 
 	-- O que acontece ao renunciar
 	local lose = box(2, Colors.AccentDark)
-	line(lose, "SE VOCÊ RENUNCIAR", 0, Colors.Accent, Fonts.Display, 14)
-	line(lose, `↩ Você volta a ser <b>Humano comum</b>, no time <b>{teamName("None")}</b>.`, 1)
+	line(lose, "IF YOU RENOUNCE", 0, Colors.Accent, Fonts.Display, 14)
+	line(lose, `↩ You go back to being an <b>ordinary Human</b>, on the <b>{teamName("None")}</b> team.`, 1)
 	if data.Path == "Hunter" then
-		line(lose, "📜 Perde todos os contratos e os poderes V/B.", 2)
-		line(lose, "❤ A vida máxima volta ao normal.", 3)
+		line(lose, "📜 You lose all contracts and the V/B powers.", 2)
+		line(lose, "❤ Your max health goes back to normal.", 3)
 	else
-		line(lose, "🩸 Perde o tipo de Infernal, os passivos e os poderes V/B.", 2)
-		line(lose, "❤ Perde o bônus de vida máxima do corpo de demônio.", 3)
+		line(lose, "🩸 You lose your Fiend type, passives and the V/B powers.", 2)
+		line(lose, "❤ You lose the devil body's max health bonus.", 3)
 	end
-	line(lose, "🔄 Depois você pode escolher um caminho outra vez.", 4)
+	line(lose, "🔄 Afterwards you can choose a path again.", 4)
 
 	-- Custo
 	local costBox = box(3, Colors.Gold)
-	line(costBox, `Custo para renunciar: <b>💰 {UITheme.formatNumber(resetCostOf(data))}</b> de Gold`, 1, Colors.Gold, Fonts.Title, 16)
+	line(costBox, `Cost to renounce: <b>💰 {UITheme.formatNumber(resetCostOf(data))}</b> Gold`, 1, Colors.Gold, Fonts.Title, 16)
 	goldLine = line(costBox, "", 2, Colors.Text, Fonts.Title, 14)
 	updateGoldLine()
 end
 
 local function renderLocked(data, info)
 	local lock = box(1, Colors.Accent)
-	line(lock, "🔒 AINDA NÃO", 0, Colors.Accent, Fonts.Display, 16)
+	line(lock, "🔒 NOT YET", 0, Colors.Accent, Fonts.Display, 16)
 	local reason = if type(data.Reason) == "string" and data.Reason ~= ""
 		then data.Reason
-		else "Você ainda não pode seguir este caminho."
+		else "You cannot follow this path yet."
 	line(lock, UITheme.escape(reason), 1, Colors.Text, Fonts.Title, 15)
 	if PathData.FromPlayer(player) == "None" then
 		line(
 			lock,
-			`Requisitos: level {PathData.MinLevel} e a missão "{PathData.RequiredQuest}" completa.`,
+			`Requirements: level {PathData.MinLevel} and the "Crossroads" quest completed.`,
 			2,
 			Colors.TextDim,
 			Fonts.Light,
@@ -785,7 +785,7 @@ local function renderLocked(data, info)
 
 	line(content, info.Description, 2, Colors.Text, Fonts.Light, 15)
 	sacrificeBox(data.Path, 3)
-	sectionTitle("O QUE TE ESPERA", 4)
+	sectionTitle("WHAT AWAITS YOU", 4)
 	optionsRow(data, 5, false)
 end
 
@@ -806,8 +806,8 @@ local function openDialog(data)
 	iconLabel.Text = UITheme.PathIcons[data.Path] or "❔"
 	titleLabel.TextColor3 = color
 	titleLabel.Text = if data.Mode == "Reset"
-		then "RENUNCIAR AO CAMINHO"
-		else `CAMINHO DO {UITheme.upper(info.DisplayName)}`
+		then "RENOUNCE THE PATH"
+		else `PATH OF THE {UITheme.upper(info.DisplayName)}`
 	subtitleLabel.Text = if type(data.NPCName) == "string" then data.NPCName else ""
 	accentBar.BackgroundColor3 = color
 	content.ScrollBarImageColor3 = color
@@ -848,22 +848,22 @@ actionButton.MouseButton1Click:Connect(function()
 		local message
 		if data.Path == "Hunter" then
 			local contract = PathData.Contracts[id]
-			message = `Você vai se tornar <b>{info.DisplayName}</b> com o contrato <b>{contract.DisplayName}</b>.`
+			message = `You will become a <b>{info.DisplayName}</b> with the <b>{contract.DisplayName}</b> contract.`
 		else
 			local fiendType = PathData.FiendTypes[id]
-			message = `Você vai se tornar <b>{fiendType.DisplayName}</b> e entrar no time <b>{teamName("Fiend")}</b>.`
+			message = `You will become a <b>{fiendType.DisplayName}</b> and join the <b>{teamName("Fiend")}</b> team.`
 		end
-		message ..= `\n\nEsta escolha é <b>permanente</b>. Para desistir, só pagando {cost} de Gold e perdendo tudo o que o caminho deu.`
+		message ..= `\n\nThis choice is <b>permanent</b>. To give it up you must pay {cost} Gold and lose everything the path gave you.`
 
-		askConfirm("ESCOLHA PERMANENTE", message, "CONFIRMAR", info.Color, function()
+		askConfirm("PERMANENT CHOICE", message, "CONFIRM", info.Color, function()
 			local action = if data.Path == "Hunter" then "ChooseHunter" else "ChooseFiend"
 			Remotes.PathAction:FireServer(action, id, data.NPCId)
 			closeDialog()
 		end)
 	elseif data.Mode == "Reset" then
-		local message = `Você vai pagar <b>{cost} de Gold</b> e voltar a ser <b>Humano comum</b>.`
-			.. `\n\nOs poderes e passivos do caminho do {info.DisplayName} serão perdidos. O Gold não volta.`
-		askConfirm("RENUNCIAR AO CAMINHO?", message, "RENUNCIAR", Colors.Accent, function()
+		local message = `You will pay <b>{cost} Gold</b> and go back to being an <b>ordinary Human</b>.`
+			.. `\n\nThe powers and passives of the {info.DisplayName} path will be lost. The Gold is not refunded.`
+		askConfirm("RENOUNCE THE PATH?", message, "RENOUNCE", Colors.Accent, function()
 			Remotes.PathAction:FireServer("Reset", nil, data.NPCId)
 			closeDialog()
 		end)

@@ -35,8 +35,8 @@ local PANEL_W, PANEL_H = 780, 480
 local HIDE_WHILE_OPEN = { "HUD", "QuestTracker", "BossBar" }
 -- Nome dos NPCs que abrem cada caminho (os nomes de verdade ficam no servidor, em QuestData)
 local NPC_NAMES = {
-	Veterano = "Caçador Veterano",
-	Anciao = "Demônio Ancião",
+	Veterano = "Veteran Hunter",
+	Anciao = "Elder Devil",
 }
 
 local function new(className, props)
@@ -105,7 +105,7 @@ text({
 	TextXAlignment = Enum.TextXAlignment.Left,
 	Font = Fonts.Marker,
 	TextSize = 32,
-	Text = "CAMINHO",
+	Text = "PATH",
 	Parent = panel,
 })
 local closeButton = new("TextButton", {
@@ -434,7 +434,7 @@ local function renderPath()
 		-- Um contrato só (desde 2026-10-01), com a forma (ContractData), a maestria dele e os dois poderes
 		local contractId = contracts[1]
 		local contract = contractId and PathData.Contracts[contractId]
-		sectionTitle("CONTRATO", nextOrder())
+		sectionTitle("CONTRACT", nextOrder())
 		if contract then
 			local hasForms = ContractData.HasForms(contractId)
 			local hpCost = contract.HPCost or 0
@@ -443,7 +443,7 @@ local function renderPath()
 			}
 			if hasForms then
 				local fusion = ContractData.Fusion(contractId, form)
-				local formText = `Forma: {ContractData.FormNames[form]} {ContractData.FormGlyphs[form] or ""}`
+				local formText = `Form: {ContractData.FormNames[form]} {ContractData.FormGlyphs[form] or ""}`
 				if fusion and fusion.DisplayName then
 					formText ..= ` · {fusion.DisplayName}`
 				end
@@ -451,14 +451,14 @@ local function renderPath()
 			end
 			table.insert(lines, {
 				Text = if hpCost > 0
-					then `Sacrifício: −{UITheme.formatPercent(hpCost)} de vida máxima`
-					else "Sem sacrifício de vida máxima",
+					then `Sacrifice: −{UITheme.formatPercent(hpCost)} max health`
+					else "No max health sacrifice",
 				Font = Fonts.Title,
 				Color = if hpCost > 0 then Colors.Health[1] else GREEN,
 			})
 			local passive = UITheme.passiveText(if hasForms then ContractData.Passive(contractId, form) else contract.Passive)
 			if passive then
-				table.insert(lines, { Text = `Passivo: {passive}`, Font = Fonts.Title, Color = CREAM })
+				table.insert(lines, { Text = `Passive: {passive}`, Font = Fonts.Title, Color = CREAM })
 			end
 			infoRow(nextOrder(), UITheme.glyphOf(contract), lines, UITheme.tipText(contract.DisplayName, contract.Description))
 
@@ -469,29 +469,29 @@ local function renderPath()
 				local level, into, need = SkillTreeData.MasteryLevel(if value then value.Value else 0)
 				local maxed = level >= SkillTreeData.Mastery.MaxLevel
 				local masteryLines = {
-					{ Text = `Maestria do contrato: {level}/{SkillTreeData.Mastery.MaxLevel}`, Font = Fonts.Title, Size = 16, Color = WHITE },
-					{ Text = if maxed then "Maestria máxima." else `{into}/{need} XP para o próximo nível · sobe acertando com os poderes` },
+					{ Text = `Contract mastery: {level}/{SkillTreeData.Mastery.MaxLevel}`, Font = Fonts.Title, Size = 16, Color = WHITE },
+					{ Text = if maxed then "Max mastery." else `{into}/{need} XP to the next level · rises by landing hits with your powers` },
 				}
 				local nextForm = ContractData.NextForm(form)
 				local requires = nextForm and ContractData.Form(contractId, nextForm) and ContractData.Form(contractId, nextForm).Requires
 				if requires then
 					local parts = {}
-					if requires.Mastery then table.insert(parts, `maestria {requires.Mastery} no contrato`) end
+					if requires.Mastery then table.insert(parts, `contract mastery {requires.Mastery}`) end
 					local style = ContractData.Get(contractId).FusionStyle
-					if requires.StyleMastery and style then table.insert(parts, `{requires.StyleMastery} nos {style}`) end
-					if requires.Quest then table.insert(parts, "a provação final") end
+					if requires.StyleMastery and style then table.insert(parts, `{SkillTreeData.StyleName(style)} mastery {requires.StyleMastery}`) end
+					if requires.Quest then table.insert(parts, "the final trial") end
 					table.insert(masteryLines, {
-						Text = `Próxima forma ({ContractData.FormNames[nextForm]}): {table.concat(parts, ", ")}. Fale com o Mestre dos Pactos.`,
+						Text = `Next form ({ContractData.FormNames[nextForm]}): {table.concat(parts, ", ")}. Talk to the Pact Master.`,
 						Font = Fonts.Title,
 						Color = CREAM,
 					})
 				end
-				infoRow(nextOrder(), ContractData.FormGlyphs[form] or "壱", masteryLines, UITheme.tipText("Maestria do contrato",
-					"Sobe com cada acerto e abate dos poderes do contrato (e, depois da fusão, com os golpes do estilo fundido). "
-						.. "É ela que libera as formas do pacto no Mestre dos Pactos."))
+				infoRow(nextOrder(), ContractData.FormGlyphs[form] or "壱", masteryLines, UITheme.tipText("Contract mastery",
+					"Rises with every hit and kill from your contract powers (and, after the fusion, with hits from the fused style). "
+						.. "It unlocks the pact forms at the Pact Master."))
 			end
 
-			sectionTitle("PODERES", nextOrder())
+			sectionTitle("POWERS", nextOrder())
 			for _, slotKey in { "Z", "X" } do
 				local skill = PathData.GetSkill(path, contracts, fiendType, slotKey, form)
 				if skill then
@@ -501,13 +501,13 @@ local function renderPath()
 		end
 	elseif path == "Fiend" then
 		local fiend = PathData.FiendTypes[fiendType]
-		sectionTitle("TIPO DE INFERNAL", nextOrder())
+		sectionTitle("FIEND TYPE", nextOrder())
 		if fiend then
 			infoRow(nextOrder(), UITheme.glyphOf(fiend), {
 				{ Text = fiend.DisplayName, Font = Fonts.Title, Size = 16, Color = WHITE },
 				{ Text = fiend.Description },
 			}, UITheme.tipText(fiend.DisplayName, fiend.Description))
-			sectionTitle("PODERES", nextOrder())
+			sectionTitle("POWERS", nextOrder())
 			for _, slotKey in { "Z", "X" } do
 				local skill = fiend.Skills and fiend.Skills[slotKey]
 				if skill then
@@ -516,52 +516,52 @@ local function renderPath()
 			end
 		else
 			infoRow(nextOrder(), "?", {
-				{ Text = "Tipo ainda não definido", Font = Fonts.Title, Size = 16, Color = WHITE },
+				{ Text = "Type not chosen yet", Font = Fonts.Title, Size = 16, Color = WHITE },
 			})
 		end
 	else
 		-- Humano comum: os dois caminhos que abrem no level 25
-		sectionTitle(`CAMINHOS NO LEVEL {PathData.MinLevel}`, nextOrder())
+		sectionTitle(`PATHS AT LEVEL {PathData.MinLevel}`, nextOrder())
 		for _, pathId in { "Hunter", "Fiend" } do
 			local option = PathData.Paths[pathId]
 			local npc = NPC_NAMES[option.NPC] or option.NPC
 			infoRow(nextOrder(), UITheme.PathIcons[pathId], {
 				{ Text = option.DisplayName, Font = Fonts.Title, Size = 16, Color = WHITE },
 				{ Text = option.Description },
-				{ Text = `Fale com: {npc}`, Font = Fonts.Title, Color = WHITE },
-			}, UITheme.tipText(option.DisplayName, `{option.Description}\n\nFale com: {npc}`))
+				{ Text = `Talk to: {npc}`, Font = Fonts.Title, Color = WHITE },
+			}, UITheme.tipText(option.DisplayName, `{option.Description}\n\nTalk to: {npc}`))
 		end
 		infoRow(nextOrder(), "道", {
-			{ Text = "Como escolher", Font = Fonts.Title, Size = 16, Color = WHITE },
+			{ Text = "How to choose", Font = Fonts.Title, Size = 16, Color = WHITE },
 			{
-				Text = `Chegue ao level {PathData.MinLevel}, complete a missão "{PathData.RequiredQuest}" e fale com `
-					.. "o NPC do caminho. A escolha é permanente.",
+				Text = `Reach level {PathData.MinLevel}, complete the "Crossroads" quest and talk to `
+					.. "the path's NPC. The choice is permanent.",
 			},
 		})
 	end
 
 	-- Passivos de quem já tem caminho
 	if path ~= "None" then
-		sectionTitle("PASSIVOS", nextOrder())
+		sectionTitle("PASSIVES", nextOrder())
 		local multiplier = PathData.HPMultiplier(path, contracts, fiendType)
 		local passive = UITheme.passiveText(PathData.Passives(path, contracts, fiendType))
 		infoRow(nextOrder(), "体", {
 			{
-				Text = `Vida máxima: {math.floor(multiplier * 100 + 0.5)}% do normal`,
+				Text = `Max health: {math.floor(multiplier * 100 + 0.5)}% of normal`,
 				Font = Fonts.Title,
 				Size = 13,
 				Color = if multiplier < 1 then Colors.Health[1] elseif multiplier > 1 then GREEN else WHITE,
 			},
 			{
-				Text = if passive then passive else "Nenhum passivo extra",
+				Text = if passive then passive else "No extra passive",
 				Color = if passive then CREAM else DIM,
 			},
 			{
 				Text = if path == "Fiend"
-					then "Infernais não podem fazer contratos. Os poderes custam vida."
-					else "Os poderes gastam tempo de vida, que recupera sozinho.",
+					then "Fiends cannot make contracts. Powers cost health."
+					else "Powers cost lifespan, which recovers on its own.",
 			},
-		}, UITheme.tipText("Passivos", "O que o seu caminho muda no corpo, somando os contratos ou o tipo de Infernal."))
+		}, UITheme.tipText("Passives", "What your path changes in your body, adding up your contracts or Fiend type."))
 	end
 end
 
@@ -573,7 +573,7 @@ local function updateCard()
 	pathGlyph.Text = UITheme.PathIcons[path] or info.Glyph or "?"
 	ringStroke.Color = if path == "None" then LINE else RED
 	pathName.Text = UITheme.upper(info.DisplayName)
-	pathTeam.Text = `Time: <font color="{hex(WHITE)}">{if team then team.DisplayName else info.Team}</font>`
+	pathTeam.Text = `Team: <font color="{hex(WHITE)}">{if team then team.DisplayName else info.Team}</font>`
 	pathDescription.Text = info.Description
 
 	if path == "Hunter" then
@@ -585,26 +585,26 @@ local function updateCard()
 		if type(lifespan) ~= "number" then
 			lifespan = maxLifespan
 		end
-		boxTitle.Text = "TEMPO DE VIDA"
+		boxTitle.Text = "LIFESPAN"
 		boxValue.Visible = false
 		boxBar.Frame.Visible = true
 		if boxBarGradient then
 			boxBarGradient.Color = ColorSequence.new(Colors.Lifespan[1], Colors.Lifespan[2])
 		end
 		boxBar.Set(lifespan / maxLifespan, `{math.floor(lifespan)} / {math.floor(maxLifespan)}`, true)
-		boxSub.Text = `Recupera {math.floor(PathData.LifespanRegen * 60 + 0.5)} por minuto`
+		boxSub.Text = `Recovers {math.floor(PathData.LifespanRegen * 60 + 0.5)} per minute`
 		boxStroke.Color = Colors.Lifespan[2]
 	elseif path == "Fiend" then
-		boxTitle.Text = "CORPO DE DEMÔNIO"
+		boxTitle.Text = "DEVIL BODY"
 		boxValue.Visible = true
 		boxValue.Text = `+{UITheme.formatPercent(PathData.FiendPassive.MaxHPBonus)}`
 		boxValue.TextColor3 = GREEN
 		boxBar.Frame.Visible = false
-		boxSub.Text = "de vida máxima"
+		boxSub.Text = "max health"
 		boxStroke.Color = RED
 	else
 		local minLevel = PathData.MinLevel
-		boxTitle.Text = `RUMO AO LEVEL {minLevel}`
+		boxTitle.Text = `ROAD TO LEVEL {minLevel}`
 		boxValue.Visible = false
 		boxBar.Frame.Visible = true
 		if boxBarGradient then
@@ -612,8 +612,8 @@ local function updateCard()
 		end
 		boxBar.Set(level.Value / minLevel, `Level {math.min(level.Value, minLevel)} / {minLevel}`, true)
 		boxSub.Text = if level.Value >= minLevel
-			then `Missão: {PathData.RequiredQuest}`
-			else "Depois, escolha um caminho"
+			then `Quest: Crossroads`
+			else "Then choose a path"
 		boxStroke.Color = LINE
 	end
 end
