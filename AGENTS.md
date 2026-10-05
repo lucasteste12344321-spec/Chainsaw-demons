@@ -542,7 +542,7 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   de `Window` (0,6 s) com a animação `CounterFail` (112283459712561, o agarrão errando). O primeiro golpe que chegar
   (`CombatState.StartCounter`/`TryCounter`, chamado no começo de `CombatRules.Damage` e `DamageFromNPC`; resultado
   "Countered", sem dano) de até `CounterRange` studs: o atacante é preso na frente (`holdVictim`) e o cliente de quem
-  contra-atacou toca `CounterGrab` (107680654208644, marcador "HitGrab"; CombatFX "CounterGrab"). No `HitAt` (1,5 s, o
+  contra-atacou toca `CounterGrab` (107680654208644, marcador "HitGrab"; CombatFX "CounterGrab"). No `HitAt` (0,93 s, o
   marcador HitGrab medido pelo usuário no Studio; o Output mostra o tempo em cada teste) leva o golpe e cai em ragdoll por `RagdollTime`.
   Ninguém bateu: `FailRecovery` travado. Chefes só levam o golpe. Atributo `Countering` no personagem durante a postura.
 - `src/Server/Ragdoll.luau`: ragdoll R6 (BallSocketConstraint no lugar das juntas do Torso, colisores invisíveis nos
