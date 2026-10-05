@@ -15,6 +15,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Debris = game:GetService("Debris")
+local Ragdoll = require(script.Parent:WaitForChild("Ragdoll"))
 
 local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 local CombatStyles = require(ReplicatedStorage:WaitForChild("CombatStyles"))
@@ -996,6 +997,62 @@ local function doFoxSnap(player, slot)
 	end)
 end
 
+-- ----- Contra-agarrão (Kind "CounterGrab", C dos Punhos) -----
+-- Ao apertar: postura por Window segundos (CombatState.StartCounter). O primeiro golpe que chegar (de jogador ou de
+-- inimigo, até CounterRange studs) não entra: quem bateu é atordoado e preso na frente (holdVictim) e, no HitAt
+-- (marcador "HitGrab" da animação de agarrão), leva o golpe e cai em ragdoll (Ragdoll) por RagdollTime. O cliente de
+-- quem contra-atacou troca a animação ao receber o CombatFX "CounterGrab". Ninguém bateu: FailRecovery travado.
+-- Chefes não são presos nem derrubados: só levam o golpe.
+
+local function doCounterGrab(player, slot)
+	local ctx, cfg, state, token = skillContext(player, slot)
+	if not ctx then return end
+	local t = now()
+	CombatState.SetCooldown(player, slot, cfg.Cooldown)
+	CombatState.SetBusy(player, t + cfg.Window + cfg.FailRecovery)
+	slowFor(player, "CounterGrab", cfg.SpeedMultiplier, cfg.Window + cfg.FailRecovery)
+	CombatState.FX("CounterStance", { Character = ctx.Character, Style = ctx.StyleName, Duration = cfg.Window }, player)
+
+	CombatState.StartCounter(player, cfg.Window, cfg.CounterRange, function(attackerModel)
+		if state.actionToken ~= token or not stillValid(ctx) then return end
+		local humanoid = attackerModel:FindFirstChildOfClass("Humanoid")
+		local root = attackerModel:FindFirstChild("HumanoidRootPart")
+		if not humanoid or humanoid.Health <= 0 or not root then return end
+		local target = { Model = attackerModel, Humanoid = humanoid, Root = root }
+		local isBoss = attackerModel:GetAttribute("Boss") == true
+		local hitAt = cfg.HitAt
+
+		-- Pegou: quem contra-atacou fica invulnerável durante o agarrão; quem bateu fica preso até o golpe
+		CombatState.SetBusy(player, now() + hitAt + cfg.Recovery)
+		slowFor(player, "CounterGrab", 0, hitAt + cfg.Recovery)
+		ctx.Character:SetAttribute("DodgeUntil", now() + hitAt + 0.15)
+		local release
+		if not isBoss then
+			CombatState.Stun(humanoid, hitAt + 0.3, true)
+			release = holdVictim(ctx, target, cfg.HoldDistance, hitAt)
+		end
+		CombatState.FX("CounterGrab", { Character = ctx.Character, Style = ctx.StyleName, Target = attackerModel, HitAt = hitAt })
+
+		task.delay(hitAt, function()
+			if release then release() end
+			if ctx.Player.Character ~= ctx.Character or humanoid.Health <= 0 or not attackerModel.Parent then return end
+			local opts = {
+				ScaleWithForca = true,
+				ForcaScale = cfg.ForcaScale,
+				Unblockable = true,
+				Unparryable = true,
+				NoHitReaction = true, -- quem leva cai em ragdoll (sem animação de vítima)
+			}
+			if strike(ctx, target, cfg.Damage, opts, true, false) == "Hit" and not isBoss then
+				CombatState.Stun(humanoid, cfg.RagdollTime, true)
+				Ragdoll.Apply(attackerModel, cfg.RagdollTime)
+				local look = flatLook(ctx.Root)
+				knock(ctx, target, look * cfg.Knockback + Vector3.new(0, cfg.KnockbackUp, 0), 0.15)
+			end
+		end)
+	end)
+end
+
 -- ================= Acerto mandado pelo cliente =================
 
 local function onHit(player, seq, targets, impactTime, originFrame)
@@ -1030,6 +1087,7 @@ local function cancelActions(player)
 	local state = CombatState.Get(player)
 	state.actionToken += 1
 	CombatState.StopBlock(player)
+	CombatState.StopCounter(player)
 	pending[player] = nil
 	local charging = state.charging
 	if charging then
@@ -1110,6 +1168,12 @@ end
 function SkillKinds.FoxSnap(player, slot, holding)
 	if holding ~= false then
 		doFoxSnap(player, slot)
+	end
+end
+
+function SkillKinds.CounterGrab(player, slot, holding)
+	if holding ~= false then
+		doCounterGrab(player, slot)
 	end
 end
 

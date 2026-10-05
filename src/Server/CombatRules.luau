@@ -200,6 +200,11 @@ function CombatRules.Damage(attacker, victimHumanoid, amount, opts)
 		damage += StatConfig.DamageBonus(PlayerData.GetStat(attacker, "Forca")) * scale
 	end
 
+	-- Postura de contra-ataque (Contra-agarrão): o golpe não entra e quem bateu é agarrado
+	if CombatState.TryCounter(victimModel, attacker.Character) then
+		return 0, "Countered"
+	end
+
 	local victimPlayer = Players:GetPlayerFromCharacter(victimModel)
 	if victimPlayer then
 		damage *= 1 - StatConfig.DamageReduction(PlayerData.GetStat(victimPlayer, "Defesa"))
@@ -258,13 +263,16 @@ function CombatRules.DamageFromNPC(victimHumanoid, amount, npcModel)
 	if not isInstanceOf(victimModel, "Model") then return 0 end
 	if victimModel:FindFirstChildOfClass("ForceField") then return 0 end
 
+	local attackerModel = if isInstanceOf(npcModel, "Model") then npcModel else nil
+	if attackerModel and CombatState.TryCounter(victimModel, attackerModel) then
+		return 0, "Countered"
+	end
+
 	local damage = amount
 	local victimPlayer = Players:GetPlayerFromCharacter(victimModel)
 	if victimPlayer then
 		damage *= 1 - StatConfig.DamageReduction(PlayerData.GetStat(victimPlayer, "Defesa"))
 	end
-
-	local attackerModel = if isInstanceOf(npcModel, "Model") then npcModel else nil
 	local dodged, byChance = dodges(victimModel, victimPlayer)
 	if dodged then
 		onDodged(victimModel, victimPlayer, attackerModel, byChance)

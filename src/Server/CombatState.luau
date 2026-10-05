@@ -275,6 +275,10 @@ function CombatState.TryBlock(victimModel, attackerModel, guardDamage, opts)
 		local attackerHumanoid = attackerModel and attackerModel:FindFirstChildOfClass("Humanoid")
 		if attackerHumanoid then
 			CombatState.Stun(attackerHumanoid, cfg.ParryStun, true)
+			-- Animação de quem levou parry (chefe com reação própria, o Stagger do BossService, fica sem ela)
+			if attackerModel:GetAttribute("Boss") ~= true then
+				CombatState.PlayReaction(attackerHumanoid, CombatStyles.ParriedAnimation, cfg.ParryStun)
+			end
 		end
 		local attackerPlayer = attackerModel and Players:GetPlayerFromCharacter(attackerModel)
 		if attackerPlayer and states[attackerPlayer] then
@@ -315,6 +319,80 @@ function CombatState.BlockedDamage(victimModel)
 	-- "Muralha" na árvore deixa passar menos dano
 	local taken = if state then state.blockCfg.DamageTaken else DEFAULT_BLOCK.DamageTaken
 	return if victimPlayer then math.max(0, taken - treeEffect(victimPlayer, "BlockTaken")) else taken
+end
+
+-- ================= Reações e contra-ataque =================
+
+-- Toca uma animação de reação no personagem (servidor; replica para todos), acima dos golpes, por até maxTime s.
+-- Usada no parry (CombatStyles.ParriedAnimation).
+function CombatState.PlayReaction(humanoid, id, maxTime)
+	if type(id) ~= "number" or id <= 0 or not humanoid or humanoid.Health <= 0 then return nil end
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		animator = Instance.new("Animator")
+		animator.Parent = humanoid
+	end
+	local animation = Instance.new("Animation")
+	animation.AnimationId = "rbxassetid://" .. id
+	local ok, track = pcall(function()
+		return animator:LoadAnimation(animation)
+	end)
+	animation:Destroy()
+	if not ok or not track then return nil end
+	track.Priority = Enum.AnimationPriority.Action4 -- por cima do golpe que levou o parry
+	track.Looped = false
+	track:Play(0.05)
+	if maxTime then
+		task.delay(maxTime, function()
+			if track.IsPlaying then
+				track:Stop(0.2)
+			end
+		end)
+	end
+	game:GetService("Debris"):AddItem(track, (maxTime or 3) + 1)
+	return track
+end
+
+-- Postura de contra-ataque (Contra-agarrão dos Punhos): por duration segundos, o primeiro golpe que chegar de até
+-- range studs não causa dano e chama onCounter(atacante) (CombatRules.Damage e DamageFromNPC perguntam TryCounter
+-- antes de tudo). Atributo "Countering" no personagem enquanto vale.
+local counters = {}
+
+function CombatState.StartCounter(player, duration, range, onCounter)
+	local character = player.Character
+	if not character then return end
+	local entry = { Character = character, Until = now() + duration, Range = range, OnCounter = onCounter }
+	counters[player] = entry
+	character:SetAttribute("Countering", true)
+	task.delay(duration, function()
+		if counters[player] == entry then
+			counters[player] = nil
+			if character.Parent then character:SetAttribute("Countering", nil) end
+		end
+	end)
+end
+
+function CombatState.StopCounter(player)
+	local entry = counters[player]
+	counters[player] = nil
+	if entry and entry.Character.Parent then
+		entry.Character:SetAttribute("Countering", nil)
+	end
+end
+
+-- A vítima está em postura de contra-ataque contra esse atacante? Se sim, gasta a postura, chama o onCounter e devolve
+-- true (o golpe não causa dano).
+function CombatState.TryCounter(victimModel, attackerModel)
+	local victimPlayer = Players:GetPlayerFromCharacter(victimModel)
+	local entry = victimPlayer and counters[victimPlayer]
+	if not entry or entry.Character ~= victimModel or now() > entry.Until then return false end
+	local victimRoot, attackerRoot = rootOf(victimModel), rootOf(attackerModel)
+	if not victimRoot or not attackerRoot or (attackerRoot.Position - victimRoot.Position).Magnitude > entry.Range then
+		return false
+	end
+	CombatState.StopCounter(victimPlayer)
+	task.spawn(entry.OnCounter, attackerModel)
+	return true
 end
 
 -- ================= Atordoamento =================
@@ -516,6 +594,7 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	states[player] = nil
+	counters[player] = nil
 	breakerReadyAt[player] = nil
 end)
 

@@ -537,6 +537,20 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   50% da velocidade (`whiffPenalty` no CombatService). O Soco carregado conta como erro se nenhum acerto chegar até
   `Windup` + 0,65 s depois de soltar (o cliente só manda o acerto quando pega alguém). O Agarrão já tinha `WhiffCooldown`.
 
+## Contra-agarrão, parry e ragdoll (Claude, 2026-10-05, animações do usuário)
+- Punhos C = Contra-agarrão (Kind `CounterGrab`, `CombatStyles.Styles.Punhos.Skills.C`, sem técnica na árvore): postura
+  de `Window` (0,6 s) com a animação `CounterFail` (112283459712561, o agarrão errando). O primeiro golpe que chegar
+  (`CombatState.StartCounter`/`TryCounter`, chamado no começo de `CombatRules.Damage` e `DamageFromNPC`; resultado
+  "Countered", sem dano) de até `CounterRange` studs: o atacante é preso na frente (`holdVictim`) e o cliente de quem
+  contra-atacou toca `CounterGrab` (107680654208644, marcador "HitGrab"; CombatFX "CounterGrab"). No `HitAt` (0,45 s;
+  ajustar ao marcador: no Studio o Output mostra o tempo do HitGrab) leva o golpe e cai em ragdoll por `RagdollTime`.
+  Ninguém bateu: `FailRecovery` travado. Chefes só levam o golpe. Atributo `Countering` no personagem durante a postura.
+- `src/Server/Ragdoll.luau`: ragdoll R6 (BallSocketConstraint no lugar das juntas do Torso, colisores invisíveis nos
+  membros, atributo `Ragdoll`/`RagdollUntil`; o cliente do jogador põe o Humanoid em Physics pelo CombatInput; NPC o
+  servidor). Levanta sozinho.
+- Parry: quem leva toca `CombatStyles.ParriedAnimation` (93676921591226) pelo `CombatState.PlayReaction` (Action4, até
+  o fim do `ParryStun`); chefe com Stagger próprio fica sem.
+
 ## Recompensa do grupo (Claude, 2026-10-05)
 - `src/Server/GroupReward.server.luau`: quem está no grupo dono do jogo (`game.CreatorId`; o jogo é do grupo 126221487)
   ganha uma vez `REWARD` (300 Gold e 1 giro de clã). Marca "@GRUPO" em `profile.Codes` (o campo de códigos não aceita

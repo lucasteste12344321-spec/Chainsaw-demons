@@ -19,6 +19,10 @@ CombatStyles.Styles = {
 			Barrage = 103050213897648, -- Rajada (em loop enquanto dura)
 			Charge = 0, 
 			ChargedPunch = 107106515079108,
+			-- Contra-agarrão (C, do usuário, 2026-10-05): a postura com o agarrão errando, e o agarrão que pegou
+			-- (marcador "HitGrab" no golpe; o dano sai no HitAt da skill)
+			CounterFail = 112283459712561,
+			CounterGrab = 107680654208644,
 			Hit = { 72799792874416, 132312783465078, 94168986140063, 75926009688934}, -- quem apanha (sorteado)
 		},
 		-- Aceita qualquer um desses nomes (o Roblox diferencia maiúsculas). Sem nenhum, o golpe acerta em 70% da animação.
@@ -132,6 +136,33 @@ CombatStyles.Styles = {
 				Stun = 1.2,
 				Windup = 0.12,
 				SpeedMultiplier = 0.5,
+			},
+			-- Contra-agarrão: postura curta; quem bater nela (golpe, skill, poder ou inimigo, até CounterRange studs) não
+			-- causa dano, é agarrado e, no HitAt (marcador "HitGrab" da animação), leva o golpe e cai em ragdoll. Ninguém
+			-- bateu: a postura acaba e fica FailRecovery travado (a animação do agarrão errando).
+			C = {
+				Kind = "CounterGrab",
+				Id = "ContraAgarrao",
+				Name = "Contra-agarrão",
+				Icon = "🤼",
+				Glyph = "返",
+				Description = "Fique em postura: se alguém te atacar nesse instante, você agarra, derruba e ele cai no chão. "
+					.. "Se ninguém atacar, você fica aberto por um momento.",
+				Animation = "CounterFail", -- toca ao apertar (Animations.CounterFail)
+				SuccessAnimation = "CounterGrab", -- toca quando pega
+				Cooldown = 12,
+				Window = 0.6, -- duração da postura que pega o golpe
+				FailRecovery = 0.5, -- ninguém bateu: travado esse tanto depois da postura
+				HitAt = 0.45, -- depois de pegar: o golpe (ajustar para o tempo do marcador "HitGrab")
+				Recovery = 0.35, -- depois do golpe, até poder agir
+				CounterRange = 12, -- quem bateu de mais longe que isso (projétil, poder de longe) não é agarrado
+				HoldDistance = 2.5, -- a vítima fica presa a essa distância na frente até o golpe
+				Damage = 30,
+				ForcaScale = 1.2,
+				RagdollTime = 1.6, -- tempo caído no chão
+				Knockback = 22,
+				KnockbackUp = 8,
+				SpeedMultiplier = 0.2,
 			},
 		},
 	},
@@ -375,6 +406,10 @@ function CombatStyles.SkillOfKind(style, kind)
 	end
 	return nil
 end
+
+-- Quem leva parry (atacante, jogador ou inimigo) toca esta animação (do usuário, 2026-10-05). Chefe com reação própria
+-- (Stagger do BossService) fica sem ela.
+CombatStyles.ParriedAnimation = 93676921591226
 
 -- Tolerância de alcance do servidor ao conferir um acerto que o cliente mandou (compensa o ping)
 CombatStyles.HitTolerance = 2

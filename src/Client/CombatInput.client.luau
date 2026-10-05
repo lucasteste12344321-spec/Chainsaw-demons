@@ -483,6 +483,14 @@ local function trySkill(slot)
 		m1RequestAfter = math.max(m1RequestAfter, hold)
 		localLockUntil = math.max(localLockUntil, hold)
 		player:SetAttribute("PredictedCombatLockUntil", now() + math.max(0, localLockUntil - os.clock()))
+	elseif cfg.Kind == "CounterGrab" then
+		-- Contra-agarrão: a postura (animação do agarrão errando) sai na hora; se o servidor avisar que pegou
+		-- (CombatFX "CounterGrab"), troca para a animação do agarrão que pegou
+		CombatAnimations.PlaySkill(style, cfg.Animation)
+		local hold = os.clock() + cfg.Window
+		m1RequestAfter = math.max(m1RequestAfter, hold)
+		localLockUntil = math.max(localLockUntil, hold)
+		player:SetAttribute("PredictedCombatLockUntil", now() + math.max(0, localLockUntil - os.clock()))
 	elseif cfg.Animation then
 		-- Skills da Katana: animação e efeitos na hora (o CombatFX segue os marcadores ou os tempos da skill)
 		local styleName = CombatStyles.FromCharacter(player.Character)
@@ -687,6 +695,19 @@ local function onCharacter(character)
 	impactPending = nil
 	predictedCombo = 0
 	player:SetAttribute("PredictedCombatLockUntil", 0)
+	-- Ragdoll (servidor: Ragdoll.luau, atributo "Ragdoll"): a física do personagem é deste cliente, então o Humanoid
+	-- vai para o estado Physics aqui e levanta quando o atributo sai
+	character:GetAttributeChangedSignal("Ragdoll"):Connect(function()
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if not humanoid or humanoid.Health <= 0 then return end
+		if character:GetAttribute("Ragdoll") == true then
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+			humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+		else
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+			humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+		end
+	end)
 	-- Atordoado (inclusive por parry): o servidor zera o combo, aqui também
 	character:GetAttributeChangedSignal("Stunned"):Connect(function()
 		if character:GetAttribute("Stunned") == true then
@@ -729,6 +750,34 @@ player.CharacterAdded:Connect(onCharacter)
 if player.Character then
 	task.spawn(onCharacter, player.Character)
 end
+
+-- Contra-agarrão pegou (CombatService): toca o agarrão que pegou em quem contra-atacou (este jogador)
+Remotes.CombatFX.OnClientEvent:Connect(function(kind, data)
+	if kind ~= "CounterGrab" or type(data) ~= "table" or data.Character ~= player.Character then return end
+	local _, style = CombatStyles.FromCharacter(player.Character)
+	local cfg = style and style.Skills.C
+	if not cfg or cfg.Kind ~= "CounterGrab" then
+		for _, slot in CombatStyles.SkillSlots do
+			local skillCfg = style and style.Skills[slot]
+			if skillCfg and skillCfg.Kind == "CounterGrab" then
+				cfg = skillCfg
+			end
+		end
+	end
+	if cfg then
+		local track = CombatAnimations.PlaySkill(style, cfg.SuccessAnimation)
+		-- No Studio: mostra no Output em que tempo o marcador "HitGrab" passa (para acertar o HitAt da skill)
+		if track and RunService:IsStudio() then
+			local started = os.clock()
+			local connection
+			connection = track:GetMarkerReachedSignal("HitGrab"):Connect(function()
+				connection:Disconnect()
+				print(string.format("[Contra-agarrão] marcador HitGrab em %.2f s (HitAt no CombatStyles: %.2f)",
+					os.clock() - started, cfg.HitAt))
+			end)
+		end
+	end
+end)
 
 -- ================= Repetição =================
 
