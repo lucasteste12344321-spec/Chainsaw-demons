@@ -59,6 +59,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	elseif FoxAim.IsLunge(slot) then
 		FoxAim.Cast(slot)
 	else
+		player:SetAttribute("PredictedRootUntil", workspace:GetServerTimeNow() + 0.4) -- parado já na hora
 		Remotes.UsePower:FireServer(slot)
 	end
 end)

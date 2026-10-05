@@ -566,6 +566,14 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   `ComboBreakerReadyAt`, escrito pelo `CombatState.BreakCombo`).
 - Testado pelo usuário com vários jogadores (2026-10-05).
 
+## Parado nas skills (Claude, 2026-10-05, pedido do usuário: "algumas skills dá para andar usando")
+- Todas as skills Z/X/C com `SpeedMultiplier = 0` (Rajada, Soco carregado, Contra-agarrão, Saque, Kon!, Giro da serra;
+  o resto já era 0). Só M1 (0,75) e guarda (0,45) continuam andando devagar. Poderes V/B: o `PathSkills` põe
+  `CombatState.SetSpeed(player, "Power", 0)` do começo ao fim do poder (no máximo `POWER_ROOT_MAX` 1,5 s).
+- Sem o atraso do ping: o cliente para na hora pelo atributo `PredictedRootUntil` no LocalPlayer (hora do servidor,
+  +0,4 s), escrito pelo CombatInput (skill), PowerInput, FoxAim e HUB_GUI (poder) e lido no `combatSlow` do
+  StaminaDashRunscript.
+
 ## Castigo por errar (Claude, 2026-10-05)
 - Campo `WhiffRecovery` nas skills (Soco carregado 0,5, Avanço cortante 0,6, Saque 0,6, Kon! 0,4): errou (ninguém no
   alcance; acertar a guarda não conta como erro) = esse tanto travado (`SetBusy`: sem M1, skill, guarda nem dash) e a
@@ -618,6 +626,8 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   peça maior que 120 studs (malha: 45), personagens, `Enemies`, `EnemySpawns`, NPC com tag `QuestGiver`, spawn, assento,
   peça com ProximityPrompt/ClickDetector e tudo com o atributo `NoDestroy = true` (na peça ou numa pasta/modelo acima).
   `workspace:SetAttribute("DestructionDisabled", true)` desliga.
+  Diagnóstico: `/destruir [raio]` (ItemCommands) explode na frente e conta por que cada peça perto quebrou ou não
+  (`Destruction.Explain`).
 - Ligado em: Mordida do Kon (área inteira), Bote (o caminho da cabeça), poderes Area/Projectile, Soco carregado (a partir
   de meia carga), Saque, Kon!, e o arremesso do 5º M1, do Soco carregado, do Saque, do Contra-agarrão, da Mordida e do Bote.
   O Infernal do Sangue (Codex) recebe `ctx.Destruction` no PathSkills (pedido abaixo).

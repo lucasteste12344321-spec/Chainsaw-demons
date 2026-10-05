@@ -207,6 +207,8 @@ end
 -- abaixo de 0,6 (guarda, soco carregando, rajada) também não dá dash. No M1 o dash cancela o fim do golpe.
 local STANCE_SPEED = 0.6
 local function combatSlow()
+	-- Skill ou poder acabou de sair (PredictedRootUntil, do CombatInput/PowerInput): parado até o servidor confirmar
+	if workspace:GetServerTimeNow() < (player:GetAttribute("PredictedRootUntil") or 0) then return 0 end
 	local value = character and character:GetAttribute("CombatSpeed")
 	return if type(value) == "number" then math.clamp(value, 0, 1) else 1
 end
@@ -308,6 +310,13 @@ local function setupCharacter(newCharacter)
 	table.insert(characterConnections, character:GetAttributeChangedSignal("Stunned"):Connect(updateMovement))
 	table.insert(characterConnections, character:GetAttributeChangedSignal("AdminWalkSpeed"):Connect(updateMovement))
 	table.insert(characterConnections, character:GetAttributeChangedSignal("CombatSpeed"):Connect(updateMovement))
+	table.insert(characterConnections, player:GetAttributeChangedSignal("PredictedRootUntil"):Connect(function()
+		updateMovement()
+		local left = (player:GetAttribute("PredictedRootUntil") or 0) - workspace:GetServerTimeNow()
+		if left > 0 then
+			task.delay(left + 0.02, updateMovement)
+		end
+	end))
 	table.insert(characterConnections, humanoid.Died:Connect(stopActions))
 	-- Encostou no chão: o pulo duplo volta a valer
 	usedDoubleJump = false

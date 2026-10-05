@@ -54,6 +54,7 @@ local function release(state)
 		state.track.TimePosition = math.max(state.track.TimePosition, Config.AimHoldTime)
 		state.track:AdjustSpeed(1)
 	end
+	Players.LocalPlayer:SetAttribute("PredictedRootUntil", workspace:GetServerTimeNow() + 0.4) -- parado já na hora
 	Remotes.UsePower:FireServer(state.slot, state.target)
 	cleanup(state, false)
 end
@@ -200,6 +201,7 @@ function Aim.Cast(slot)
 			animation:Destroy()
 		end
 	end
+	Players.LocalPlayer:SetAttribute("PredictedRootUntil", workspace:GetServerTimeNow() + 0.4) -- parado já na hora
 	Remotes.UsePower:FireServer(slot, target)
 end
 

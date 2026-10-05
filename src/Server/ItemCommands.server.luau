@@ -13,6 +13,7 @@
 --   /restricao <on|off>        simula conta com sorteio pago restrito (menor no Brasil): o clã vira escolha direta
 --                              (até sair do jogo; o normal vem do PolicyService no CharacterService)
 --   /treinador <treino|duelo>  chama a cópia do Treinador para testar (sem contar em missão; perto do NPC Treinador)
+--   /destruir [raio]           explode o mapa na sua frente (Destruction) e mostra por que cada peça quebrou ou não
 --   /chefe <Nome>              faz um chefe aparecer agora (ex.: /chefe Denji; o global não espera o horário)
 --   /hibrido [Infernal] [Contrato]  modo híbrido: contrato no V/B e poderes do Infernal no H/J, seja qual for o caminho
 --                              (padrão Sangue e Raposa; /hibrido off desliga; vale até sair do jogo)
@@ -301,4 +302,24 @@ Admins.BindCommand("/chefe", function(player, argument)
 	end
 	local _, message = control:Invoke("Spawn", name)
 	PlayerData.Notify(player, "Chefe", tostring(message), 5)
+end)
+
+Admins.BindCommand("/destruir", function(player, argument)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	local radius = math.clamp(tonumber(argument) or 10, 2, 24)
+	local Destruction = require(ServerScriptService:WaitForChild("Destruction"))
+	local position = root.Position + root.CFrame.LookVector * (radius * 0.6)
+	local counts = Destruction.Explain(position, radius)
+	local broken = Destruction.Blast(position, radius, { Power = 60 })
+	local parts = {}
+	for reason, count in counts do
+		table.insert(parts, `{reason}: {count}`)
+	end
+	local summary = if #parts > 0 then table.concat(parts, " · ") else "nenhuma peça perto"
+	print(`[Destruição] /destruir de {player.Name}: quebrou {broken}. Perto: {summary}`)
+	if workspace:GetAttribute("DestructionDisabled") == true then
+		summary = "DESLIGADA (workspace.DestructionDisabled). " .. summary
+	end
+	PlayerData.Notify(player, "Destruição", `Quebrou {broken}. Perto: {summary}`, 10)
 end)

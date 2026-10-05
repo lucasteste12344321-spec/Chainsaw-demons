@@ -860,6 +860,7 @@ local function createSlot(info, order)
 				if slot.Skill.Kind == "FoxLunge" and foxAim then
 					require(foxAim).Cast(info.Power)
 				else
+					player:SetAttribute("PredictedRootUntil", workspace:GetServerTimeNow() + 0.4) -- parado já na hora
 					Remotes.UsePower:FireServer(info.Power)
 				end
 			end

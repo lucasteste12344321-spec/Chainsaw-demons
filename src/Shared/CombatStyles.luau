@@ -98,7 +98,7 @@ CombatStyles.Styles = {
 				MinDot = 0.3,
 				Stun = 0.45,
 				FinalKnockback = 30,
-				SpeedMultiplier = 0.3,
+				SpeedMultiplier = 0, -- parado durante a skill
 				-- VFX (ReplicatedStorage.VFX.Punchs.BarragePunch): a peça base (crash4) fica VFXForward studs à frente
 				-- e VFXHeight acima da raiz, virada para a frente. O servidor usa a mesma conta para a hitbox.
 				VFXForward = 2,
@@ -135,7 +135,7 @@ CombatStyles.Styles = {
 				MinDot = 0.1, -- aceita alvos bem de lado (0 = até 90° da frente)
 				Stun = 1.2,
 				Windup = 0.12,
-				SpeedMultiplier = 0.5,
+				SpeedMultiplier = 0, -- parado durante a skill
 			},
 			-- Contra-agarrão: postura curta; quem bater nela (golpe, skill, poder ou inimigo, até CounterRange studs) não
 			-- causa dano, é agarrado e, no HitAt (marcador "HitGrab" da animação), leva o golpe e cai em ragdoll. Ninguém
@@ -162,7 +162,7 @@ CombatStyles.Styles = {
 				RagdollTime = 1.6, -- tempo caído no chão
 				Knockback = 22,
 				KnockbackUp = 8,
-				SpeedMultiplier = 0.2,
+				SpeedMultiplier = 0, -- parado durante a skill
 			},
 		},
 	},
@@ -367,7 +367,7 @@ CombatStyles.Styles = {
 				Stun = 1.2,
 				Knockback = 45,
 				KnockbackUp = 14,
-				SpeedMultiplier = 0.1,
+				SpeedMultiplier = 0, -- parado durante a skill
 			},
 		},
 	},
@@ -544,7 +544,7 @@ CombatStyles.Styles = {
 				Stun = 1.1,
 				Knockback = 50,
 				KnockbackUp = 16,
-				SpeedMultiplier = 0.1,
+				SpeedMultiplier = 0, -- parado durante a skill
 			},
 		},
 	},

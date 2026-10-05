@@ -385,6 +385,36 @@ function Destruction.Blast(position, radius, opts)
 	return count
 end
 
+-- Diagnóstico (/destruir no ItemCommands): por que cada peça perto do ponto quebra ou não. Devolve { [motivo] = n }
+local function whyNot(part)
+	if not part:IsA("BasePart") or part:IsA("Terrain") then return "terreno" end
+	if not part.Anchored then return "solta (sem Anchored)" end
+	if part.Transparency >= 0.95 then return "invisível (colisão do mapa)" end
+	if part:IsA("SpawnLocation") or part:IsA("Seat") or part:IsA("VehicleSeat") then return "spawn/assento" end
+	if part:GetAttribute("Destroyable") == false then return "Destroyable = false" end
+	if part:FindFirstChildWhichIsA("ProximityPrompt", true) or part:FindFirstChildWhichIsA("ClickDetector") then return "tem prompt" end
+	if blockedByAncestor(part) then return "protegida (NoDestroy, NPC, inimigo, spawn de inimigo)" end
+	local ext = extents(part)
+	if isFloor(part, ext) then return "chão" end
+	return "grande demais"
+end
+
+function Destruction.Explain(position, radius)
+	local params = OverlapParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = characterFilter()
+	params.MaxParts = 300
+	local counts = {}
+	for _, part in workspace:GetPartBoundsInRadius(position, radius, params) do
+		local kind = classify(part)
+		local reason = if kind == "Voxel" then "quebra em cubos"
+			elseif kind == "Shatter" then (if broken[part] then "já quebrada" else "quebra em pedaços")
+			else whyNot(part)
+		counts[reason] = (counts[reason] or 0) + 1
+	end
+	return counts
+end
+
 -- Quem foi arremessado quebra o que bater pelo caminho (parede, poste, caixa). duration = tempo do arremesso.
 function Destruction.Launch(model, duration, opts)
 	if workspace:GetAttribute("DestructionDisabled") == true then return end

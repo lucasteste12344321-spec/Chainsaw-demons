@@ -47,6 +47,8 @@ local MARK_MIN_DOT = math.cos(math.rad(35)) -- Mark: o alvo precisa estar a até
 local DASH_WALL_MARGIN = 2 -- Dash: para esta distância antes de uma parede
 local DASH_MAX_LIFT = 4 -- Dash: quanto o destino pode subir para não entrar numa rampa
 local LUNGE_BREAK_STEP = 5 -- Bote: distância entre duas quebras do mapa no caminho da cabeça
+local POWER_ROOT_MAX = 1.5 -- no máximo esse tempo parado usando um poder
+local rootTokens = {} -- [Player] = o uso de poder que está prendendo o jogador agora
 
 local DEFAULT_COLOR = Color3.fromRGB(255, 255, 255)
 local SKILL_COLORS = {
@@ -976,9 +978,24 @@ local function onUsePower(player, slot, aimPosition)
 	busyUntil[player] = now + GLOBAL_LOCK
 	player:SetAttribute("Power" .. slot .. "ReadyAt", readyAt)
 
+	-- Parado enquanto o poder acontece (CombatSpeed 0; o cliente já parou na hora pelo PredictedRootUntil). Solta no fim
+	-- do poder ou em POWER_ROOT_MAX, o que vier primeiro (a lança voando não prende quem jogou).
+	local rootToken = {}
+	rootTokens[player] = rootToken
+	CombatState.SetSpeed(player, "Power", 0)
+	task.delay(POWER_ROOT_MAX, function()
+		if rootTokens[player] == rootToken then
+			rootTokens[player] = nil
+			CombatState.SetSpeed(player, "Power", nil)
+		end
+	end)
 	local ok, err = pcall(run, ctx)
 	if not ok then
 		warn(`[PathSkills] Erro ao usar {tostring(skill.Id)}: {err}`)
+	end
+	if rootTokens[player] == rootToken then
+		rootTokens[player] = nil
+		CombatState.SetSpeed(player, "Power", nil)
 	end
 
 	if type(QuestModule.OnPowerUsed) == "function" then
@@ -1004,6 +1021,7 @@ Players.PlayerRemoving:Connect(function(player)
 	cooldowns[player] = nil
 	busyUntil[player] = nil
 	lastNotice[player] = nil
+	rootTokens[player] = nil
 end)
 
 -- Troca de caminho ou novo contrato: a recarga de um poder não passa para o poder que entrou no slot

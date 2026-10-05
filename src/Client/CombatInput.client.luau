@@ -451,6 +451,8 @@ local function dashForward(cfg, styleName, attackId)
 	end)
 end
 
+local ROOT_PREDICT = 0.4 -- skill ou poder: parado no cliente até o CombatSpeed do servidor chegar (StaminaDashRunscript)
+
 local function trySkill(slot)
 	if not canAct() or inStance() or locked() then return false end
 	if now() < (player:GetAttribute(`Combat{slot}ReadyAt`) or 0) then return false end
@@ -463,6 +465,8 @@ local function trySkill(slot)
 	end
 	CombatAnimations.CancelAttack() -- a skill corta o fim do M1
 	Remotes.CombatSkill:FireServer(slot, true)
+	-- Parado já na hora (o servidor trava pelo CombatSpeed, que chega com o atraso do ping)
+	player:SetAttribute("PredictedRootUntil", now() + ROOT_PREDICT)
 	-- A animação da skill começa na hora (o servidor confirma pelo CombatFX / atributo Charging)
 	if cfg.Kind == "Barrage" then
 		CombatAnimations.StartBarrage(style)
