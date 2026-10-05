@@ -343,6 +343,7 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   48) com o kanji num quadradinho; páginas em painel escuro de cantos redondos a 92% (UIScale) no meio da altura;
   Builder Sans nos textos e botões (o nome do jogo continua Creepster). A tela de carregamento segue o mesmo visual
   (barra fina, anel girando, dicas atualizadas).
+- Testado pelo usuário em Play (2026-10-05): menu, carregamento e HUD nova aprovados.
 - `MainMenu` está no limite de 200 registradores do Luau no escopo de cima ("Out of local registers" no Play com 195
   locais). Hoje tem 185: variável nova vai numa tabela (`ClanChoice`, `MenuFont`) ou num bloco `do ... end`.
 - Tema do menu principal (2026-09-30, pedido do usuário): laranja e branco sobre cinza (`ACCENT`, `ACCENT_DARK`, `LIGHT`,
@@ -514,7 +515,7 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   regional (WorldActivities.client) ficou pequeno embaixo da bússola e o menu principal ganhou PASSES e botões menores.
 - `QuestGUI`: lista de missões sem moldura (fundo escuro que some para a esquerda, progresso em negrito, linha fina).
 - Âncoras do tutorial mantidas (Vitals, Skills, Hotbar, Slot_<Tecla>, TreeButton, InventoryButton, SettingsButton,
-  AttackButton, QuestTracker). Sem teste em Play ainda.
+  AttackButton, QuestTracker). Testado pelo usuário em Play (2026-10-05): aprovado.
 
 ## Justiça no PvP (Claude, 2026-10-05)
 - Números em `CombatStyles.PvP`; só vale com vítima jogador (inimigos como antes).
