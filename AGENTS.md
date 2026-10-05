@@ -622,6 +622,13 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   de meia carga), Saque, Kon!, e o arremesso do 5º M1, do Soco carregado, do Saque, do Contra-agarrão, da Mordida e do Bote.
   O Infernal do Sangue (Codex) recebe `ctx.Destruction` no PathSkills (pedido abaixo).
 
+## Clima por área (Claude, 2026-10-05, pedido do usuário: neve na área de neve)
+- `src/Client/Weather.client.luau` (só cliente): zonas = Parts em `workspace.WeatherZones` (ou tag `WeatherZone`), tipo
+  pelo atributo `Weather` ("Snow"/"Rain") ou pelo nome ("Neve"/"Chuva"), atributo opcional `Intensity`. Dentro da zona:
+  partículas caindo de uma Part que segue a câmera (em `workspace.CombatFX`; com Fast Mode cai 35%), névoa da
+  `Atmosphere` mais fechada e um `ColorCorrectionEffect` "WeatherColor" mais frio, com transição de 2,5 s. As Parts das
+  zonas ficam invisíveis no cliente. Menu principal aberto = sem clima.
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.
