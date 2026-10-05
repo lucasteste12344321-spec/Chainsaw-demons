@@ -49,9 +49,26 @@ return {
 		XP = 3230,
 		Gold = 650,
 	},
+	Denji = {
+		-- Chefe Denji (modelo "Denji", colocado no mapa pelo usuário): a 1ª forma. Não morre: com 15% da vida vira o
+		-- Lord Chainsaw (BossData.Denji.Transform), que é quem dá XP e Gold. Vida x3, dano x1,25 de um level 40.
+		DisplayName = "Denji",
+		Template = "Denji",
+		Level = 40,
+		Health = 7000,
+		Damage = 170,
+		Speed = 18,
+		AggroRange = 50,
+		AttackRange = 5,
+		AttackCooldown = 1,
+		Combo = 4,
+		LeashRange = 90,
+		XP = 0,
+		Gold = 0,
+	},
 	LordChainsaw = {
-		-- Chefe do Lord Chainsaw (modelo "Lord Chainsaw", colocado no mapa pelo usuário). Mesma conta do Rei Goblin
-		-- num level 40: vida x6,5, dano x1,6, XP e Gold x10. Especiais, fase 2 e cura no BossData; golpes no kit.
+		-- 2ª forma do Denji (modelo "Lord Chainsaw"; aparece no lugar dele). Mesma conta do Rei Goblin num level 40:
+		-- vida x6,5, dano x1,6, XP e Gold x10. Especiais, fase 2 e cura no BossData; golpes no kit.
 		DisplayName = "Lord Chainsaw",
 		Template = "Lord Chainsaw",
 		Level = 40,

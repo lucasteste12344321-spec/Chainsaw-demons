@@ -8,6 +8,9 @@
 -- Atributos no modelo do chefe: Boss, BossAwake, BossPhase, BossDamage, OwnHitReaction (+ os de inimigo).
 -- Especiais (campo Specials do BossData): Slam, Rush, Fury, Chain (corrente que puxa) e BloodDrink (cura que dá para
 -- interromper). Slam e Rush com Destroy = true quebram o mapa (Destruction).
+-- Transformação (campo Transform): com a vida em Transform.At o chefe para, fica invulnerável, e no fim vira outro chefe
+-- (Transform.Into, uma entrada do BossData com FormOf) no mesmo lugar, com vida cheia e o mesmo placar de dano. Ex.: o
+-- Denji vira o Lord Chainsaw. A forma não nasce sozinha; se todos fugirem, ela some e o chefe de base volta a esperar.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -43,6 +46,7 @@ warnings.Name = "BossWarnings"
 warnings.Parent = workspace
 
 local templates
+local spawnBoss -- (enemyType, config, carry?) definida no fim
 
 local function flat(vector)
 	return Vector3.new(vector.X, 0, vector.Z)
@@ -214,7 +218,8 @@ end
 
 -- ================= Um chefe =================
 
-local function runBoss(enemyType, config, npc, controller, state)
+-- carry: { BaseType = chefe que nasce no mapa, HomeCFrame = onde ele fica }
+local function runBoss(enemyType, config, npc, controller, state, carry)
 	local humanoid, root, stats = controller.Humanoid, controller.Root, controller.Stats
 	local animator = humanoid:FindFirstChildOfClass("Animator")
 	local specials = config.Specials or {}
@@ -279,6 +284,12 @@ local function runBoss(enemyType, config, npc, controller, state)
 	local lastReaction = 0
 	local drinking = nil -- BloodDrink em andamento: { Damage = dano levado desde o começo }
 	local drinksUsed = 0
+	local transformCfg = config.Transform
+	local pendingTransform = false
+	if transformCfg then
+		-- Não morre antes de se transformar: a vida para em 1 e ele vira a outra forma
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+	end
 
 	local function alive()
 		return humanoid.Health > 0 and npc.Parent ~= nil and not sleeping
@@ -433,6 +444,29 @@ local function runBoss(enemyType, config, npc, controller, state)
 	end
 	controller.OnReturnedHome = sleep
 
+	-- Forma (Lord Chainsaw): sem ninguém por perto, some e o chefe de base volta a esperar no lugar dele
+	if config.FormOf then
+		local reverted = false
+		local function revert()
+			if reverted or humanoid.Health <= 0 then return end
+			reverted = true
+			clearSummons()
+			npc:Destroy()
+			spawnBoss(carry.BaseType, BossData.Get(carry.BaseType))
+		end
+		controller.OnIdle = function(distFromHome)
+			if distFromHome <= 12 then
+				revert()
+			else
+				humanoid.WalkSpeed = stats.Speed
+				humanoid:MoveTo(controller.Home)
+				controller.SetRunning(true)
+			end
+			return true
+		end
+		controller.OnReturnedHome = revert
+	end
+
 	-- Reação de apanhar: de frente ou de lado conforme de onde veio o golpe (só fora de ataque e com intervalo)
 	local function react(attackerId)
 		if not reactions or not alive() or specialRunning or controller.IsBusy() or stunnedHard() then return end
@@ -513,6 +547,14 @@ local function runBoss(enemyType, config, npc, controller, state)
 		end
 		if phase == 1 and phase2 and health > 0 and health <= humanoid.MaxHealth * phase2.At then
 			enterPhase2()
+		end
+		if transformCfg and not pendingTransform and health <= humanoid.MaxHealth * transformCfg.At then
+			pendingTransform = true
+			-- Invulnerável até virar a outra forma (DodgeUntil: o CombatRules desvia tudo)
+			npc:SetAttribute("DodgeUntil", workspace:GetServerTimeNow() + (transformCfg.Time or 2) + 5)
+			if health < 1 then
+				humanoid.Health = 1
+			end
 		end
 	end)
 
@@ -734,6 +776,52 @@ local function runBoss(enemyType, config, npc, controller, state)
 
 	local SPECIALS = { Slam = slam, Rush = rush, Fury = fury, Chain = chain }
 
+	-- Transformação: brilha, rodopia o aviso, explode (quebra o mapa e afasta quem está perto) e troca de modelo
+	local function transform()
+		local cfg = transformCfg
+		controller.CancelAttack()
+		controller.StopMover()
+		if cfg.Message then
+			announce(root.Position, stats.DisplayName, cfg.Message)
+		end
+		local glow = Instance.new("Highlight")
+		glow.Name = "Transform"
+		glow.FillColor = Color3.fromRGB(255, 120, 30)
+		glow.OutlineColor = Color3.fromRGB(255, 200, 120)
+		glow.FillTransparency = 0.7
+		glow.Parent = npc
+		TweenService:Create(glow, TweenInfo.new(cfg.Time or 2, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{ FillTransparency = 0 }):Play()
+		local track = cfg.Animation and trackFor(cfg.Animation, Enum.AnimationPriority.Action4)
+		if track then
+			track:Play(0.1)
+		end
+		local radius = cfg.Radius or 14
+		warnCircle(groundBelow(root.Position), radius, cfg.Time or 2)
+		task.wait(cfg.Time or 2)
+		if not npc.Parent then return end
+
+		local at = npc:GetPivot()
+		local center = groundBelow(root.Position)
+		shockwave(center, radius)
+		Destruction.Blast(center + Vector3.new(0, 2, 0), radius, { Power = 70 })
+		for _, entry in playersInCircle(center, radius) do
+			local away = flat(entry.Root.Position - center)
+			away = if away.Magnitude > 0.1 then away.Unit else flat(root.CFrame.LookVector).Unit
+			Remotes.CombatImpulse:FireClient(entry.Player, away * 55 + Vector3.new(0, 25, 0), 0.25)
+		end
+		clearSummons()
+		npc:Destroy() -- sem morrer: o EnemyModule não dá recompensa nem chama o OnDied
+		local formConfig = BossData.Get(cfg.Into)
+		if formConfig then
+			spawnBoss(cfg.Into, formConfig, {
+				BaseType = carry.BaseType, HomeCFrame = carry.HomeCFrame, CFrame = at, State = state,
+			})
+		else
+			warn(`[BossService] Transform.Into = {tostring(cfg.Into)} não existe no BossData`)
+		end
+	end
+
 	-- Longe: investida. Perto: pisão (sempre, se tiver 2+ jogadores em volta) ou fúria.
 	local function chooseSpecial(targetHrp)
 		local dist = flat(targetHrp.Position - root.Position).Magnitude
@@ -804,6 +892,12 @@ local function runBoss(enemyType, config, npc, controller, state)
 			end
 
 			if specialRunning or controller.Paused then continue end
+
+			if pendingTransform then
+				perform("Transformar", transform)
+				break
+			end
+
 			if controller.IsBusy() or stunnedHard() then continue end
 
 			if pendingRoar then
@@ -835,31 +929,35 @@ local function runBoss(enemyType, config, npc, controller, state)
 	end)
 end
 
--- Nasce onde o modelo foi colocado no Studio e renasce RespawnTime segundos depois de morrer
-local function spawnBoss(enemyType, config)
+-- Nasce onde o modelo foi colocado no Studio e renasce RespawnTime segundos depois de morrer. carry (só nas formas de
+-- uma transformação): { BaseType, HomeCFrame, CFrame = onde aparece, State = placar de dano que continua }.
+-- A recompensa sai na morte da última forma; o renascimento é sempre o do chefe de base.
+spawnBoss = function(enemyType, config, carry)
 	local templateName = EnemyModule.GetTemplateName(enemyType)
 	local template = templates:WaitForChild(templateName, 15)
 	if not template then
 		warn(`[BossService] Não existe EnemyTemplates.{templateName} (chefe {enemyType})`)
 		return
 	end
-	local state = { Damage = {} }
-	local cframe = template:GetPivot()
-	local npc, controller = EnemyModule.SpawnEnemy(template, cframe, {
+	local baseType = carry and carry.BaseType or enemyType
+	local baseConfig = BossData.Get(baseType) or config
+	local homeCFrame = carry and carry.HomeCFrame or template:GetPivot()
+	local state = carry and carry.State or { Damage = {} }
+	local npc, controller = EnemyModule.SpawnEnemy(template, carry and carry.CFrame or homeCFrame, {
 		EnemyType = enemyType,
-		Home = cframe.Position,
-		HomeCFrame = cframe,
+		Home = homeCFrame.Position,
+		HomeCFrame = homeCFrame,
 		IgnoreAggroLimit = true,
 		GiveRewards = function(humanoid, _, stats)
 			giveRewards(state, humanoid, enemyType, stats, config)
 		end,
 		OnDied = function()
-			task.wait(config.RespawnTime or 300)
-			spawnBoss(enemyType, config)
+			task.wait(baseConfig.RespawnTime or 300)
+			spawnBoss(baseType, baseConfig)
 		end,
 	})
 	if npc and controller then
-		runBoss(enemyType, config, npc, controller, state)
+		runBoss(enemyType, config, npc, controller, state, { BaseType = baseType, HomeCFrame = homeCFrame })
 	end
 end
 
@@ -870,5 +968,7 @@ if not templates then
 	return
 end
 for enemyType, config in BossData.Bosses do
-	task.spawn(spawnBoss, enemyType, config)
+	if not config.FormOf then -- as formas (Lord Chainsaw) só aparecem pela transformação
+		task.spawn(spawnBoss, enemyType, config)
+	end
 end

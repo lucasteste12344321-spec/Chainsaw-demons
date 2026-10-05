@@ -170,7 +170,34 @@ EnemyKits["King Goblin"] = {
 	},
 }
 
--- Chefe Lord Chainsaw (EnemyData.LordChainsaw): por enquanto com as animações dos Punhos (R6), até ele ganhar as
+-- Chefe Denji (1ª forma, humano): por enquanto com as animações dos Punhos (R6). Transformação no BossData.
+EnemyKits.Denji = {
+	Animations = {
+		Idle = 80129783780208,
+		Run = 80849474243778,
+		Walk = 136976781107133,
+		Attack = { 83586198824517, 107945896681556, 98990181706005, 89779080311699 },
+	},
+	AttackHitTime = { 0.25, 0.25, 0.3, 0.25 },
+	HitMarker = { "Hitframe1", "Hitframe", "Hit" },
+	Combo = 4,
+	ComboInterval = 0.42,
+	HitStun = 0.28,
+	FinisherStun = 0.5,
+	FinisherDamage = 1.3,
+	FinisherKnockback = 45,
+	Lunge = 28,
+	Strafe = true,
+	Dash = {
+		MinRange = 10,
+		MaxRange = 26,
+		Cooldown = 4,
+		Speed = 78,
+		Duration = 0.3,
+	},
+}
+
+-- Chefe Lord Chainsaw (2ª forma do Denji): por enquanto com as animações dos Punhos (R6), até ele ganhar as
 -- próprias. Especiais, fase 2 e a cura ficam no BossData.
 EnemyKits["Lord Chainsaw"] = {
 	Animations = {

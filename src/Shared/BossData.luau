@@ -88,17 +88,61 @@ BossData.Bosses = {
 		},
 	},
 
-	-- Lord Chainsaw (modelo "Lord Chainsaw" em EnemyTemplates, no lugar do mapa onde o usuário colocou). Fica parado
-	-- até alguém chegar perto (Throne sem animação = em pé esperando) e volta para lá, curado, se todos fugirem.
-	-- Ainda sem animações próprias: os especiais usam só os avisos no chão (Animation = nil).
-	LordChainsaw = {
-		Title = "Lord Chainsaw",
+	-- Denji (modelo "Denji" em EnemyTemplates, no lugar do mapa onde o usuário colocou): espera em pé até alguém chegar
+	-- perto (Throne sem animação) e, se todos fugirem, volta para lá curado. Briga como humano; com 15% da vida puxa a
+	-- cordinha e vira o Lord Chainsaw (Transform), que tem a vida cheia e continua o mesmo placar de dano.
+	Denji = {
+		Title = "Denji",
 		Throne = {
 			WakeRange = 35,
 			StandUpTime = 0.2,
-			WakeMessage = "Ligou as motosserras!",
+			WakeMessage = "Quer brigar? Então vem!",
 		},
-		RespawnTime = 420,
+		RespawnTime = 420, -- conta a partir da morte do Lord Chainsaw
+		MinStun = 1.25,
+		KnockbackImmune = true,
+
+		Specials = {
+			Cooldown = 6,
+			FirstDelay = 3,
+			-- Investida: ombrada atravessando a faixa
+			Rush = {
+				MinRange = 12,
+				Distance = 40,
+				Width = 7,
+				Telegraph = 0.8,
+				Speed = 85,
+				Damage = 1.2,
+				Knockback = 60,
+				Stun = 0.6,
+			},
+			-- Socos: retângulo na frente, socos rápidos, o último arremessa
+			Fury = {
+				Range = 9,
+				Width = 8,
+				Telegraph = 0.5,
+				Hits = 7,
+				Interval = 0.14,
+				Damage = 0.3,
+				Stun = 0.2,
+				Knockback = 45,
+			},
+		},
+
+		Transform = {
+			At = 0.15,
+			Into = "LordChainsaw",
+			Time = 2.5, -- parado e invulnerável, brilhando, até explodir
+			Radius = 16, -- a explosão quebra o mapa e afasta quem está perto (sem dano)
+			Message = "Denji puxou a cordinha do peito...",
+		},
+	},
+
+	-- Lord Chainsaw: a forma do Denji (FormOf). Nasce só pela transformação, no lugar dele, com a vida cheia. É quem dá
+	-- a recompensa (para todo mundo que somou MinContribution da vida dele, contando o dano no Denji).
+	LordChainsaw = {
+		Title = "Lord Chainsaw",
+		FormOf = "Denji",
 		MinContribution = 0.03,
 		MinStun = 1.25,
 		KnockbackImmune = true,
