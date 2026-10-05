@@ -99,7 +99,7 @@ local function column(position, title)
 	})
 	return frame
 end
-local damageColumn = column(UDim2.fromScale(0, 0), "DANO")
+local damageColumn = column(UDim2.fromScale(0, 0), "DAMAGE")
 local dropsColumn = column(UDim2.new(0.5, 6, 0, 0), "DROPS")
 
 local function row(parent, order)
@@ -150,7 +150,7 @@ end
 
 local function playerName(userId)
 	local other = userId and Players:GetPlayerByUserId(userId)
-	return if other then other.DisplayName else "(saiu)"
+	return if other then other.DisplayName else "(left)"
 end
 
 local function updateDamage()
@@ -176,7 +176,7 @@ local function updateDamage()
 				local label = damageRows[TOP_DAMAGE + 1]
 				label.Visible = true
 				label.TextColor3 = Colors.Gold
-				label.Text = `{index}. Você  {UITheme.formatNumber(entry.Damage)} ({UITheme.formatPercent(entry.Damage / maxHealth)})`
+				label.Text = `{index}. You  {UITheme.formatNumber(entry.Damage)} ({UITheme.formatPercent(entry.Damage / maxHealth)})`
 				break
 			end
 		end
@@ -185,14 +185,14 @@ local function updateDamage()
 		local label = damageRows[1]
 		label.Visible = true
 		label.TextColor3 = Colors.TextDim
-		label.Text = "Ninguém bateu ainda."
+		label.Text = "Nobody has hit him yet."
 	end
 end
 
 local function updateHealth()
 	if not currentHumanoid then return end
 	local health, maxHealth = math.max(0, currentHumanoid.Health), math.max(1, currentHumanoid.MaxHealth)
-	local text = if health <= 0 then "DERROTADO" else `{UITheme.formatNumber(math.ceil(health))} / {UITheme.formatNumber(maxHealth)}`
+	local text = if health <= 0 then "DEFEATED" else `{UITheme.formatNumber(math.ceil(health))} / {UITheme.formatNumber(maxHealth)}`
 	healthBar.Set(health / maxHealth, text)
 end
 
@@ -202,7 +202,7 @@ local function updateTitle()
 	local config = BossData.Get(enemyType)
 	local name = if config and config.Title then config.Title else tostring(enemyType)
 	titleLabel.Text = `👑 {UITheme.upper(name)}  Lv. {currentBoss:GetAttribute("Level") or "?"}`
-	phaseLabel.Text = if currentBoss:GetAttribute("BossPhase") == 2 then "FÚRIA!" else ""
+	phaseLabel.Text = if currentBoss:GetAttribute("BossPhase") == 2 then "FURY!" else ""
 end
 
 local function updateDrops()

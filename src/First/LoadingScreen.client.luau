@@ -26,16 +26,16 @@ local TOTAL_TIMEOUT = 30 -- nunca prende o jogador mais que isso
 local SKIP_AFTER = 12 -- o botão PULAR aparece depois desse tempo
 
 local TIPS = {
-	"Levante a guarda (F) logo antes do golpe inimigo para dar um parry.",
-	"Pule e dê o 4º soco do combo para lançar o inimigo para cima.",
-	"Segure X para carregar o soco. Carregado no máximo, ele quebra a guarda.",
-	"No level 25 você escolhe seu caminho: Caçador ou Infernal.",
-	"Aperte M para abrir a árvore de habilidades e gastar seus pontos.",
-	"Aperte G para abrir o inventário e vestir os itens dos chefes.",
-	"Aperte N para recolher ou abrir a lista de missões.",
-	"Q dá um dash. A corrida é automática; segure Ctrl para andar.",
-	"Golpes pelas costas atravessam a guarda.",
-	"Apanhou muito seguido? O dash quebra o combo mesmo atordoado.",
+	"Raise your guard (F) right before an enemy hit lands to parry it.",
+	"Jump and land the 4th punch of the combo to launch the enemy upward.",
+	"Hold X to charge your punch. At full charge it breaks guards.",
+	"At level 25 you choose your path: Hunter or Fiend.",
+	"Press M to open the skill tree and spend your points.",
+	"Press G to open the inventory and wear boss items.",
+	"Press N to collapse or expand the quest list.",
+	"Q dashes. Running is automatic; hold Ctrl to walk.",
+	"Hits from behind go through guards.",
+	"Getting comboed? The dash breaks the combo even while stunned.",
 }
 
 local function new(className, props)
@@ -243,7 +243,7 @@ local skipButton = new("TextButton", {
 	Font = FONT_BOLD,
 	TextSize = 14,
 	TextColor3 = TEXT,
-	Text = "PULAR",
+	Text = "SKIP",
 	Visible = false,
 	Parent = background,
 })
@@ -291,7 +291,7 @@ task.spawn(function()
 	while screenGui.Parent do
 		index = index % #order + 1
 		tipLabel.TextTransparency = 1
-		tipLabel.Text = `<font color="#{ORANGE:ToHex()}"><b>DICA</b></font>   {TIPS[order[index]]}`
+		tipLabel.Text = `<font color="#{ORANGE:ToHex()}"><b>TIP</b></font>   {TIPS[order[index]]}`
 		tween(tipLabel, 0.4, { TextTransparency = 0 })
 		task.wait(4.5)
 		if not screenGui.Parent then break end
@@ -334,7 +334,7 @@ end
 
 -- 1. Mapa e assets (a fila do ContentProvider esvaziando)
 do
-	local progress = stage("Carregando o mapa...", 0, 0.55)
+	local progress = stage("Loading the map...", 0, 0.55)
 	local biggestQueue = 1
 	waitUntil(function()
 		local queue = ContentProvider.RequestQueueSize
@@ -347,7 +347,7 @@ end
 
 -- 2. Animações e sons do combate (pré-carregados para não saírem atrasados na primeira vez)
 do
-	local progress = stage("Preparando animações e sons...", 0.55, 0.7)
+	local progress = stage("Preparing animations and sounds...", 0.55, 0.7)
 	local ids, soundIds = {}, {}
 	local function add(value, into)
 		if type(value) == "number" and value > 0 then
@@ -399,7 +399,7 @@ end
 
 -- 3. Personagem
 do
-	stage("Criando seu personagem...", 0.7, 0.8)
+	stage("Creating your character...", 0.7, 0.8)
 	waitUntil(function()
 		return player.Character ~= nil
 	end, 15)
@@ -419,7 +419,7 @@ end
 
 -- 5. Tela de título pronta por baixo
 do
-	stage("Quase lá...", 0.95, 1)
+	stage("Almost there...", 0.95, 1)
 	waitUntil(function()
 		return playerGui:FindFirstChild("TitleScreen") ~= nil
 	end, 10)

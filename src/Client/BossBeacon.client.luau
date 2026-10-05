@@ -56,11 +56,11 @@ while true do
 			local bossTitle = ReplicatedStorage:GetAttribute("GlobalBossTitle_" .. bossType) or bossType
 			beacon.Title.Text = string.upper(bossTitle)
 			if ReplicatedStorage:GetAttribute("GlobalBossActive_" .. bossType) == true then
-				beacon.Timer.Text = "ESTÁ AQUI!"
+				beacon.Timer.Text = "IS HERE!"
 				beacon.Timer.TextColor3 = if blink then UI.Colors.Accent else UI.Colors.Text
 				beacon.Stroke.Color = if blink then UI.Colors.Accent else UI.Colors.White
 			else
-				beacon.Timer.Text = `aparece em {formatTime(nextAt - workspace:GetServerTimeNow())}`
+				beacon.Timer.Text = `shows up in {formatTime(nextAt - workspace:GetServerTimeNow())}`
 				beacon.Timer.TextColor3 = UI.Colors.TextDim
 				beacon.Stroke.Color = UI.Colors.Accent
 			end

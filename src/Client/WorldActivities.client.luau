@@ -40,7 +40,7 @@ task.spawn(function()
    -- Uma linha de status em destaque e a explicação menor
    text.Text=string.format('<font color="#%s"><b>%s  •  %d/%d  •  %d:%02d</b></font>\n%s\n%s',UI.Colors.Text:ToHex(),UI.escape(snapshot.Region),snapshot.Progress,snapshot.Goal,
     math.floor(seconds/60),seconds%60,UI.escape(snapshot.Description),
-    if snapshot.Carrying then "Carregando provisões: leve ao ponto de entrega." else string.format("Sua contribuição: %d  •  faça 2 ações para receber",snapshot.Contribution))
+    if snapshot.Carrying then "Carrying supplies: take them to the drop-off point." else string.format("Your contribution: %d  •  do 2 actions to get the reward",snapshot.Contribution))
    local camera=workspace.CurrentCamera; if camera then scale.Scale=math.min(1,(camera.ViewportSize.X-24)/WIDTH) end
   end
   task.wait(.5)

@@ -210,7 +210,7 @@ local function countHit(amount)
 	if combo < COMBO_MIN then return end
 
 	countLabel.Text = tostring(combo)
-	damageLabel.Text = UITheme.formatNumber(comboDamage) .. " DE DANO"
+	damageLabel.Text = UITheme.formatNumber(comboDamage) .. " DAMAGE"
 	-- Quanto maior o combo, mais vermelho
 	countLabel.TextColor3 = Colors.White:Lerp(Colors.Orange, math.clamp((combo - COMBO_MIN) / 20, 0, 1))
 	holder.Visible = player:GetAttribute("MenuOpen") ~= true

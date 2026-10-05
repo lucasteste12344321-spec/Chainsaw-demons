@@ -132,7 +132,7 @@ local northLabel = UITheme.label({
 -- The compass stays inside the existing HUD footprint; touch puts its card below the map.
 local cardinals = {{Label = northLabel, Direction = Vector3.new(0, 0, -1)}}
 northLabel.Name = "CardinalN"
-for _, info in {{"L", Vector3.xAxis}, {"S", Vector3.zAxis}, {"O", -Vector3.xAxis}} do
+for _, info in {{"E", Vector3.xAxis}, {"S", Vector3.zAxis}, {"W", -Vector3.xAxis}} do
 	local label = northLabel:Clone()
 	label.Name = "Cardinal" .. info[1]; label.Text = info[1]
 	label.TextSize = 12; label.TextColor3 = PAPER; label.Parent = outer
@@ -563,7 +563,7 @@ local function placeObjective(item, position, showDistance, pulse)
 	end
 end
 
-local compassNames = {"N", "NE", "L", "SE", "S", "SO", "O", "NO"}
+local compassNames = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
 local function updateNavigation()
 	table.clear(navigationTargets)
 	local function add(id, name, position, priority, area)
@@ -614,7 +614,7 @@ local function updateNavigation()
 				if d < distance then best = node; distance = d end
 			end
 		end
-		if best then add("Event:" .. regionalState.Id, if regionalState.Carrying then "Entregar provisões" else regionalState.Name, best.Position, if regionalState.Carrying then 0 else 3) end
+		if best then add("Event:" .. regionalState.Id, if regionalState.Carrying then "Deliver supplies" else regionalState.Name, best.Position, if regionalState.Carrying then 0 else 3) end
 	end
 	table.sort(navigationTargets, function(a, b)
 		if a.Priority ~= b.Priority then return a.Priority < b.Priority end
@@ -640,10 +640,10 @@ local function updateNavigation()
 		targetTitle.Text = selectedTarget.Name
 		local height = selectedTarget.Position.Y - center.Y
 		local elevation = if height > 14 then " ↑" elseif height < -14 then " ↓" else ""
-		local detail = if selectedTarget.Area then "Área de coleta" elseif selectedTarget.Distance < 14 and math.abs(height) < 14 then "Você chegou" else `{math.floor(selectedTarget.Distance + .5)} studs{elevation}`
+		local detail = if selectedTarget.Area then "Collection area" elseif selectedTarget.Distance < 14 and math.abs(height) < 14 then "You have arrived" else `{math.floor(selectedTarget.Distance + .5)} studs{elevation}`
 		if selectedTarget.Area then detail ..= ` · {math.floor(selectedTarget.Distance + .5)} st` end
-		targetDetail.Text = detail .. (if #navigationTargets > 1 then " · toque p/ trocar" else "")
-	else targetTitle.Text = "Explore a região"; targetDetail.Text = "Toque no mapa para ampliar" end
+		targetDetail.Text = detail .. (if #navigationTargets > 1 then " · tap to switch" else "")
+	else targetTitle.Text = "Explore the region"; targetDetail.Text = "Tap the map to zoom" end
 end
 
 local function draw()

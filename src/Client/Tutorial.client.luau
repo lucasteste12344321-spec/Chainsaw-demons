@@ -84,7 +84,7 @@ local skipButton = new("TextButton", {
 	TextColor3 = Colors.TextDim,
 	TextXAlignment = Enum.TextXAlignment.Right,
 	RichText = true,
-	Text = "<u>Pular tutorial</u>",
+	Text = "<u>Skip tutorial</u>",
 	ZIndex = 6,
 	Parent = header,
 })
@@ -136,7 +136,7 @@ local continueButton = UITheme.button({
 	Size = UDim2.fromOffset(170, 34),
 	Font = Fonts.Marker,
 	TextSize = 18,
-	Text = "CONTINUAR",
+	Text = "CONTINUE",
 	ZIndex = 6,
 	Parent = buttonRow,
 }, Colors.Accent)
@@ -145,7 +145,7 @@ local enterHint = UITheme.label({
 	Font = Fonts.Light,
 	TextSize = 12,
 	TextColor3 = Colors.TextDim,
-	Text = if touchOnly then "" else "Enter também continua",
+	Text = if touchOnly then "" else "Enter also continues",
 	ZIndex = 6,
 	Parent = buttonRow,
 })
@@ -272,7 +272,7 @@ end
 local function formatText(text)
 	local reward
 	if player:GetAttribute("TutorialRewarded") == true then
-		reward = "já recebida antes"
+		reward = "already received"
 	else
 		local parts = {}
 		if (TutorialData.Reward.Gold or 0) > 0 then
@@ -280,9 +280,9 @@ local function formatText(text)
 		end
 		local spins = TutorialData.Reward.Spins or 0
 		if spins > 0 then
-			table.insert(parts, if spins == 1 then "{1 giro de clã}" else `\{{spins} giros de clã}`)
+			table.insert(parts, if spins == 1 then "{1 clan spin}" else `\{{spins} clan spins}`)
 		end
-		reward = table.concat(parts, " e ")
+		reward = table.concat(parts, " and ")
 	end
 	text = string.gsub(text, "%$REWARD", reward)
 	text = UITheme.escape(text)
@@ -405,7 +405,7 @@ local function resolveTarget(target)
 		return goblinZone(from), "GOBLINS", 6
 	elseif type(target) == "string" and string.sub(target, 1, 4) == "NPC:" then
 		local npcId = string.sub(target, 5)
-		return npcPart(npcId), if npcId == "Mestre" then "MESTRE ESPADACHIM" else string.upper(npcId), 4
+		return npcPart(npcId), if npcId == "Mestre" then "MASTER SWORDSMAN" else string.upper(npcId), 4
 	end
 	return nil
 end
@@ -761,7 +761,7 @@ function startStep(index)
 	end
 	bodyLabel.Text = formatText(if touchOnly and step.TouchText then step.TouchText else step.Text)
 	buttonRow.Visible = step.Check == nil
-	continueButton.Text = step.Button or "CONTINUAR"
+	continueButton.Text = step.Button or "CONTINUE"
 	progressBar.Frame.Visible = step.Goal ~= nil
 	if step.Goal then
 		progressBar.Set(0, formatGoal(step, 0), true)
@@ -854,10 +854,10 @@ skipButton.MouseButton1Click:Connect(function()
 		return
 	end
 	skipArmedUntil = os.clock() + 3
-	skipButton.Text = `<u><font color="#{KEY_HEX}">Clique de novo para pular</font></u>`
+	skipButton.Text = `<u><font color="#{KEY_HEX}">Click again to skip</font></u>`
 	task.delay(3, function()
 		if os.clock() >= skipArmedUntil then
-			skipButton.Text = "<u>Pular tutorial</u>"
+			skipButton.Text = "<u>Skip tutorial</u>"
 		end
 	end)
 end)

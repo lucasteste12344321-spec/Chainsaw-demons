@@ -30,11 +30,11 @@ local toastCounter = 0
 -- Cor da faixa lateral conforme o título
 local function accentFor(title)
 	local lower = title:lower()
-	if lower:find("level") or lower:find("completa") or lower:find("abate") then
+	if lower:find("level") or lower:find("complete") or lower:find("kill") or lower:find("defeated") then
 		return Colors.Gold
-	elseif lower:find("erro") or lower:find("aviso") then
+	elseif lower:find("error") or lower:find("warning") then
 		return Colors.Accent
-	elseif lower:find("missão") then
+	elseif lower:find("quest") then
 		return Colors.Orange
 	end
 	return Colors.Blue

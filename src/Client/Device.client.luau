@@ -123,12 +123,12 @@ local function bossText()
 		if bossType and type(value) == "number" then
 			local bossTitle = ReplicatedStorage:GetAttribute("GlobalBossTitle_" .. bossType) or bossType
 			if ReplicatedStorage:GetAttribute("GlobalBossActive_" .. bossType) == true then
-				return `{bossTitle} ESTÁ NO MAPA! Siga o marcador em cima do lugar dele.`
+				return `{bossTitle} IS ON THE MAP! Follow the marker above his spot.`
 			end
-			return `{bossTitle} aparece em {formatTime(value - workspace:GetServerTimeNow())}.`
+			return `{bossTitle} shows up in {formatTime(value - workspace:GetServerTimeNow())}.`
 		end
 	end
-	return "Nenhum chefe global agendado."
+	return "No global boss scheduled."
 end
 
 local function render()
@@ -138,34 +138,34 @@ local function render()
 	screen.BackgroundColor3 = style.Screen
 	glyph.Text = style.Glyph
 	glyph.TextColor3 = style.Accent
-	local pathName = if player:GetAttribute("Path") == "Hunter" then "CAÇADOR" elseif style.Speaker then "INFERNAL" else "HUMANO"
+	local pathName = if player:GetAttribute("Path") == "Hunter" then "HUNTER" elseif style.Speaker then "FIEND" else "HUMAN"
 	title.Text = if style.Speaker then style.Name else `{style.Name} · {pathName}`
 	title.TextColor3 = style.Accent
 	clearBody()
 
 	local order = 1
 	if style.Speaker then
-		speech(order, "Ei! Trouxe o serviço de hoje. Faça direitinho que o pagamento é bom.")
+		speech(order, "Hey! I brought today's jobs. Do them right and the pay is good.")
 		order += 1
 	end
 
 	-- Chefe global
 	local boss = card(order, 54)
 	order += 1
-	textLine(boss, { Position = UDim2.fromOffset(10, 4), Size = UDim2.new(1, -20, 0, 18), Text = "CHEFE GLOBAL", TextSize = 12,
+	textLine(boss, { Position = UDim2.fromOffset(10, 4), Size = UDim2.new(1, -20, 0, 18), Text = "GLOBAL BOSS", TextSize = 12,
 		Font = UI.Fonts.Title, TextColor3 = style.Accent })
 	bossLabel = textLine(boss, { Position = UDim2.fromOffset(10, 22), Size = UDim2.new(1, -20, 0, 28), Text = bossText(),
 		TextSize = 13 })
 
 	-- Missões
-	local header = UI.label({ Parent = body, LayoutOrder = order, Size = UDim2.new(1, -6, 0, 22), Text = "MISSÕES DE HOJE",
+	local header = UI.label({ Parent = body, LayoutOrder = order, Size = UDim2.new(1, -6, 0, 22), Text = "TODAY'S QUESTS",
 		TextSize = 15, Font = UI.Fonts.Title })
 	order += 1
 	if not state then
-		header.Text = "MISSÕES DE HOJE · carregando..."
+		header.Text = "TODAY'S QUESTS · loading..."
 		return
 	end
-	header.Text = `MISSÕES DE HOJE · renovam em {formatTime(state.NextDayAt - workspace:GetServerTimeNow())}`
+	header.Text = `TODAY'S QUESTS · reset in {formatTime(state.NextDayAt - workspace:GetServerTimeNow())}`
 	local allClaimed = #state.Missions > 0
 	for _, mission in state.Missions do
 		local done = mission.Progress >= mission.Goal
@@ -182,7 +182,7 @@ local function render()
 		UI.corner(fill, UDim.new(1, 0))
 		local button = UI.button({ Parent = frame, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
 			Size = UDim2.fromOffset(BUTTON_W, BUTTON_H), TextSize = if TOUCH then 14 else 12,
-			Text = if mission.Claimed then "✓ FEITO" elseif done then "RESGATAR" else `{mission.Progress}/{mission.Goal}` },
+			Text = if mission.Claimed then "✓ DONE" elseif done then "CLAIM" else `{mission.Progress}/{mission.Goal}` },
 			if done and not mission.Claimed then style.Accent else C.PanelLight)
 		if done and not mission.Claimed then
 			button.TextColor3 = C.Black
@@ -193,18 +193,18 @@ local function render()
 	end
 	local reward = card(order, 26)
 	order += 1
-	local streakText = if state.StreakGold > 0 then ` (+{math.floor(state.StreakGold * 100 + 0.5)}% de sequência)` else ""
+	local streakText = if state.StreakGold > 0 then ` (+{math.floor(state.StreakGold * 100 + 0.5)}% streak)` else ""
 	textLine(reward, { Position = UDim2.fromOffset(10, 0), Size = UDim2.new(1, -20, 1, 0), TextSize = 12, TextColor3 = C.TextDim,
-		Text = `Cada missão: {state.Gold} Gold{streakText} e {state.XP} XP` })
+		Text = `Each quest: {state.Gold} Gold{streakText} and {state.XP} XP` })
 
 	-- Bônus de completar as três
 	local bonus = card(order, CARD_H)
 	order += 1
 	textLine(bonus, { Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -(BUTTON_W + 24), 0, CARD_H - 12), TextSize = 13,
-		Text = `Complete as 3: +{state.BonusSpins} giro de clã.\nSequência: {state.Streak} dia(s) seguidos.` })
+		Text = `Complete all 3: +{state.BonusSpins} clan spin.\nStreak: {state.Streak} day(s) in a row.` })
 	local bonusButton = UI.button({ Parent = bonus, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
 		Size = UDim2.fromOffset(BUTTON_W, BUTTON_H), TextSize = if TOUCH then 14 else 12,
-		Text = if state.BonusClaimed then "✓ RECEBIDO" elseif allClaimed then "PEGAR BÔNUS" else "FALTA" },
+		Text = if state.BonusClaimed then "✓ CLAIMED" elseif allClaimed then "CLAIM BONUS" else "NOT YET" },
 		if allClaimed and not state.BonusClaimed then style.Accent else C.PanelLight)
 	if allClaimed and not state.BonusClaimed then
 		bonusButton.TextColor3 = C.Black

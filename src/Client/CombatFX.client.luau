@@ -1269,7 +1269,7 @@ function handlers.Hit(data)
 	end
 	-- Contra-golpe da esquiva (o M1 logo depois de desviar)
 	if data.Counter then
-		floatText(data.Character, "CONTRA-GOLPE!", PARRY_COLOR)
+		floatText(data.Character, "COUNTER!", PARRY_COLOR)
 	end
 	local style = styleOrDefault(data)
 	playSound(data, if data.Strong then "HeavyHit" else "Hit", rootOf(data.Character))
@@ -1349,7 +1349,7 @@ function handlers.GuardBreak(data)
 	burst(position, BREAK_COLOR, 5, 0.3)
 	sparks(position, BREAK_COLOR, 14, 28)
 	flash(data.Character, BREAK_COLOR, 0.4)
-	floatText(data.Character, "GUARDA QUEBRADA", BREAK_COLOR)
+	floatText(data.Character, "GUARD BROKEN", BREAK_COLOR)
 	playSound(data, "GuardBreak", root)
 	endBlock(data.Character)
 	if data.Character == player.Character then
@@ -1363,7 +1363,7 @@ function handlers.ComboBreaker(data)
 	if not root then return end
 	burst(root.Position, PARRY_COLOR, 6, 0.3)
 	flash(data.Character, PARRY_COLOR, 0.3)
-	floatText(data.Character, "QUEBRA-COMBO!", PARRY_COLOR)
+	floatText(data.Character, "COMBO BREAKER!", PARRY_COLOR)
 	if data.Character == player.Character then
 		shake(0.3)
 	end
@@ -1481,7 +1481,7 @@ end
 
 function handlers.Dodge(data)
 	if typeof(data.Character) ~= "Instance" then return end
-	floatText(data.Character, "ESQUIVOU", DODGE_COLOR)
+	floatText(data.Character, "DODGED", DODGE_COLOR)
 	local side = data.Side
 	if side ~= "Left" and side ~= "Right" and side ~= "Back" then return end
 	dodgeGhost(data.Character)
