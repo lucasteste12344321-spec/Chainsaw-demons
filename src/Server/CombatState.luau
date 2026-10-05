@@ -386,6 +386,7 @@ function CombatState.BreakCombo(player)
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	if not humanoid then return end
 	breakerReadyAt[player] = now() + PVP.BreakerCooldown
+	player:SetAttribute("ComboBreakerReadyAt", breakerReadyAt[player]) -- a HUD mostra a recarga na casa do dash
 	setBreakerReady(player, false)
 	local record = pvpRecord(humanoid)
 	record.combo = 0

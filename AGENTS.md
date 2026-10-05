@@ -526,8 +526,10 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   x`TeamStun` (0,7) (`CombatState.NoteAttacker`, chamado pelo `CombatRules.Damage`).
 - Quebra-combo: `BreakerFraction` (25%) da vida máxima levada seguida (fora da guarda; zera após `BreakerGap` 1,5 s sem
   apanhar nem stun) põe `ComboBreakerReady` no player; o dash sai mesmo atordoado (DashService e movimento), tira o stun,
-  dá a imunidade e recarrega em `BreakerCooldown` (25 s). Efeito `CombatFX` "ComboBreaker". Falta indicador na HUD.
-- Sem teste em Play ainda.
+  dá a imunidade e recarrega em `BreakerCooldown` (25 s). Efeito `CombatFX` "ComboBreaker". HUD: a casa do dash (Q)
+  pulsa em laranja com "QUEBRAR!" em cima enquanto `ComboBreakerReady`; a recarga aparece no canto da casa (atributo
+  `ComboBreakerReadyAt`, escrito pelo `CombatState.BreakCombo`).
+- Testado pelo usuário com vários jogadores (2026-10-05).
 
 ## Repositório em dia com o Studio (Claude, 2026-10-05)
 - O GitHub estava atrás do Studio (o usuário sobe arquivos à mão). A partir de um dump de todos os scripts do Studio

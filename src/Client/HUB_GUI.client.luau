@@ -75,6 +75,7 @@ local HOTBAR_KEYS = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, En
 local STYLE_GLYPHS = { Punhos = "拳", Katana = "刀" }
 local SKILL_GLYPHS = { Punhos = { Z = "連", X = "溜" } }
 
+local BREAKER_COLOR = Color3.fromRGB(255, 150, 40) -- quebra-combo pronto (laranja)
 local SLOT_SIZE = 42 -- casas da linha de baixo (estilos, habilidades e poderes)
 local SLOT_GAP = 6
 local MENU_SIZE = if touchOnly then 38 else 32 -- no celular um pouco maior (dedo)
@@ -680,7 +681,9 @@ local function slotTip(slot)
 		return UITheme.tipText("Defesa (F)", "Segure para levantar a guarda. Logo no começo dela, o golpe inimigo vira "
 			.. "parry. A barrinha embaixo é a guarda: se esvaziar, ela quebra e você fica atordoado.")
 	elseif info.StaminaCost then
-		return UITheme.tipText("Dash (Q)", "Avança para onde você está andando. Recarga de 1 s e gasta fôlego (a barra branca).")
+		return UITheme.tipText("Dash (Q)", "Avança para onde você está andando. Recarga de 1 s e gasta fôlego (a barra branca).\n"
+			.. "Apanhando muito seguido de outro jogador, a casa acende em laranja: o dash sai mesmo atordoado e quebra o combo "
+			.. "(recarga de 25 s, no canto da casa).")
 	elseif info.Skill then
 		local _, style = CombatStyles.FromCharacter(player.Character)
 		style = style or CombatStyles.Styles.Punhos
@@ -865,6 +868,35 @@ local function createSlot(info, order)
 		button.MouseButton1Click:Connect(function()
 			fireBindable("MovementAction", "Dash")
 		end)
+		-- Quebra-combo (CombatStyles.PvP): "QUEBRAR!" em cima da casa quando está pronto e a recarga no canto
+		slot.BreakerLabel = text({
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.new(0.5, 0, 0, -3),
+			Size = UDim2.fromOffset(70, 14),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = FONT_HEAVY,
+			TextSize = 12,
+			TextColor3 = BREAKER_COLOR,
+			TextStrokeTransparency = 0.4,
+			Text = "QUEBRAR!",
+			Visible = false,
+			ZIndex = 9,
+			Parent = holder,
+		})
+		slot.BreakerScale = new("UIScale", { Parent = slot.BreakerLabel })
+		slot.BreakerCooldown = text({
+			AnchorPoint = Vector2.new(1, 1),
+			Position = UDim2.new(1, -4, 1, -2),
+			Size = UDim2.fromOffset(24, 12),
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Font = FONT_BOLD,
+			TextSize = 10,
+			TextColor3 = BREAKER_COLOR,
+			TextStrokeTransparency = 0.5,
+			Visible = false,
+			ZIndex = 7,
+			Parent = button,
+		})
 	end
 
 	return slot
@@ -1931,7 +1963,21 @@ RunService.RenderStepped:Connect(function(dt)
 			remaining = math.max(0, math.max(player:GetAttribute(info.Attribute) or 0,
 				player:GetAttribute("PredictedDashReadyAt") or 0) - now)
 			local cost = info.StaminaCost * math.max(0, 1 - (player:GetAttribute("TreeDashCost") or 0))
-			usable = usable and stamina >= cost
+			-- Quebra-combo pronto: o dash vale mesmo atordoado e a casa pulsa em laranja
+			local breaker = player:GetAttribute("ComboBreakerReady") == true
+			usable = (usable or (stunned and breaker)) and stamina >= cost
+			setActive(slot, breaker, BREAKER_COLOR)
+			slot.BreakerLabel.Visible = breaker
+			if breaker then
+				local pulse = (math.sin(os.clock() * 8) + 1) / 2
+				slot.Stroke.Thickness = 1.5 + pulse * 1.5
+				slot.BreakerScale.Scale = 1 + pulse * 0.12
+			end
+			local breakerLeft = (player:GetAttribute("ComboBreakerReadyAt") or 0) - now
+			slot.BreakerCooldown.Visible = not breaker and breakerLeft > 0
+			if breakerLeft > 0 then
+				slot.BreakerCooldown.Text = tostring(math.ceil(breakerLeft))
+			end
 		elseif info.Attribute then
 			remaining = math.max(0, (player:GetAttribute(info.Attribute) or 0) - now)
 			local skill = style and style.Skills[info.Skill]
