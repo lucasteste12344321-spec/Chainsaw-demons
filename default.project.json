@@ -1,0 +1,36 @@
+{
+  "name": "Chainsawdemons",
+  "syncback": {
+    "ignoreNames": ["VFX"]
+  },
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedFirst": {
+      "$path": "src/First"
+    },
+    "ReplicatedStorage": {
+      "$path": "src/Shared",
+      "Packages": {
+        "$path": "Packages"
+      },
+      "VFX": {
+        "$className": "Folder",
+        "$keepUnknowns": true
+      }
+    },
+    "ServerScriptService": {
+      "$path": "src/Server",
+      "ServerPackages": {
+        "$path": "ServerPackages"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "LoadCharacterAppearance": false
+      },
+      "StarterPlayerScripts": {
+        "$path": "src/Client"
+      }
+    }
+  }
+}

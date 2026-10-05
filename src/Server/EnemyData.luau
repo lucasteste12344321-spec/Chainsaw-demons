@@ -1,0 +1,221 @@
+
+return {
+	-- ===== Goblins (level 1 a 20) =====
+	Goblin = {
+		DisplayName = "Goblin",
+		Level = 1, -- zonas do level 1 ao 10
+		Health = 100,
+		Damage = 13,
+		Speed = 16,
+		AggroRange = 35,
+		AttackRange = 4,
+		AttackCooldown = 0.8,
+		LeashRange = 70,
+		XP = 38,
+		Gold = 8,
+	},
+	GoblinLadrao = {
+		-- Rápido e frágil (vida x0,9), carrega o que roubou (Gold x1,15)
+		DisplayName = "Goblin Ladrão",
+		Template = "Goblin",
+		Tint = Color3.fromRGB(125, 90, 55),
+		Scale = 0.9,
+		Level = 10, -- zonas do level 10 ao 20
+		Health = 576,
+		Damage = 42,
+		Speed = 19,
+		AggroRange = 35,
+		AttackRange = 4,
+		AttackCooldown = 0.65,
+		LeashRange = 70,
+		XP = 173,
+		Gold = 40,
+	},
+	ReiGoblin = {
+		-- Boss do fim dos Goblins (modelo "King Goblin", já gigante: sem Scale/Tint). Dano x1,6, XP e Gold x10.
+		-- Trono, ataques especiais, fase 2 e drops em ReplicatedStorage.BossData (quem cuida é o BossService);
+		-- animações e golpes comuns no kit (EnemyKits["King Goblin"]).
+		DisplayName = "Rei Goblin",
+		Template = "King Goblin",
+		Level = 20,
+		Health = 8000,
+		Damage = 118,
+		Speed = 17,
+		AggroRange = 50,
+		AttackRange = 7,
+		AttackCooldown = 1,
+		Combo = 3,
+		LeashRange = 80,
+		XP = 3230,
+		Gold = 650,
+	},
+
+	-- ===== Demônios da cidade (level 20 a 100) =====
+	Ratazana = {
+		-- Bando: vida x0,5, dano x0,6, XP e Gold x0,5. Zonas com MaxEnemies 5 ou 6
+		DisplayName = "Ratazana do Canal",
+		Level = 20,
+		Health = 620,
+		Damage = 44,
+		Speed = 21,
+		AggroRange = 30,
+		AttackRange = 3.5,
+		AttackCooldown = 0.5,
+		Combo = 1,
+		LeashRange = 70,
+		XP = 162,
+		Gold = 33,
+	},
+	Manequim = {
+		-- Tanque de golpe forte: vida x1,3, dano x1,4, XP e Gold x1,3
+		DisplayName = "Manequim",
+		Level = 30,
+		Health = 2392,
+		Damage = 148,
+		Speed = 14,
+		AggroRange = 35,
+		AttackRange = 4,
+		AttackCooldown = 1.2,
+		Combo = 1,
+		LeashRange = 70,
+		XP = 615,
+		Gold = 124,
+	},
+	Passageiro = {
+		-- Assassino: vida x0,9, dano x1,1, XP e Gold x1,1
+		DisplayName = "Passageiro do Metrô",
+		Level = 40,
+		Health = 2196,
+		Damage = 152,
+		Speed = 17,
+		AggroRange = 40,
+		AttackRange = 4,
+		AttackCooldown = 0.8,
+		LeashRange = 70,
+		XP = 685,
+		Gold = 138,
+	},
+	Operario = {
+		-- Brutamontes de marreta: vida x1,6, dano x1,5, XP e Gold x1,4
+		DisplayName = "Operário Possuído",
+		Scale = 1.2,
+		Level = 50,
+		Health = 4864,
+		Damage = 255,
+		Speed = 13,
+		AggroRange = 35,
+		AttackRange = 4.5,
+		AttackCooldown = 1.3,
+		Combo = 1,
+		LeashRange = 70,
+		XP = 1082,
+		Gold = 217,
+	},
+	CaoDeRua = {
+		-- Rápido: vida x0,8, dano x0,9
+		DisplayName = "Cão de Rua",
+		Level = 60,
+		Health = 2912,
+		Damage = 182,
+		Speed = 22,
+		AggroRange = 45,
+		AttackRange = 4,
+		AttackCooldown = 0.6,
+		LeashRange = 80,
+		XP = 923,
+		Gold = 185,
+	},
+	Enfermeira = {
+		-- Frágil e perigosa: vida x0,8, dano x1,1 (vai arremessar agulhas quando o projétil existir)
+		DisplayName = "Enfermeira de Agulhas",
+		Level = 70,
+		Health = 3392,
+		Damage = 257,
+		Speed = 15,
+		AggroRange = 40,
+		AttackRange = 4,
+		AttackCooldown = 1,
+		LeashRange = 70,
+		XP = 1073,
+		Gold = 215,
+	},
+	Afogado = {
+		-- Resistente: vida x1,2, dano x1,1, XP e Gold x1,1 (vai agarrar e puxar)
+		DisplayName = "Afogado",
+		Level = 80,
+		Health = 5808,
+		Damage = 292,
+		Speed = 15,
+		AggroRange = 35,
+		AttackRange = 4,
+		AttackCooldown = 1,
+		LeashRange = 70,
+		XP = 1345,
+		Gold = 270,
+	},
+	Engravatado = {
+		-- Vida x1,1, dano x1,2, XP e Gold x1,2 (vai chamar capangas)
+		DisplayName = "Engravatado Sem Rosto",
+		Level = 90,
+		Health = 5984,
+		Damage = 357,
+		Speed = 18,
+		AggroRange = 40,
+		AttackRange = 4,
+		AttackCooldown = 0.8,
+		LeashRange = 70,
+		XP = 1648,
+		Gold = 330,
+	},
+	Relogio = {
+		-- Boss final: vida x12, dano x1,8, XP e Gold x15. Zona com MaxEnemies = 1 e RespawnTime longo
+		DisplayName = "Relógio",
+		Scale = 1.8,
+		Level = 100,
+		Health = 72480,
+		Damage = 594,
+		Speed = 16,
+		AggroRange = 60,
+		AttackRange = 4,
+		AttackCooldown = 1,
+		Combo = 3,
+		LeashRange = 60,
+		XP = 22845,
+		Gold = 4575,
+	},
+
+	-- ===== Cópia do Treinador (TrainerService, missões da esquiva) =====
+	-- Só ataca e só leva dano de quem pediu o treino; sem XP, Gold nem missão de abate. O modelo é montado na hora
+	-- (cópia do NPC Treinador ou do StarterCharacter, kit EnemyKits.TreinadorTreino). Os números seguem a curva do
+	-- level do jogador (o TrainerService passa o level dele, no mínimo 10).
+	TreinoTreinador = {
+		DisplayName = "Treinador (treino)", -- o nome deixa claro que ele não cai (a vida volta)
+		Template = "TreinadorTreino",
+		Level = 10,
+		Health = 4000, -- no treino a vida volta (não morre)
+		Damage = 6, -- treino: dano baixo
+		Speed = 17,
+		AggroRange = 90,
+		AttackRange = 4.5,
+		AttackCooldown = 1.1,
+		LeashRange = 90,
+		Combo = 3,
+		XP = 0,
+		Gold = 0,
+	},
+	DueloTreinador = {
+		DisplayName = "Treinador",
+		Template = "TreinadorTreino",
+		Level = 25,
+		Health = 2600,
+		Damage = 45,
+		Speed = 18,
+		AggroRange = 90,
+		AttackRange = 4.5,
+		AttackCooldown = 0.9,
+		LeashRange = 90,
+		Combo = 4,
+		XP = 0,
+		Gold = 0,
+	},
+}
