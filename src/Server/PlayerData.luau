@@ -20,6 +20,7 @@ local DodgeData = require(ReplicatedStorage:WaitForChild("DodgeData"))
 local ContractData = require(ReplicatedStorage:WaitForChild("ContractData"))
 local QuestData = require(script.Parent:WaitForChild("QuestData"))
 local FishingData = require(ReplicatedStorage:WaitForChild("FishingData"))
+local DailyData = require(ReplicatedStorage:WaitForChild("DailyData"))
 local WorldQuestData = require(script.Parent:WaitForChild("WorldQuestData"))
 
 local Passes = require(script.Parent:WaitForChild("GamepassEntitlements"))
@@ -164,6 +165,7 @@ local function defaultData()
 		Styles = {},
 		HiddenStyles = {}, -- estilos guardados no inventário (EquipStyle)
 		Tutorial = defaultTutorial(),
+		Daily = DailyData.Reconcile(nil), -- missões diárias (DailyService)
 		ContractMastery = {}, -- [contrato] = XP total (mesma curva da maestria dos estilos)
 		DodgeLevel = 0, -- esquiva automática (DodgeData), sobe com as missões do Treinador
 		-- DodgeForced (opcional): chance de esquiva fixa de admin (/esquiva <n>%), de 0 a 1 e sem o teto; nil = normal
@@ -411,6 +413,7 @@ local function reconcile(saved)
 	data.Styles = reconcileStyles(saved.Styles)
 	data.HiddenStyles = reconcileHiddenStyles(saved.HiddenStyles)
 	data.Tutorial = reconcileTutorial(saved.Tutorial, data.Level)
+	data.Daily = DailyData.Reconcile(saved.Daily)
 	data.ContractMastery = reconcileContractMastery(saved.ContractMastery)
 	if type(saved.DodgeLevel) == "number" and saved.DodgeLevel == saved.DodgeLevel then
 		data.DodgeLevel = math.clamp(math.floor(saved.DodgeLevel), 0, DodgeData.MaxLevel)
@@ -487,6 +490,7 @@ local function serialize(player)
 		Styles = profile.Styles,
 		HiddenStyles = profile.HiddenStyles,
 		Tutorial = profile.Tutorial,
+		Daily = profile.Daily,
 		ContractMastery = profile.ContractMastery,
 		DodgeLevel = profile.DodgeLevel,
 		DodgeForced = profile.DodgeForced,
@@ -1149,6 +1153,7 @@ local function setupPlayer(player)
 		Styles = data.Styles,
 		HiddenStyles = data.HiddenStyles,
 		Tutorial = data.Tutorial,
+		Daily = data.Daily,
 		ContractMastery = data.ContractMastery,
 		DodgeLevel = data.DodgeLevel,
 		DodgeForced = data.DodgeForced,

@@ -55,8 +55,14 @@ local spawnBoss -- (enemyType, config, carry?) definida no fim
 local active = {} -- [chefe de base] = modelo atual (qualquer forma)
 local globalToken = {} -- [chefe de base] = número da aparição global em andamento (nil = fora do horário)
 
-local function announceAll(title, text, duration)
-	Remotes.Announcement:FireAllClients(title, text, duration or 8)
+-- Avisos do chefe global: chegam no aparelho de cada um (tablet do Caçador / Kogane do Infernal, Device.client)
+local function announceAll(title, text)
+	Remotes.DeviceAlert:FireAllClients(title, text, "Boss")
+end
+
+-- Estado do chefe global para o cliente (contador no lugar dele, BossBeacon.client, e o aparelho)
+local function setGlobalActive(baseType, active)
+	ReplicatedStorage:SetAttribute("GlobalBossActive_" .. baseType, active)
 end
 
 local function flat(vector)
@@ -989,7 +995,8 @@ spawnBoss = function(enemyType, config, carry)
 				-- Chefe global: não renasce; volta no próximo horário
 				active[baseType] = nil
 				globalToken[baseType] = nil
-				announceAll(config.Title or enemyType, baseConfig.Global.DefeatMessage or "Foi derrotado!", 8)
+				setGlobalActive(baseType, false)
+				announceAll(config.Title or enemyType, baseConfig.Global.DefeatMessage or "Foi derrotado!")
 				return
 			end
 			task.wait(baseConfig.RespawnTime or 300)
@@ -1057,16 +1064,18 @@ local function startGlobal(baseType, config)
 	local g = config.Global
 	local token = (globalToken[baseType] or 0) + 1
 	globalToken[baseType] = token
-	announceAll(config.Title or baseType, g.SpawnMessage or "Apareceu!", 10)
+	setGlobalActive(baseType, true)
+	announceAll(config.Title or baseType, g.SpawnMessage or "Apareceu!")
 	task.spawn(spawnBoss, baseType, config)
 	task.delay(g.Duration or 1800, function()
 		if globalToken[baseType] ~= token then return end
 		globalToken[baseType] = nil
+		setGlobalActive(baseType, false)
 		local npc = active[baseType]
 		active[baseType] = nil
 		if npc and npc.Parent then
 			npc:Destroy() -- sem morrer: sem recompensa nem OnDied
-			announceAll(config.Title or baseType, g.LeaveMessage or "Foi embora.", 8)
+			announceAll(config.Title or baseType, g.LeaveMessage or "Foi embora.")
 		end
 	end)
 	return true
@@ -1077,6 +1086,13 @@ local function runSchedule(baseType, config)
 	local g = config.Global
 	local interval = g.Interval or 10800
 	local offset = g.Offset or 0
+	-- Onde ele aparece (o contador fica em cima desse ponto) e o nome mostrado
+	local template = templates:WaitForChild(EnemyModule.GetTemplateName(baseType), 15)
+	if template then
+		ReplicatedStorage:SetAttribute("GlobalBossPos_" .. baseType, template:GetPivot().Position)
+	end
+	ReplicatedStorage:SetAttribute("GlobalBossTitle_" .. baseType, config.Title or baseType)
+	setGlobalActive(baseType, false)
 	while true do
 		local now = os.time()
 		local nextAt = (math.floor((now - offset) / interval) + 1) * interval + offset
@@ -1085,7 +1101,7 @@ local function runSchedule(baseType, config)
 		if warnAt > now then
 			task.wait(warnAt - now)
 			local minutes = math.max(1, math.floor((nextAt - os.time()) / 60 + 0.5))
-			announceAll(config.Title or baseType, string.format(g.WarningMessage or "Aparece em %d minutos!", minutes), 8)
+			announceAll(config.Title or baseType, string.format(g.WarningMessage or "Aparece em %d minutos!", minutes))
 		end
 		task.wait(math.max(0, nextAt - os.time()))
 		startGlobal(baseType, config)

@@ -1314,6 +1314,32 @@ end
 treeButton.MouseButton1Click:Connect(function()
 	fireToggle("SkillTree")
 end)
+-- Aparelho do caminho (Device.client: tablet do Caçador / Kogane do Infernal): missões diárias e chefe global, tecla T.
+-- Bolinha vermelha com missão para resgatar (atributo DailyClaimable do DailyService).
+do
+	local deviceButton = menuButton(0, "T", "▣")
+	UITheme.tooltip(deviceButton, UITheme.tipText("Missões diárias (T)",
+		"Seu tablet (ou a Kogane, se for Infernal): 3 missões por dia, bônus de sequência e o horário do chefe global."))
+	deviceButton.MouseButton1Click:Connect(function()
+		fireToggle("Device")
+	end)
+	local dailyDot = round(new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(1, -3, 0, 3),
+		Size = UDim2.fromOffset(10, 10),
+		BackgroundColor3 = RED,
+		Visible = false,
+		ZIndex = 5,
+		Parent = deviceButton,
+	}))
+	local function updateDot()
+		dailyDot.Visible = player:GetAttribute("DailyClaimable") == true
+		deviceButton.Text = if player:GetAttribute("Path") == "Fiend" then "金" else "▣"
+	end
+	player:GetAttributeChangedSignal("DailyClaimable"):Connect(updateDot)
+	player:GetAttributeChangedSignal("Path"):Connect(updateDot)
+	updateDot()
+end
 inventoryButton.MouseButton1Click:Connect(function()
 	fireToggle("Inventory")
 end)

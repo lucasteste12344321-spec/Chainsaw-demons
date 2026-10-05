@@ -648,6 +648,20 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   `CombatRules.CanDamage` e no `canHit` do CombatInput) e expulsa; só o dono bane e dá mod. Atributo `VIPRole` no player.
   Teste no Studio: `ReplicatedStorage:SetAttribute("TestVIPServer", true)` antes do Play (o teleporte só no publicado).
 
+## Missões diárias, aparelho do caminho e contador do chefe (Claude, 2026-10-05, ideia do usuário)
+- `src/Shared/DailyData.luau` (lista de missões, sorteio por jogador e dia, recompensa, bônus, `Reconcile`) e
+  `src/Server/DailyService.server.luau`: 3 por dia, renovam à meia-noite de Brasília; progresso pelo `QuestModule.Listen`
+  (novo: "Kill", "Fish", "Power"; chefe = "Kill" de um tipo do BossData). Cada missão: Gold (60 + 12 x level, +10% por dia
+  de sequência até +60%) e 15% do XP do level; as três: +1 giro de clã e a sequência (`Streak`). Salvo em
+  `profile.Daily`. Remotes `DailyAction` ("State", "Claim" índice, "Bonus") / `DailyState`. Atributo `DailyClaimable`.
+- Cliente `src/Client/Device.client.luau`: o aparelho do caminho, tecla T e botão ▣/金 na coluna de menus da HUD (bolinha
+  vermelha com algo para resgatar). Caçador e Humano: TABLET (azul); Infernal: KOGANE (dourado, fala com aspas). Mostra o
+  chefe global e as missões. Os avisos do chefe global agora vêm por `Remotes.DeviceAlert` (aviso no canto, no estilo do
+  aparelho), não mais pelo Announcement.
+- Contador no mapa: `src/Client/BossBeacon.client.luau`, placa flutuando 14 studs acima de onde o chefe global aparece
+  ("DENJI · aparece em 1h 42min" / "ESTÁ AQUI!"). O BossService publica `GlobalBossPos_`, `GlobalBossTitle_` e
+  `GlobalBossActive_<Tipo>` no ReplicatedStorage (além do `GlobalBoss_<Tipo>` com o horário).
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.

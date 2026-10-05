@@ -24,6 +24,18 @@ WorldQuestData.Register(QuestData)
 
 local QuestModule = {}
 
+-- Ouvintes de progresso (missões diárias, DailyService): fn(player, kind, target). kind: "Kill" (target = tipo do
+-- inimigo), "Fish" (peixe), "Power" (id do poder)
+local listeners = {}
+function QuestModule.Listen(callback)
+	table.insert(listeners, callback)
+end
+local function emit(player, kind, target)
+	for _, callback in listeners do
+		task.spawn(callback, player, kind, target)
+	end
+end
+
 local MAX_ACTIVE = 5 -- limite de missões ativas (as principais automáticas, Main = true, não ocupam vaga)
 local NPC_TAG = "QuestGiver"
 local NPC_RANGE = 20 -- distância máxima para falar com um NPC ou aceitar missão dele
@@ -393,6 +405,7 @@ end
 -- Inimigo derrotado (EnemyModule). enemyLevel é usado pelos objetivos com MinEnemyLevel.
 function QuestModule.OnEnemyKilled(player, enemyType, enemyLevel)
 	local level = if type(enemyLevel) == "number" then enemyLevel else 1
+	emit(player, "Kill", enemyType)
 	updateObjectives(player, function(objective, current)
 		if objective.Type ~= "Kill" or not matchesTarget(objective, enemyType) then return nil end
 		if objective.MinEnemyLevel and level < objective.MinEnemyLevel then return nil end
@@ -403,6 +416,7 @@ end
 -- Only trusted server systems call this; clients cannot submit objective progress.
 function QuestModule.OnActivity(player, kind, target, uniqueId)
 	if not WorldQuestData.ObjectiveTypes[kind] or type(target) ~= "string" or type(uniqueId) ~= "string" then return end
+	emit(player, kind, target)
 	updateObjectives(player, function(objective, current, entry)
 		if objective.Type ~= kind or not matchesTarget(objective, target) then return nil end
 		entry.ActivityVisits = entry.ActivityVisits or {}
@@ -472,6 +486,7 @@ end
 
 -- Jogador usou um poder de caminho (PathSkills). skillId = Id da habilidade no PathData.
 function QuestModule.OnPowerUsed(player, skillId)
+	emit(player, "Power", skillId)
 	updateObjectives(player, function(objective, current)
 		if objective.Type == "UsePower" and matchesTarget(objective, skillId) then
 			return current + 1

@@ -9,6 +9,9 @@ local NAMES = {
 	"GamepassState", -- S->C: verified ownership and daily claim status
 	"VIPPanel", -- C->S (action, value) painel do servidor VIP: convites, listas, PvP, expulsar/banir (VIPPanel.server)
 	"VIPPanelState", -- S->C (data) estado do painel VIP
+	"DailyAction", -- C->S (action, index) missões diárias: "State" | "Claim" (índice) | "Bonus" (DailyService)
+	"DailyState", -- S->C (data) missões do dia, sequência e horários
+	"DeviceAlert", -- S->C (title, text, kind) aviso no aparelho (tablet do Caçador / Kogane do Infernal): chefe global
 	-- Dados do jogador / progressão
 	"StatusUpgrade", -- C->S (statName) sistema antigo de pontos de status (não usado; a árvore substituiu)
 	"StatusReset", -- C->S () reseta a árvore de habilidades: devolve os pontos gastos, custa Gold
