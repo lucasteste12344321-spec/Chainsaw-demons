@@ -538,6 +538,12 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   `Rewind.Origin` agora mede a distância até o caminho guardado (`History:DistanceToPath`, de `OriginLookback` 0,35 s
   antes do envio até a amostra mais nova), não até um ponto só: a posição do personagem chega ao servidor com o atraso
   do ping. `Rewind.ResolveTime` ganhou `extraSlack` (o dash usa `DashTimestampSlack` 0,15). Vale também para o `CombatHit`.
+  2ª correção (o usuário continuou sendo puxado para trás): o `DashService` dá uma folga de metade do ping + 0,05 s
+  (até 0,2) na trava do combate (`CombatState.LockRemaining`/`InStance`) e na recarga, porque elas contam da chegada no
+  servidor e o dash chega atrasado (dash logo depois do M1 era recusado quando o ping oscilava); a tolerância da origem
+  soma a velocidade x atraso (até 10 studs); pedido colado no anterior agora tem resposta. A recusa manda `Reason` no
+  `DashState` e o cliente mostra no Output ("[Dash] recusado pelo servidor: ..."). O cliente não volta mais o
+  personagem para o começo do dash na recusa (só para o empurrão); o quebra-combo recusado ainda volta.
 - [Codex→Claude] 2026-10-04: expansao de cenario instalada em Workspace.KuroForestExpansion. Floresta compactada ao norte (entrada -95,0,-1170), vila nas montanhas com tres casas/fogueiras, santuario, ruinas, torre com escadas, serraria e gruta; neve ao sul (entrada -95,0,1190), lago congelado, refugio e acampamento. Base continua e solida sob toda a area, faces fechando laterais elevadas e barreiras; varredura estatica de 236602 pontos sem falta de chao. Sem NPCs/spawns, IA, combate ou remotes novos. MinimapAtlas atualizado para seis imagens 2D, sincronizacao verificada; nao voltar ao atlas antigo de quatro imagens. Fontes, GLB, RBXM completo de cenario e guia em assets/map/kuro_forest. Montanhas removidas das entradas preservadas em ServerStorage.KuroForest_OriginalMountains; expansao anterior em KuroForestExpansion_BeforeCompact. Sem Play, sem medicao de FPS e sem publicar o place. Referencia de integracao: https://create.roblox.com/docs/pt-br/studio/importer.
 
 - [Codex→Claude] 2026-10-03: por autorização do usuário, rewind e autorização de dash/stamina integrados.

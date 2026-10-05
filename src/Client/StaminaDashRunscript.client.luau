@@ -393,15 +393,20 @@ local function dash()
 	breakerDash = breaking
 end
 
+-- Dash recusado pelo servidor (ou sem resposta): para o empurrão onde está. Não volta mais o personagem para o começo
+-- do dash (2026-10-05, pedido do usuário: com ping alto ele era "puxado para trás" toda hora). O personagem é do cliente
+-- (network ownership), então voltar não protegia nada; o servidor continua dono da stamina e da recarga. Só o
+-- quebra-combo recusado volta (ele saiu atordoado).
 local function rejectDash(request)
 	if request.Character ~= character or not alive() then return end
-	stopDash(true)
-	-- Só desfaz o deslocamento previsto desse dash; não puxa um personagem morto/atordoado por outro golpe
-	-- (o quebra-combo recusado volta: ele saiu já atordoado).
-	if (character:GetAttribute("Stunned") ~= true or request.Breaker)
+	local wasDashing = stopDash(false)
+	if request.Breaker and character:GetAttribute("Stunned") == true
 		and (rootPart.Position - request.Start.Position).Magnitude <= DASH_DISTANCE + NetConfig.OriginTolerance then
+		stopDash(true)
 		rootPart.CFrame = request.Start
 		settleAfterDash(true)
+	elseif wasDashing then
+		settleAfterDash(false)
 	end
 end
 
@@ -415,6 +420,8 @@ Remotes.DashState.OnClientEvent:Connect(function(data)
 		nextDashAt = os.clock() + math.max(0, data.ReadyAt - workspace:GetServerTimeNow())
 		player:SetAttribute("PredictedDashReadyAt", 0)
 		if not data.Accepted then
+			-- Motivo no Output (F9 no jogo): ajuda a achar o que recusou o dash
+			warn(`[Dash] recusado pelo servidor: {data.Reason or "?"}`)
 			rejectDash(request)
 		elseif request.Character == character and alive() then
 			if dashVelocity then
@@ -522,6 +529,7 @@ RunService.RenderStepped:Connect(function(dt)
 		local request = pendingDash
 		pendingDash = nil
 		player:SetAttribute("PredictedDashReadyAt", 0)
+		warn("[Dash] sem resposta do servidor em 1 s")
 		rejectDash(request)
 	end
 	if dashVelocity then

@@ -131,6 +131,18 @@ function CombatState.IsLocked(player)
 	return now() < state.lockUntil or state.blocking or state.charging ~= nil
 end
 
+-- Para o dash (DashService): quanto falta da trava de skills/block (0 se livre) e se está numa postura que não deixa
+-- sair (guarda levantada ou carregando). A trava é contada da chegada do golpe no servidor; o dash vem com o atraso do
+-- ping, então o DashService dá uma folga em cima de LockRemaining.
+function CombatState.LockRemaining(player)
+	return math.max(0, CombatState.Get(player).lockUntil - now())
+end
+
+function CombatState.InStance(player)
+	local state = CombatState.Get(player)
+	return state.blocking or state.charging ~= nil
+end
+
 -- busyUntil: trava o próximo M1; lockUntil (opcional, padrão igual): trava skills e block
 function CombatState.SetBusy(player, untilTime, lockUntil)
 	local state = CombatState.Get(player)

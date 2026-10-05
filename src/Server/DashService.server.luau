@@ -29,6 +29,15 @@ local function update(player, state, now)
 	state.Time = now
 end
 
+-- Folga para o atraso do ping (metade do ida e volta + um pouco, até 0,2 s). As travas do combate e a recarga do dash
+-- são contadas da chegada no servidor, mas o pedido de dash chega com o atraso dele: sem a folga, um dash dado logo no
+-- fim da trava do M1 (cancelar o soco) era recusado quando o ping oscilava, e o personagem voltava para trás.
+local function latencyGrace(player)
+	local ok, ping = pcall(function() return player:GetNetworkPing() end)
+	ping = if ok and History.Finite(ping) then ping else 0
+	return math.clamp(ping / 2 + 0.05, 0.05, 0.2)
+end
+
 local function publish(player, state, seq, accepted, extra)
 	state.Revision += 1
 	player:SetAttribute("Stamina", state.Stamina)
@@ -70,26 +79,43 @@ local function onDash(player, character, seq, direction, timestamp, origin)
 	if not state or character ~= state.Character or character ~= player.Character then return end
 	if not History.Finite(seq) or seq < 1 or seq >= 2 ^ 31 or seq % 1 ~= 0 or seq <= state.LastSeq then return end
 	local now = workspace:GetServerTimeNow()
-	if now - state.LastRequest < Config.DashRequestGap then return end
-	state.LastRequest, state.LastSeq = now, seq
 	update(player, state, now)
-	local function deny() publish(player, state, seq, false) end
+	-- Pedido colado no anterior: responde a recusa (sem resposta, o cliente esperava 1 s e voltava para trás)
+	if now - state.LastRequest < Config.DashRequestGap then
+		state.LastSeq = seq
+		publish(player, state, seq, false, { Reason = "Pedido repetido" })
+		return
+	end
+	state.LastRequest, state.LastSeq = now, seq
+	-- O motivo vai na resposta (o cliente mostra no Output/F9 para dar para saber por que um dash foi recusado)
+	local function deny(reason) publish(player, state, seq, false, { Reason = reason }) end
 	local root = character:FindFirstChild("HumanoidRootPart")
 	local hum = character:FindFirstChildOfClass("Humanoid")
+	local grace = latencyGrace(player)
 	-- Quebra-combo (CombatStyles.PvP): atordoado depois de apanhar muito seguido, o dash sai mesmo assim
 	local breaking = character:GetAttribute("Stunned") == true and CombatState.CanBreakCombo(player)
-	if not root or not root:IsA("BasePart") or not hum or hum.Health <= 0 or hum.SeatPart or root.Anchored
-		or (not breaking and (character:GetAttribute("Stunned") == true or CombatState.IsLocked(player)))
-		or now < state.ReadyAt then deny(); return end
+	if not root or not root:IsA("BasePart") or not hum or hum.Health <= 0 or hum.SeatPart or root.Anchored then
+		deny("Personagem"); return
+	end
+	if not breaking then
+		if character:GetAttribute("Stunned") == true then deny("Atordoado"); return end
+		if CombatState.InStance(player) then deny("Guarda/carga"); return end
+		if CombatState.LockRemaining(player) > grace then deny("Golpe em andamento"); return end
+	end
+	if now < state.ReadyAt - grace then deny("Recarga"); return end
 	local slow = character:GetAttribute("CombatSpeed")
-	if not breaking and type(slow) == "number" and slow < 0.6 then deny(); return end
+	if not breaking and type(slow) == "number" and slow < 0.6 then deny("Lento"); return end
 	if typeof(direction) ~= "Vector3" or not History.Finite(direction.X) or not History.Finite(direction.Y)
 		or not History.Finite(direction.Z) or math.abs(direction.Y) > 0.01
-		or direction.Magnitude < 0.9 or direction.Magnitude > 1.1 then deny(); return end
+		or direction.Magnitude < 0.9 or direction.Magnitude > 1.1 then deny("Direção"); return end
 	local _, sentAt = Rewind.ResolveTime(player, timestamp, now, Config.DashTimestampSlack)
-	if not sentAt or not Rewind.Origin(character, sentAt, origin) then deny(); return end
+	if not sentAt then deny("Horário"); return end
+	-- Correndo, o personagem anda enquanto o pedido viaja: a tolerância cresce com a velocidade (até 10 studs)
+	local velocity = root.AssemblyLinearVelocity
+	local extraTolerance = math.min(10, Vector3.new(velocity.X, 0, velocity.Z).Magnitude * (grace + 0.1))
+	if not Rewind.Origin(character, sentAt, origin, extraTolerance) then deny("Posição"); return end
 	local cost = Config.DashCost * math.max(0, 1 - effect(player, "DashCost"))
-	if state.Stamina < cost then deny(); return end
+	if state.Stamina < cost - 0.5 then deny("Fôlego"); return end
 	direction = Vector3.new(direction.X, 0, direction.Z).Unit
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
@@ -101,9 +127,9 @@ local function onDash(player, character, seq, direction, timestamp, origin)
 		direction * Config.DashDistance, params)
 	local distance = Config.DashDistance
 	if wall and wall.Normal.Y < Config.WallNormalY then distance = math.max(0, wall.Distance - 1.2) end
-	if distance < 1.5 then deny(); return end
+	if distance < 1.5 then deny("Parede"); return end
 	-- A decisão e o desconto não cedem execução: pedidos simultâneos não gastam o mesmo saldo.
-	state.Stamina -= cost
+	state.Stamina = math.max(0, state.Stamina - cost)
 	state.ReadyAt = now + Config.DashCooldown
 	if breaking then CombatState.BreakCombo(player) end
 	CombatState.InterruptForDash(player)

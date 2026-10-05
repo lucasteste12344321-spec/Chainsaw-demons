@@ -79,7 +79,7 @@ function Rewind.ResolveTime(player, timestamp, receivedAt, extraSlack)
 	-- Creator Hub define GetNetworkPing como ida e volta (RTT); estima cada trecho pela metade.
 	ping = if ok and History.Finite(ping) then math.clamp(ping / 2, 0, Config.RewindWindow) else 0
 	local budget = math.min(Config.RewindWindow, ping + Config.TimestampSlack) + (extraSlack or 0)
-	if timestamp > receivedAt + Config.FutureSlack or receivedAt - timestamp > budget then return nil end
+	if timestamp > receivedAt + Config.FutureSlack + (extraSlack or 0) or receivedAt - timestamp > budget then return nil end
 	local sentAt = math.min(timestamp, receivedAt)
 	-- O alvo desenhado no cliente também chega atrasado. Nunca extrapola além da janela máxima.
 	return math.max(receivedAt - Config.RewindWindow, sentAt - ping), sentAt
@@ -88,11 +88,12 @@ end
 -- A origem que o cliente mandou está perto do caminho que o servidor viu o personagem fazer (de OriginLookback antes
 -- do envio até agora)? Antes comparava com um ponto só, na hora do envio: a posição do personagem chega ao servidor com
 -- o atraso do ping, e correndo com ping alto a diferença passava da tolerância (dash recusado e puxado para trás).
-function Rewind.Origin(character, timestamp, frame)
+-- extraTolerance (opcional): studs a mais (o dash soma a distância que o personagem anda no atraso do ping).
+function Rewind.Origin(character, timestamp, frame, extraTolerance)
 	if not History.FrameValid(frame) then return nil end
 	local entry = tracked[character]
 	local distance = entry and entry.History:DistanceToPath(timestamp - Config.OriginLookback, frame.Position)
-	if not distance or distance > Config.OriginTolerance then return nil end
+	if not distance or distance > Config.OriginTolerance + (extraTolerance or 0) then return nil end
 	return frame
 end
 
