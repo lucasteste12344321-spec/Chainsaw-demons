@@ -1253,7 +1253,8 @@ local treeButton = menuButton(1, "M", "⛓")
 local inventoryButton = menuButton(2, "G", "▦")
 local fishingButton = menuButton(3, nil, "釣")
 local passesButton = menuButton(4, nil, "★")
-local settingsButton = menuButton(5, nil, "≡")
+local groupButton = menuButton(5, nil, "団") -- some depois de ganhar a recompensa do grupo
+local settingsButton = menuButton(6, nil, "≡")
 passesButton.TextColor3 = CREAM
 treeButton:SetAttribute("TutorialAnchor", "TreeButton")
 inventoryButton:SetAttribute("TutorialAnchor", "InventoryButton")
@@ -1264,6 +1265,7 @@ UITheme.tooltip(inventoryButton, UITheme.tipText("Inventário (G)",
 	"Itens dos chefes: vista para ganhar os bônus e mostrar no personagem."))
 UITheme.tooltip(fishingButton, UITheme.tipText("Pescaria", "Abre a cesta: peixes, vara, sopas e a venda para o Daichi."))
 UITheme.tooltip(passesButton, UITheme.tipText("Passes e VIP", "Benefícios permanentes, giros diários e servidor VIP."))
+UITheme.tooltip(groupButton, UITheme.tipText("Entre no grupo", "Entre no grupo do jogo e ganhe 300 Gold e 1 giro de clã (uma vez)."))
 UITheme.tooltip(settingsButton, UITheme.tipText("Configurações", "Fast Mode, proteção de aliados e corrida automática."))
 
 -- Bolinha com os pontos livres da árvore
@@ -1320,6 +1322,43 @@ fishingButton.MouseButton1Click:Connect(function()
 		Remotes.FishingAction:FireServer("Bag")
 	end
 end)
+-- Grupo do jogo (GroupReward.server): abre o convite do Roblox e, entrando (ou já sendo membro), pede a recompensa.
+-- O botão só aparece enquanto a recompensa não foi ganha, com uma bolinha vermelha chamando atenção.
+do
+	local groupDot = round(new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(1, -4, 0, 4),
+		Size = UDim2.fromOffset(9, 9),
+		BackgroundColor3 = RED,
+		BorderSizePixel = 0,
+		ZIndex = 5,
+		Parent = groupButton,
+	}))
+	local function refreshGroupButton()
+		groupButton.Visible = player:GetAttribute("GroupRewarded") ~= true
+		groupDot.Visible = groupButton.Visible
+	end
+	player:GetAttributeChangedSignal("GroupRewarded"):Connect(refreshGroupButton)
+	refreshGroupButton()
+	local prompting = false
+	groupButton.MouseButton1Click:Connect(function()
+		if prompting or player:GetAttribute("MenuOpen") then return end
+		local groupId = ReplicatedStorage:GetAttribute("GroupId")
+		if type(groupId) ~= "number" then return end
+		prompting = true
+		task.spawn(function()
+			local ok, status = pcall(function()
+				return game:GetService("GroupService"):PromptJoinAsync(groupId)
+			end)
+			-- Entrou, já era membro ou o convite falhou (o servidor confere de qualquer jeito): pede a recompensa
+			if not ok or status == Enum.GroupMembershipStatus.Joined or status == Enum.GroupMembershipStatus.AlreadyMember then
+				Remotes.GroupReward:FireServer("Claim")
+			end
+			prompting = false
+		end)
+	end)
+end
+
 -- Loja de passes (GamepassShop.client; o menu principal também abre por lá)
 passesButton.MouseButton1Click:Connect(function()
 	fireToggle("GamepassShop")

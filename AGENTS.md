@@ -531,6 +531,16 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   `ComboBreakerReadyAt`, escrito pelo `CombatState.BreakCombo`).
 - Testado pelo usuário com vários jogadores (2026-10-05).
 
+## Recompensa do grupo (Claude, 2026-10-05)
+- `src/Server/GroupReward.server.luau`: quem está no grupo dono do jogo (`game.CreatorId`; o jogo é do grupo 126221487)
+  ganha uma vez `REWARD` (300 Gold e 1 giro de clã). Marca "@GRUPO" em `profile.Codes` (o campo de códigos não aceita
+  "@"); atributo `GroupRewarded`; o servidor publica `ReplicatedStorage.GroupId`. Confere com `GetGroupsAsync` (o
+  `IsInGroup` guarda a resposta do começo da sessão). Remote novo `GroupReward` ("Claim").
+- HUD: botão redondo 団 na coluna dos menus (com bolinha vermelha) abre o convite do Roblox
+  (`GroupService:PromptJoinAsync`) e pede a recompensa; some depois de ganhar.
+- Like/favorito: sem recompensa individual (contra as regras do Roblox e não dá para detectar). Permitido: recompensa
+  para todos quando o jogo bate uma meta de likes (ex.: um código novo).
+
 ## Repositório em dia com o Studio (Claude, 2026-10-05)
 - O GitHub estava atrás do Studio (o usuário sobe arquivos à mão). A partir de um dump de todos os scripts do Studio
   (Output da Command Bar), entraram os que faltavam: `UITheme`, `TutorialData`, `GamepassConfig`, `GamepassOdds`,

@@ -18,6 +18,7 @@ local NAMES = {
 	"ClanResult", -- S->C (clanId, spinsLeft) resultado do giro, para a animação do menu
 	"BuySpin", -- C->S () compra 1 giro de clã com Gold (ClanData.SpinGoldCost)
 	"ClanChoose", -- C->S (clanId) escolhe o clã direto (contas sem sorteio pago, ClanData.ChooseGoldCost); resposta no ClanResult
+	"GroupReward", -- C->S ("Claim") recompensa de quem entrou no grupo do jogo (GroupReward.server); resposta no Notify
 	"RedeemCode", -- C->S (code) resgata um código (Server/Codes); a resposta vem no CodeResult
 	"CodeResult", -- S->C (ok, message)
 	"SaveSetting", -- C->S (key, value) configuração do jogador salva no perfil (ex.: "FastMode", true)
