@@ -21,6 +21,7 @@ local CombatState = require(ServerScriptService:WaitForChild("CombatState"))
 local QuestModule = require(ServerScriptService:WaitForChild("QuestModule"))
 local FoxConfig = require(ReplicatedStorage:WaitForChild("FoxDevilConfig"))
 local ContractData = require(ReplicatedStorage:WaitForChild("ContractData"))
+local Destruction = require(ServerScriptService:WaitForChild("Destruction"))
 
 -- Infernal do Sangue (Codex, src/Server/BloodFiendSkills.luau): dano e efeito próprios para os poderes que ele assume
 -- (Handles); validação, custo e recarga continuam aqui. Sem o módulo (ou com erro nele), ou enquanto o cliente que
@@ -45,6 +46,7 @@ local HIT_TOLERANCE = 1.5 -- o alcance conta até a borda do corpo do alvo, não
 local MARK_MIN_DOT = math.cos(math.rad(35)) -- Mark: o alvo precisa estar a até 35° da frente
 local DASH_WALL_MARGIN = 2 -- Dash: para esta distância antes de uma parede
 local DASH_MAX_LIFT = 4 -- Dash: quanto o destino pode subir para não entrar numa rampa
+local LUNGE_BREAK_STEP = 5 -- Bote: distância entre duas quebras do mapa no caminho da cabeça
 
 local DEFAULT_COLOR = Color3.fromRGB(255, 255, 255)
 local SKILL_COLORS = {
@@ -469,9 +471,12 @@ function Kinds.Cone(ctx)
 					local awayFlat = Vector3.new(away.X, 0, away.Z)
 					local direction = if awayFlat.Magnitude > 0.1 then awayFlat.Unit else look
 					launch(target, direction * (skill.Knockback or 0) + Vector3.new(0, skill.KnockbackUp or 0, 0), 0.22)
+					Destruction.Launch(target.Model, 0.22)
 				end
 			end
 		end
+		-- A mordida arranca o que estiver na área (menos o chão)
+		Destruction.Blast(position, radius, { Power = 65 })
 		if #devoured > 0 then
 			-- StartTime igual ao do FoxBite: o cliente acha a mesma raposa
 			Remotes.CombatFX:FireAllClients("FoxDevour", {
@@ -532,9 +537,15 @@ function Kinds.FoxLunge(ctx)
 	local speed = (distance + behind) / travel
 	local caught = {}
 	local began = os.clock()
+	local brokenUntil = 0 -- a cabeça quebra o caminho a cada LUNGE_BREAK_STEP studs
 	while ctx.Character.Parent and ctx.Humanoid.Health > 0 do
 		local t = math.min(1, (os.clock() - began) / travel)
-		local head = start + look * ((distance + behind) * t - behind)
+		local along = (distance + behind) * t - behind
+		local head = start + look * along
+		if along >= brokenUntil or t >= 1 then
+			brokenUntil = along + LUNGE_BREAK_STEP
+			Destruction.Blast(head + Vector3.new(0, 1, 0), width / 2, { Power = 55 })
+		end
 		for _, target in collectTargets(ctx, head, width / 2 + HIT_TOLERANCE) do
 			if not caught[target.Model] and clearPath(head, target.Root.Position, ctx.Obstacles) and hitTarget(ctx, target) > 0 then
 				caught[target.Model] = target
@@ -550,6 +561,7 @@ function Kinds.FoxLunge(ctx)
 	for _, target in caught do
 		if target.Humanoid.Health > 0 and target.Root.Parent then
 			launch(target, look * (skill.Knockback or 0) + Vector3.new(0, skill.KnockbackUp or 0, 0), 0.22)
+			Destruction.Launch(target.Model, 0.22)
 		end
 	end
 end
@@ -575,6 +587,7 @@ function Kinds.Area(ctx)
 		end
 	end
 	areaEffect(ctx, center, radius)
+	Destruction.Blast(center, radius, { Power = 50 })
 end
 
 -- Avança Range studs (parando antes de paredes) e acerta quem estiver no caminho: Range, Radius
@@ -651,6 +664,7 @@ function Kinds.Projectile(ctx)
 		end
 		spear:Destroy()
 		burst(at, ctx.Color, radius * 2.5, 0.3)
+		Destruction.Blast(at, radius * 1.5, { Power = 40 })
 	end
 
 	connection = RunService.Heartbeat:Connect(function(dt)
@@ -815,6 +829,8 @@ local function newContext(player, character, humanoid, root, skill)
 		HitSet = {}, -- HitSet[model] = true: já levou dano neste uso
 		Hits = {}, -- alvos que levaram dano (para os efeitos)
 		Target = nil, -- Mark: alvo escolhido antes de cobrar o custo
+		-- Destruição do mapa para módulos de fora (BloodFiendSkills): ctx.Destruction.Blast(posição, raio, { Power })
+		Destruction = Destruction,
 	}
 end
 

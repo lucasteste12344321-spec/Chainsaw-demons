@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Debris = game:GetService("Debris")
 local Ragdoll = require(script.Parent:WaitForChild("Ragdoll"))
+local Destruction = require(script.Parent:WaitForChild("Destruction"))
 
 local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 local CombatStyles = require(ReplicatedStorage:WaitForChild("CombatStyles"))
@@ -455,6 +456,7 @@ local function resolveM1(ctx, record, targets)
 			elseif finisher then
 				CombatState.Stun(target.Humanoid, cfg.FinalStun)
 				knock(ctx, target, look * cfg.Knockback + Vector3.new(0, cfg.KnockbackUp, 0), 0.2)
+				Destruction.Launch(target.Model, 0.2)
 			else
 				CombatState.Stun(target.Humanoid, cfg.Stun)
 			end
@@ -573,6 +575,15 @@ local function releaseCharge(player, seq)
 	local record = { Kind = "ChargedPunch", Power = power, Ctx = ctx, Slot = charging.Slot }
 	addPending(player, seq, record)
 	CombatState.FX("ChargedPunch", { Character = ctx.Character, Style = ctx.StyleName, Power = power }, player)
+	-- Carregado pela metade ou mais: o soco quebra o que estiver na frente (Destruction)
+	if power >= 0.5 then
+		task.delay(cfg.Windup, function()
+			if not stillValid(ctx) then return end
+			local reach = lerp(cfg.RangeMin, cfg.RangeMax, power)
+			Destruction.Blast(ctx.Root.Position + flatLook(ctx.Root) * reach * 0.7, 2.5 + 3.5 * power,
+				{ Power = 35 + 30 * power })
+		end)
+	end
 	-- O cliente só manda o acerto quando pega alguém: sem acerto até o fim do golpe (+ folga do ping), errou
 	task.delay(cfg.Windup + 0.45 + 0.2, function()
 		if not record.Landed and stillValid(ctx) then
@@ -599,6 +610,7 @@ local function resolveChargedPunch(ctx, record, targets)
 			CombatState.Stun(target.Humanoid, cfg.Stun)
 			local speed = lerp(cfg.KnockbackMin, cfg.KnockbackMax, power)
 			knock(ctx, target, look * speed + Vector3.new(0, 10 + 15 * power, 0), 0.2)
+			Destruction.Launch(target.Model, 0.2)
 		end
 	end
 end
@@ -928,6 +940,7 @@ local function doDrawSlash(player, slot)
 		if #targets == 0 then
 			whiffPenalty(ctx, cfg)
 		end
+		Destruction.Blast(ctx.Root.Position + look * cfg.Range * 0.55, cfg.Range * 0.45, { Power = 45 })
 		for _, target in targets do
 			local opts = {
 				ScaleWithForca = true,
@@ -938,6 +951,7 @@ local function doDrawSlash(player, slot)
 			if strike(ctx, target, cfg.Damage, opts, true, false) == "Hit" then
 				CombatState.Stun(target.Humanoid, cfg.Stun)
 				knock(ctx, target, look * cfg.Knockback + Vector3.new(0, cfg.KnockbackUp, 0), 0.2)
+				Destruction.Launch(target.Model, 0.2)
 			end
 		end
 	end)
@@ -981,6 +995,7 @@ local function doFoxSnap(player, slot)
 		if #targets == 0 and not clawFound then
 			whiffPenalty(ctx, cfg)
 		end
+		Destruction.Blast(ctx.Root.Position + flatLook(ctx.Root) * cfg.Range * 0.7, 4, { Power = 40 })
 		for _, target in targets do
 			local opts = { ScaleWithForca = true, ForcaScale = cfg.ForcaScale, GuardDamage = cfg.GuardDamage }
 			if strike(ctx, target, cfg.Damage, opts, true, false) == "Hit" then
@@ -1048,6 +1063,7 @@ local function doCounterGrab(player, slot)
 				Ragdoll.Apply(attackerModel, cfg.RagdollTime)
 				local look = flatLook(ctx.Root)
 				knock(ctx, target, look * cfg.Knockback + Vector3.new(0, cfg.KnockbackUp, 0), 0.15)
+				Destruction.Launch(attackerModel, 0.4)
 			end
 		end)
 	end)

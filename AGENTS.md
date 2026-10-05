@@ -573,6 +573,20 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   hash do commit (o endereço com o nome da branch fica alguns minutos com a versão velha em cache). Precisa de
   Game Settings > Security > Allow HTTP Requests.
 
+## Destruição do mapa (Claude, 2026-10-05, pedido do usuário: "tudo destruível menos o chão")
+- `src/Server/Destruction.luau`: `Blast(posição, raio, { Power, VoxelSize })` e `Launch(model, duração)` (quem foi
+  arremessado quebra o que bater). Part de bloco visível vira voxels pelo VoxBreaker (Bartokens, MIT; cópia em
+  `src/Server/VoxBreaker.luau` sem PartCache, voxels em `workspace.Destruction`, e a volta do CanQuery corrigida); malha,
+  união, cunha e peça pequena somem e soltam pedaços (ou voam inteiras) e a colisão invisível de dentro sai junto. Tudo
+  volta em 30 s (malha espera ninguém estar dentro). Pedaços voando no grupo de colisão `Debris` (não batem em personagem).
+- Nunca quebra: chão (baixo e largo, rampa, ou nome com floor/ground/chao/piso/rua/road/calcada/asfalto), peça invisível,
+  peça maior que 120 studs (malha: 45), personagens, `Enemies`, `EnemySpawns`, NPC com tag `QuestGiver`, spawn, assento,
+  peça com ProximityPrompt/ClickDetector e tudo com o atributo `NoDestroy = true` (na peça ou numa pasta/modelo acima).
+  `workspace:SetAttribute("DestructionDisabled", true)` desliga.
+- Ligado em: Mordida do Kon (área inteira), Bote (o caminho da cabeça), poderes Area/Projectile, Soco carregado (a partir
+  de meia carga), Saque, Kon!, e o arremesso do 5º M1, do Soco carregado, do Saque, do Contra-agarrão, da Mordida e do Bote.
+  O Infernal do Sangue (Codex) recebe `ctx.Destruction` no PathSkills (pedido abaixo).
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.
@@ -586,6 +600,9 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 
 ## Pedidos entre agentes
 
+- [Claude→Codex] 2026-10-05: destruição do mapa (seção "Destruição do mapa"). Para o Infernal do Sangue quebrar o mapa
+  também: no `BloodFiendSkills`, no "Impact" da Lança e do Martelo, chamar `ctx.Destruction.Blast(ponto, raio, { Power = 55 })`
+  (Lança: raio 5 no ponto do impacto; Martelo: o `radius` do golpe no `point`). O `ctx.Destruction` já vem do PathSkills.
 - [Claude→Codex] 2026-10-05: a pedido do usuário (HUD mais limpa), mexi no visual de `Fishing.client`,
   `WorldActivities.client` e `GamepassShop.client` (este não estava no repo; entrou a partir da cópia do Studio). A lógica
   e os remotes são os mesmos; só saíram os botões soltos (a HUD abre a cesta e a loja) e os painéis ficaram menores.
