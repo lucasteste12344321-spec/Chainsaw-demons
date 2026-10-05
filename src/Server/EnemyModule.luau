@@ -439,11 +439,22 @@ local function repairRig(npc, humanoid, root, templateName)
 	local welded = 0
 	for _, part in npc:GetDescendants() do
 		if part:IsA("BasePart") and not connected[part] then
+			-- A peça presa cuja caixa está mais perto do centro desta (a motosserra do braço vai no braço, não no
+			-- tronco); dentro de duas caixas, a de centro mais perto. A raiz só se não houver outra.
 			local best, bestDistance = root, math.huge
 			for _, anchor in anchors do
-				local distance = (anchor.Position - part.Position).Magnitude
-				if distance < bestDistance then
-					best, bestDistance = anchor, distance
+				if anchor ~= root then
+					local offset = anchor.CFrame:PointToObjectSpace(part.Position)
+					local half = anchor.Size / 2
+					local outside = Vector3.new(
+						math.max(math.abs(offset.X) - half.X, 0),
+						math.max(math.abs(offset.Y) - half.Y, 0),
+						math.max(math.abs(offset.Z) - half.Z, 0)
+					).Magnitude
+					local distance = outside * 1000 + offset.Magnitude
+					if distance < bestDistance then
+						best, bestDistance = anchor, distance
+					end
 				end
 			end
 			local weld = Instance.new("WeldConstraint")
