@@ -101,15 +101,15 @@ local function resolveUser(value)
 end
 
 local function notify(player, text)
-	Remotes.Notify:FireClient(player, "Servidor VIP", text, 4)
+	Remotes.Notify:FireClient(player, "VIP Server", text, 4)
 end
 
 local LIST_ACTIONS = {
-	WhitelistAdd = { "Whitelist", true, "Liberado para entrar no seu servidor." },
-	WhitelistRemove = { "Whitelist", false, "Tirado da lista." },
-	ModAdd = { "Mods", true, "Agora é mod do seu servidor." },
-	ModRemove = { "Mods", false, "Não é mais mod." },
-	Unban = { "Banned", false, "Desbanido." },
+	WhitelistAdd = { "Whitelist", true, "Allowed to join your server." },
+	WhitelistRemove = { "Whitelist", false, "Removed from the list." },
+	ModAdd = { "Mods", true, "Is now a mod of your server." },
+	ModRemove = { "Mods", false, "Is no longer a mod." },
+	Unban = { "Banned", false, "Unbanned." },
 }
 
 local function handle(player, action, value)
@@ -133,20 +133,20 @@ local function handle(player, action, value)
 			push(target)
 		end
 	elseif LIST_ACTIONS[action] then
-		if not Entitlements.Owns(player, "VIP") then notify(player, "O passe VIP é necessário."); return end
+		if not Entitlements.Owns(player, "VIP") then notify(player, "The VIP pass is required."); return end
 		local userId = resolveUser(value)
-		if not userId or userId == player.UserId then notify(player, "Jogador não encontrado."); return end
+		if not userId or userId == player.UserId then notify(player, "Player not found."); return end
 		local entry = LIST_ACTIONS[action]
 		if Rooms.Update(player.UserId, entry[1], userId, entry[2]) then
 			notify(player, `{nameOf(userId)}: {entry[3]}`)
 		else
-			notify(player, "A lista está cheia (máximo 50).")
+			notify(player, "The list is full (max 50).")
 		end
 	elseif action == "PvP" then
 		if not role or not ownerId then return end
 		Rooms.Update(ownerId, "PvP", nil, value == true)
 		for _, other in Players:GetPlayers() do
-			notify(other, if value == true then "PvP ligado neste servidor." else "PvP desligado neste servidor.")
+			notify(other, if value == true then "PvP is on in this server." else "PvP is off in this server.")
 		end
 	elseif action == "Kick" or action == "Ban" then
 		if not role or not ownerId then return end
@@ -155,7 +155,7 @@ local function handle(player, action, value)
 		if not target or target == player then return end
 		local targetRole = Rooms.RoleOf(target.UserId)
 		if targetRole == "Owner" or (targetRole == "Mod" and role ~= "Owner") then
-			notify(player, "Você não pode tirar essa pessoa.")
+			notify(player, "You cannot remove that person.")
 			return
 		end
 		if action == "Ban" then
@@ -163,8 +163,8 @@ local function handle(player, action, value)
 			Rooms.Update(ownerId, "Mods", target.UserId, false)
 			Rooms.Update(ownerId, "Banned", target.UserId, true)
 		end
-		Rooms.SendToPublic(target, if action == "Ban" then "Você foi banido deste servidor VIP." else "Você foi expulso deste servidor VIP.")
-		notify(player, `{target.DisplayName} foi {if action == "Ban" then "banido" else "expulso"}.`)
+		Rooms.SendToPublic(target, if action == "Ban" then "You were banned from this VIP server." else "You were kicked from this VIP server.")
+		notify(player, `{target.DisplayName} was {if action == "Ban" then "banned" else "kicked"}.`)
 	end
 end
 

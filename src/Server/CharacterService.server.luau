@@ -151,7 +151,7 @@ local function onClanSpin(player)
 	if clan.Rarity == "Legendary" then
 		task.delay(LEGENDARY_ANNOUNCE_DELAY, function()
 			if player.Parent then
-				Remotes.Announcement:FireAllClients("Clã lendário!", `{player.DisplayName} tirou o clã {clan.Name} {clan.Kanji}!`, 6)
+				Remotes.Announcement:FireAllClients("Legendary clan!", `{player.DisplayName} rolled the {clan.Name} {clan.Kanji} clan!`, 6)
 			end
 		end)
 	end
@@ -162,11 +162,11 @@ local function onBuySpin(player)
 	local profile = PlayerData.GetProfile(player)
 	if not profile then return end
 	if restricted(player) then
-		PlayerData.Notify(player, "Clã", "Na sua conta não tem giro pago: escolha o clã direto na lista.")
+		PlayerData.Notify(player, "Clan", "Your account has no paid spins: choose your clan directly from the list.")
 		return
 	end
 	if not PlayerData.SpendGold(player, ClanData.SpinGoldCost) then
-		PlayerData.Notify(player, "Clã", `Um giro custa {ClanData.SpinGoldCost} Gold.`)
+		PlayerData.Notify(player, "Clan", `A spin costs {ClanData.SpinGoldCost} Gold.`)
 		return
 	end
 	profile.Spins += 1
@@ -185,7 +185,7 @@ local function onClanChoose(player, clanId)
 	end
 	local credits, gold = ClanData.ChooseCost(clan.Id, profile.Spins)
 	if gold > 0 and not PlayerData.SpendGold(player, gold) then
-		PlayerData.Notify(player, "Clã", `Faltou Gold: o clã {clan.Name} custa {gold} Gold além dos créditos.`)
+		PlayerData.Notify(player, "Clan", `Not enough Gold: the {clan.Name} clan costs {gold} Gold on top of your credits.`)
 		Remotes.ClanResult:FireClient(player, nil, profile.Spins)
 		return
 	end
@@ -209,15 +209,15 @@ local function onRedeemCode(player, text)
 	local code = normalizeCode(text)
 	local entry = code and Codes[code]
 	if type(entry) ~= "table" then
-		Remotes.CodeResult:FireClient(player, false, "Código inválido.")
+		Remotes.CodeResult:FireClient(player, false, "Invalid code.")
 		return
 	end
 	if type(entry.Expires) == "number" and os.time() > entry.Expires then
-		Remotes.CodeResult:FireClient(player, false, "Esse código expirou.")
+		Remotes.CodeResult:FireClient(player, false, "This code has expired.")
 		return
 	end
 	if profile.Codes[code] then
-		Remotes.CodeResult:FireClient(player, false, "Você já usou esse código.")
+		Remotes.CodeResult:FireClient(player, false, "You already used this code.")
 		return
 	end
 
@@ -225,7 +225,7 @@ local function onRedeemCode(player, text)
 	local rewards = {}
 	if type(entry.Spins) == "number" and entry.Spins > 0 then
 		profile.Spins += math.floor(entry.Spins)
-		table.insert(rewards, `+{math.floor(entry.Spins)} giros de clã`)
+		table.insert(rewards, `+{math.floor(entry.Spins)} clan spins`)
 	end
 	if type(entry.Gold) == "number" and entry.Gold > 0 then
 		PlayerData.AddGold(player, math.floor(entry.Gold), true)
@@ -236,7 +236,7 @@ local function onRedeemCode(player, text)
 		table.insert(rewards, `+{math.floor(entry.XP)} XP`)
 	end
 	publish(player, profile)
-	local message = entry.Message or `Código resgatado: {table.concat(rewards, ", ")}.`
+	local message = entry.Message or `Code redeemed: {table.concat(rewards, ", ")}.`
 	Remotes.CodeResult:FireClient(player, true, message)
 end
 

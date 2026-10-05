@@ -27,7 +27,7 @@ local changed = Instance.new("BindableEvent")
 Rooms.Changed = changed.Event -- algo mudou (o painel manda o estado de novo)
 
 local function message(player, text)
-	if player.Parent then Remotes.Notify:FireClient(player, "Servidor VIP", text, 5) end
+	if player.Parent then Remotes.Notify:FireClient(player, "VIP Server", text, 5) end
 end
 
 local function testMode()
@@ -200,15 +200,15 @@ local function run(player, action)
 	if not ok then
 		busy[player] = nil
 		warn("[VIPServers] " .. tostring(err))
-		message(player, "Não foi possível entrar agora. Tente novamente em alguns segundos.")
+		message(player, "Could not join right now. Try again in a few seconds.")
 	end
 	task.delay(30, function() busy[player] = nil end)
 end
 
 -- public = true: volta para um servidor público. Senão vai para o próprio servidor VIP (precisa do passe).
 function Rooms.Enter(player, public)
-	if not public and not Entitlements.Owns(player, "VIP") then message(player, "O passe VIP é necessário."); return end
-	if public and not Rooms.IsReserved() then message(player, "Você já está em um servidor público."); return end
+	if not public and not Entitlements.Owns(player, "VIP") then message(player, "The VIP pass is required."); return end
+	if public and not Rooms.IsReserved() then message(player, "You are already on a public server."); return end
 	if not canStart(player) then return end
 	run(player, function()
 		if public then
@@ -217,7 +217,7 @@ function Rooms.Enter(player, public)
 		end
 		local room = roomOf(player.UserId, true)
 		assert(room, "Missing reservation")
-		if game.PrivateServerId == room.PrivateId then message(player, "Você já está no seu servidor VIP."); busy[player] = nil; return end
+		if game.PrivateServerId == room.PrivateId then message(player, "You are already on your VIP server."); busy[player] = nil; return end
 		teleportInto(player, room)
 	end)
 end
@@ -226,11 +226,11 @@ end
 function Rooms.EnterRoomOf(player, ownerId)
 	if type(ownerId) ~= "number" or ownerId == player.UserId then return end
 	local settings = Rooms.GetSettings(ownerId)
-	if contains(settings.Banned, player.UserId) then message(player, "Você foi banido desse servidor VIP."); return end
+	if contains(settings.Banned, player.UserId) then message(player, "You were banned from that VIP server."); return end
 	local invite = invites[player]
 	local invited = invite and invite.Owner == ownerId and os.clock() < invite.Expires
 	if not invited and not contains(settings.Whitelist, player.UserId) then
-		message(player, "Você não tem acesso a esse servidor VIP.")
+		message(player, "You do not have access to that VIP server.")
 		return
 	end
 	if not canStart(player) then return end
@@ -238,22 +238,22 @@ function Rooms.EnterRoomOf(player, ownerId)
 	run(player, function()
 		local room = roomOf(ownerId, false)
 		if not room then
-			message(player, "O dono ainda não abriu o servidor VIP dele.")
+			message(player, "The owner has not opened their VIP server yet.")
 			busy[player] = nil
 			return
 		end
-		if game.PrivateServerId == room.PrivateId then message(player, "Você já está nesse servidor VIP."); busy[player] = nil; return end
+		if game.PrivateServerId == room.PrivateId then message(player, "You are already on that VIP server."); busy[player] = nil; return end
 		teleportInto(player, room)
 	end)
 end
 
 -- Convite do dono (servidor público): vale INVITE_TIME s
 function Rooms.Invite(owner, target)
-	if not Entitlements.Owns(owner, "VIP") then message(owner, "O passe VIP é necessário."); return false end
+	if not Entitlements.Owns(owner, "VIP") then message(owner, "The VIP pass is required."); return false end
 	if target == owner or not target.Parent then return false end
-	if contains(Rooms.GetSettings(owner.UserId).Banned, target.UserId) then message(owner, `{target.DisplayName} está banido do seu servidor.`); return false end
+	if contains(Rooms.GetSettings(owner.UserId).Banned, target.UserId) then message(owner, `{target.DisplayName} is banned from your server.`); return false end
 	invites[target] = { Owner = owner.UserId, OwnerName = owner.DisplayName, Expires = os.clock() + INVITE_TIME }
-	message(owner, `Convite enviado para {target.DisplayName}.`)
+	message(owner, `Invite sent to {target.DisplayName}.`)
 	changed:Fire()
 	return true
 end
@@ -274,7 +274,7 @@ function Rooms.SendToPublic(player, text)
 	if text then message(player, text) end
 	busy[player] = nil; cooldown[player] = nil
 	if RunService:IsStudio() then
-		message(player, "(Studio: aqui você voltaria para um servidor público.)")
+		message(player, "(Studio: here you would go back to a public server.)")
 		return
 	end
 	run(player, function()
@@ -296,7 +296,7 @@ function Rooms.CheckArrival(player)
 	if not roomOwnerId then return end
 	player:SetAttribute("VIPRole", Rooms.RoleOf(player.UserId))
 	if contains(Rooms.GetSettings(roomOwnerId).Banned, player.UserId) then
-		Rooms.SendToPublic(player, "Você foi banido deste servidor VIP.")
+		Rooms.SendToPublic(player, "You were banned from this VIP server.")
 	end
 	changed:Fire()
 end
@@ -318,7 +318,7 @@ if Rooms.IsReserved() and not RunService:IsStudio() then
 end
 
 Teleport.TeleportInitFailed:Connect(function(player)
-	if busy[player] then busy[player] = nil; message(player, "O teleporte falhou. Você pode tentar novamente.") end
+	if busy[player] then busy[player] = nil; message(player, "The teleport failed. You can try again.") end
 end)
 Players.PlayerRemoving:Connect(function(player)
 	busy[player] = nil; cooldown[player] = nil; invites[player] = nil

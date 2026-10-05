@@ -682,8 +682,16 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   passe; DELETE com confirmação. A tela de carregamento sai quando a SaveSelect existe; o `MainMenu` espera o `SaveSlot`.
 - Trocar de save no jogo: botão CHANGE SAVE no menu principal → "Switch" (salva e `TeleportAsync` para o mesmo lugar;
   no Studio só avisa).
-- Idioma: o jogo passa a ter o **inglês** como língua de origem (tradução automática do Roblox para os outros). Texto
-  novo de jogador em inglês; os antigos estão sendo traduzidos.
+- Idioma (2026-10-05, pedido do usuário): o jogo tem o **inglês** como língua de origem (o Roblox traduz sozinho para
+  os outros idiomas). Todo texto que o jogador vê é em inglês; comentários, `warn` e comandos de admin continuam em
+  português. IDs internos não mudaram (estilos "Punhos"/"Motosserra", chaves do EnemyData, ids de missão, abas): o
+  nome mostrado vem de `DisplayName`/`Name` (`SkillTreeData.StyleName(id)` para estilos). Raridades viraram
+  Common/Uncommon/Rare/Epic/Legendary (são só texto, não ficam salvas). `EnemyData.LegacyName` guarda o nome antigo
+  para as zonas de spawn com nome em português. Números no formato inglês (`UITheme.formatNumber` = 12,345).
+  Glossário: Caçador = Hunter, Infernal = Fiend, Humano = Human, Punhos = Fists, Motosserra = Chainsaw, fôlego =
+  stamina, tempo de vida = lifespan, guarda = guard, maestria = mastery, giro de clã = clan spin, Mestre Espadachim =
+  Master Swordsman, Mestre dos Pactos = Pact Master, Treinador = Trainer, Caçador Veterano = Veteran Hunter, Demônio
+  Ancião = Elder Devil, Rei Goblin = Goblin King, Goblin Ladrão = Goblin Thief, Ratazana = Canal Rat.
 
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada

@@ -24,8 +24,8 @@ local function claim(player, automatic)
 	if player.Parent and (ok or not automatic) then
 		-- Conta restrita (RandomItemsRestricted): os giros valem como créditos de escolha direta do clã, sem sorteio
 		local restricted = player:GetAttribute("RandomItemsRestricted") ~= false
-		local gift = if restricted then "créditos de clã" else "giros de clã"
-		Remotes.Notify:FireClient(player, "VIP", if ok then `+{Config.DailySpins} {gift} diários recebidos!` else reason, 5)
+		local gift = if restricted then "clan credits" else "clan spins"
+		Remotes.Notify:FireClient(player, "VIP", if ok then `+{Config.DailySpins} daily {gift} received!` else reason, 5)
 	end
 	snapshot(player)
 end

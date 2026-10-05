@@ -57,9 +57,9 @@ local OBJECTIVE_TYPES = {
 }
 
 local DEFAULT_GREETINGS = {
-	Available = "Tenho um trabalho para você.",
-	Active = "E aí, já terminou o que eu pedi?",
-	Idle = "Não tenho nada para você agora. Volte mais tarde.",
+	Available = "I have a job for you.",
+	Active = "So, did you finish what I asked?",
+	Idle = "I have nothing for you right now. Come back later.",
 }
 
 local questsById = {}
@@ -257,18 +257,18 @@ local function rewardText(rewards)
 	local parts = {}
 	if rewards.XP then table.insert(parts, `+{rewards.XP} XP`) end
 	if rewards.Gold then table.insert(parts, `+{rewards.Gold} Gold`) end
-	if rewards.StatusPoints then table.insert(parts, `+{rewards.StatusPoints} pontos de habilidade`) end
+	if rewards.StatusPoints then table.insert(parts, `+{rewards.StatusPoints} skill points`) end
 	if rewards.Contract then
 		local contract = PathData.Contracts[rewards.Contract]
 		local name = if contract then contract.DisplayName else rewards.Contract
-		table.insert(parts, `contrato com o {name}`)
+		table.insert(parts, `contract with the {name}`)
 	end
 	if rewards.Style then
 		local style = CombatStyles.Styles[rewards.Style]
-		table.insert(parts, `estilo {if style then style.DisplayName else rewards.Style}`)
+		table.insert(parts, `{if style then style.DisplayName else rewards.Style} style`)
 	end
 	if rewards.DodgeLevel then
-		table.insert(parts, `Esquiva nível {rewards.DodgeLevel}`)
+		table.insert(parts, `Dodge level {rewards.DodgeLevel}`)
 	end
 	return table.concat(parts, ", ")
 end
@@ -292,7 +292,7 @@ local function complete(player, quest)
 
 	local rewards = quest.Rewards or {}
 	local text = rewardText(rewards)
-	PlayerData.Notify(player, "Missão completa!", if text ~= "" then `{quest.Name}: {text}` else quest.Name, 5)
+	PlayerData.Notify(player, "Quest complete!", if text ~= "" then `{quest.Name}: {text}` else quest.Name, 5)
 	if rewards.Gold then PlayerData.AddGold(player, rewards.Gold) end
 	if rewards.StatusPoints then PlayerData.AddStatusPoints(player, rewards.StatusPoints) end
 	if rewards.Contract then grantContract(player, rewards.Contract) end
@@ -315,7 +315,7 @@ local function accept(player, quest)
 	end
 	local entry = { Progress = progress }
 	state.Active[quest.Id] = entry
-	PlayerData.Notify(player, if quest.Main then "Missão principal" else "Nova missão", quest.Name, 4)
+	PlayerData.Notify(player, if quest.Main then "Main quest" else "New quest", quest.Name, 4)
 
 	-- Ex.: "chegar ao level 3" quando já está no level 3
 	if isDone(quest, entry) then
@@ -586,7 +586,7 @@ local function revalidate(player)
 			state.Active[questId] = nil
 		end
 		if #abandoned > 0 then
-			PlayerData.Notify(player, "Missões", `{#abandoned} missão(ões) que não servem mais para o seu caminho foram abandonadas.`, 5)
+			PlayerData.Notify(player, "Quests", `{#abandoned} quest(s) that no longer fit your path were abandoned.`, 5)
 		end
 
 		-- Quem não é Caçador não tem contratos: as missões que dão contrato podem ser feitas de novo
@@ -760,7 +760,7 @@ local function setupNPC(model)
 
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "QuestPrompt"
-	prompt.ActionText = "Falar"
+	prompt.ActionText = "Talk"
 	prompt.ObjectText = npcName(npcId)
 	prompt.KeyboardKeyCode = Enum.KeyCode.E -- F é o block; o E ficou só para falar (as skills estão em Z/X/C)
 	prompt.HoldDuration = 0
@@ -803,7 +803,7 @@ local function onQuestAction(player, action, questId, npcId)
 	if not isNearNPC(player, npcId) or not QuestModule.IsAvailable(player, quest) then return end
 
 	if countActive(state) >= MAX_ACTIVE then
-		PlayerData.Notify(player, "Missões", `Você já tem {MAX_ACTIVE} missões ativas (fora as principais). Termine alguma primeiro.`)
+		PlayerData.Notify(player, "Quests", `You already have {MAX_ACTIVE} active quests (not counting main ones). Finish one first.`)
 		return
 	end
 

@@ -78,7 +78,7 @@ local function onCharacter(victim, character)
 		local now = os.clock()
 		local last = history[victim.UserId]
 		if last and now - last < REPEAT_COOLDOWN then
-			PlayerData.Notify(killer, "Abate", `Você derrotou {victim.DisplayName} há pouco tempo. Esse abate não dá recompensa.`, 3)
+			PlayerData.Notify(killer, "Kill", `You defeated {victim.DisplayName} recently. This kill gives no reward.`, 3)
 			return
 		end
 		history[victim.UserId] = now
@@ -86,7 +86,7 @@ local function onCharacter(victim, character)
 		local victimLevel = PlayerData.GetLevel(victim)
 		PlayerData.AddXP(killer, xpFor(victimLevel))
 		PlayerData.AddGold(killer, goldFor(victimLevel))
-		PlayerData.Notify(killer, "Abate!", `Você derrotou {victim.DisplayName} (Lv. {victimLevel}).`, 3)
+		PlayerData.Notify(killer, "Kill!", `You defeated {victim.DisplayName} (Lv. {victimLevel}).`, 3)
 		QuestModule.OnPlayerKilled(killer, victim)
 	end)
 end

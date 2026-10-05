@@ -545,15 +545,15 @@ end
 local function savePlayer(player) return persist(player) end
 
 function PlayerData.ClaimVIPDaily(player)
-	if not Passes.Owns(player, "VIP") then return false, "O passe VIP é necessário." end
+	if not Passes.Owns(player, "VIP") then return false, "The VIP pass is required." end
 	local profile = profiles[player]
-	if not profile or not profile.CanSave then return false, "Aguarde o carregamento seguro dos dados e tente novamente." end
+	if not profile or not profile.CanSave then return false, "Wait for your data to finish loading safely and try again." end
 	local day = PassConfig.Day(os.time())
-	if profile.VIPRewards.Day >= day then return false, "Você já recebeu os giros de hoje. Renova à meia-noite de Brasília." end
-	if profile.Spins > PassConfig.MaxSpins - PassConfig.DailySpins then return false, "Use alguns giros antes de receber os 5 diários." end
+	if profile.VIPRewards.Day >= day then return false, "You already got today's spins. They reset at midnight Brasília time (UTC-3)." end
+	if profile.Spins > PassConfig.MaxSpins - PassConfig.DailySpins then return false, "Use some spins before claiming the 5 daily ones." end
 	local ok, granted = persist(player, day)
-	if not ok then return false, "Não foi possível salvar o benefício. Tente novamente; o dia não foi consumido." end
-	return granted > 0, if granted > 0 then nil else "O benefício de hoje já foi recebido."
+	if not ok then return false, "Could not save the perk. Try again; today's claim was not used up." end
+	return granted > 0, if granted > 0 then nil else "Today's perk was already claimed."
 end
 
 local function newInt(name, value, parent)
@@ -806,7 +806,7 @@ function PlayerData.UnlockStyle(player, name)
 	table.insert(profile.Styles, name)
 	publishStyles(player, profile)
 	local slot = #PlayerData.GetStyles(player)
-	PlayerData.Notify(player, "Novo estilo de combate!", `{style.DisplayName}: aperte {slot} para equipar. As técnicas saem na árvore de habilidades (M).`, 7)
+	PlayerData.Notify(player, "New combat style!", `{style.DisplayName}: press {slot} to equip it. Its techniques unlock in the skill tree (M).`, 7)
 	return true
 end
 
@@ -820,13 +820,13 @@ end
 -- Guarda ou equipa um estilo pelo inventário (Remotes.EquipStyle). Devolve (ok, motivo)
 function PlayerData.SetStyleEquipped(player, name, equip)
 	local profile = profiles[player]
-	if not profile then return false, "Seus dados ainda estão carregando." end
-	if not PlayerData.HasStyle(player, name) then return false, "Você não conhece esse estilo." end
+	if not profile then return false, "Your data is still loading." end
+	if not PlayerData.HasStyle(player, name) then return false, "You do not know that style." end
 	local fusion = fusionStyleOf(player)
 	if fusion then
 		local contract = PathData.Contracts[(select(2, PathData.FromPlayer(player)))[1]]
-		local name2 = if contract then contract.DisplayName else "contrato"
-		return false, `Seus {fusion} estão fundidos com o {name2}: é o único estilo que você pode usar.`
+		local name2 = if contract then contract.DisplayName else "contract"
+		return false, `Your {SkillTreeData.StyleName(fusion)} are fused with the {name2}: it is the only style you can use.`
 	end
 	local index = table.find(profile.HiddenStyles, name)
 	if equip then
@@ -836,7 +836,7 @@ function PlayerData.SetStyleEquipped(player, name, equip)
 		if index then return false, nil end
 		local equipped = equippedStyles(player, profile)
 		if #equipped <= 1 and equipped[1] == name then
-			return false, "Você precisa de pelo menos um estilo equipado."
+			return false, "You need at least one style equipped."
 		end
 		table.insert(profile.HiddenStyles, name)
 	end
@@ -876,8 +876,8 @@ local function formHint(player, kind, id, oldLevel, newLevel)
 		local requires = entry.Forms[form] and entry.Forms[form].Requires
 		local need = requires and requires[kind]
 		if need and oldLevel < need and newLevel >= need then
-			local npc = QuestData.NPCs[ContractData.EvolutionNPC] or "o Mestre dos Pactos"
-			return ` Requisito da forma {ContractData.FormNames[form]} cumprido: fale com {npc}.`
+			local npc = QuestData.NPCs[ContractData.EvolutionNPC] or "the Pact Master"
+			return ` {ContractData.FormNames[form]} form requirement met: talk to {npc}.`
 		end
 	end
 	return nil
@@ -909,12 +909,12 @@ function PlayerData.AddMastery(player, style, amount)
 			table.insert(ready, entry.Name)
 		end
 	end
-	local text = `{style}: maestria {newLevel}.`
+	local text = `{SkillTreeData.StyleName(style)}: mastery {newLevel}.`
 	if #ready > 0 then
-		text ..= ` Já dá para desbloquear na árvore (M): {table.concat(ready, ", ")}.`
+		text ..= ` You can now unlock in the tree (M): {table.concat(ready, ", ")}.`
 	end
 	text ..= formHint(player, "StyleMastery", style, oldLevel, newLevel) or ""
-	PlayerData.Notify(player, "Maestria!", text, 5)
+	PlayerData.Notify(player, "Mastery!", text, 5)
 end
 
 function PlayerData.GetContractMasteryLevel(player, contractId)
@@ -944,7 +944,7 @@ function PlayerData.AddContractMastery(player, contractId, amount)
 	local contract = PathData.Contracts[contractId]
 	local name = if contract then contract.DisplayName else contractId
 	local text = `{name}: maestria do contrato {newLevel}.` .. (formHint(player, "Mastery", contractId, oldLevel, newLevel) or "")
-	PlayerData.Notify(player, "Maestria do contrato!", text, 5)
+	PlayerData.Notify(player, "Contract mastery!", text, 5)
 end
 
 -- Desbloqueia um nó. Devolve (true) ou (false, motivo).
@@ -952,7 +952,7 @@ function PlayerData.UnlockNode(player, nodeId)
 	local profile = profiles[player]
 	local entry = type(nodeId) == "string" and SkillTreeData.Get(nodeId)
 	if not profile or not entry or entry.Default then
-		return false, "Esse nó não existe."
+		return false, "That node does not exist."
 	end
 	local blocker = SkillTreeData.Blocker(entry, SkillTreeData.UnlockedSet(profile.Tree), masteryLevels(profile),
 		availablePoints(player, profile))
@@ -1043,11 +1043,11 @@ function PlayerData.EquipItem(player, itemId, equip)
 	local profile = profiles[player]
 	local item = type(itemId) == "string" and ItemData.Get(itemId)
 	if not profile or not item or not ItemData.GetSlot(item.Slot) then
-		return false, "Esse item não existe."
+		return false, "That item does not exist."
 	end
 	if equip then
 		if (profile.Items[itemId] or 0) < 1 then
-			return false, "Você não tem esse item."
+			return false, "You do not have that item."
 		end
 		if profile.Equipped[item.Slot] == itemId then return true end
 		profile.Equipped[item.Slot] = itemId
@@ -1095,7 +1095,7 @@ function PlayerData.AddXP(player, amount, noBonus)
 		refreshPoints(player)
 		applyHealth(player, true)
 		levelUpEffect(player)
-		PlayerData.Notify(player, "Level up!", "Você chegou ao level " .. level.Value .. ". Aperte M para abrir a árvore de habilidades.", 4)
+		PlayerData.Notify(player, "Level up!", "You reached level " .. level.Value .. ". Press M to open the skill tree.", 4)
 	end
 	return amount
 end
@@ -1215,7 +1215,7 @@ local function setupPlayer(player, slot)
 			warn("[PlayerData] Dados não carregados no Studio (ative Game Settings > Security > Enable Studio Access to API Services para testar o salvamento)")
 		else
 			task.delay(5, function()
-				PlayerData.Notify(player, "Aviso", "Não foi possível carregar seus dados. O progresso desta sessão não será salvo.", 8)
+				PlayerData.Notify(player, "Warning", "Could not load your data. Progress in this session will not be saved.", 8)
 			end)
 		end
 	end
@@ -1224,7 +1224,7 @@ end
 local function onSkillTreeUnlock(player, nodeId)
 	local ok, reason = PlayerData.UnlockNode(player, nodeId)
 	if not ok then
-		PlayerData.Notify(player, "Árvore de habilidades", reason or "Não foi possível desbloquear.")
+		PlayerData.Notify(player, "Skill tree", reason or "Could not unlock.")
 	end
 end
 
@@ -1236,20 +1236,20 @@ local function onStatusReset(player)
 
 	local refund = SkillTreeData.Spent(profile.Tree)
 	if refund == 0 then
-		PlayerData.Notify(player, "Árvore de habilidades", "Você não tem nada desbloqueado para resetar.")
+		PlayerData.Notify(player, "Skill tree", "You have nothing unlocked to reset.")
 		return
 	end
 
 	local cost = StatConfig.ResetCost(leaderstats.Level.Value)
 	if not PlayerData.SpendGold(player, cost) then
-		PlayerData.Notify(player, "Árvore de habilidades", `Resetar custa {cost} Gold. Você tem {leaderstats.Gold.Value}.`)
+		PlayerData.Notify(player, "Skill tree", `Resetting costs {cost} Gold. You have {leaderstats.Gold.Value}.`)
 		return
 	end
 
 	table.clear(profile.Tree)
 	refreshPoints(player)
 	applyTree(player, profile)
-	PlayerData.Notify(player, "Árvore de habilidades", `Árvore resetada: {refund} pontos devolvidos por {cost} Gold.`)
+	PlayerData.Notify(player, "Skill tree", `Tree reset: {refund} points refunded for {cost} Gold.`)
 end
 
 -- Cliente pedindo para vestir/tirar um item (o inventário se atualiza pelo atributo Equipped)
@@ -1262,7 +1262,7 @@ local function onEquipStyle(player, name, equip)
 	lastStyleToggle[player] = clock
 	local ok, reason = PlayerData.SetStyleEquipped(player, name, equip)
 	if not ok and reason then
-		PlayerData.Notify(player, "Estilos", reason, 5)
+		PlayerData.Notify(player, "Styles", reason, 5)
 	end
 end
 
@@ -1272,7 +1272,7 @@ local function onEquipItem(player, itemId, equip)
 	lastEquip[player] = clock
 	local ok, reason = PlayerData.EquipItem(player, itemId, equip == true)
 	if not ok and reason then
-		PlayerData.Notify(player, "Inventário", reason)
+		PlayerData.Notify(player, "Inventory", reason)
 	end
 end
 

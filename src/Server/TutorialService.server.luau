@@ -81,7 +81,7 @@ local function dummyBar(dummy, humanoid)
 	name.TextSize = 14
 	name.TextColor3 = Color3.fromRGB(255, 255, 255)
 	name.TextStrokeTransparency = 0.4
-	name.Text = "Boneco de Treino"
+	name.Text = "Training Dummy"
 	name.Parent = billboard
 
 	local back = Instance.new("Frame")
@@ -195,9 +195,9 @@ local function giveReward(player, tutorial, profile)
 	if reward.Spins and reward.Spins > 0 and type(profile.Spins) == "number" then
 		profile.Spins += reward.Spins
 		player:SetAttribute("ClanSpins", profile.Spins)
-		table.insert(parts, if reward.Spins == 1 then "+1 giro de clã" else `+{reward.Spins} giros de clã`)
+		table.insert(parts, if reward.Spins == 1 then "+1 clan spin" else `+{reward.Spins} clan spins`)
 	end
-	PlayerData.Notify(player, "Tutorial concluído!", table.concat(parts, " e "), 6)
+	PlayerData.Notify(player, "Tutorial complete!", table.concat(parts, " and "), 6)
 end
 
 local VALID_ACTIONS = { Step = true, Finish = true, Skip = true, Restart = true, Dummy = true }

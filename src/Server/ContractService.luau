@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 local PathData = require(ReplicatedStorage:WaitForChild("PathData"))
 local ContractData = require(ReplicatedStorage:WaitForChild("ContractData"))
+local SkillTreeData = require(ReplicatedStorage:WaitForChild("SkillTreeData"))
 local PlayerData = require(script.Parent:WaitForChild("PlayerData"))
 local PathModule = require(script.Parent:WaitForChild("PathModule"))
 local QuestData = require(script.Parent:WaitForChild("QuestData"))
@@ -23,7 +24,7 @@ local ACTION_GAP = 1
 local lastAction = {}
 
 local function npcName()
-	return QuestData.NPCs[ContractData.EvolutionNPC] or "Mestre dos Pactos"
+	return QuestData.NPCs[ContractData.EvolutionNPC] or "Pact Master"
 end
 
 local function questName(questId)
@@ -66,7 +67,7 @@ local function requirementsOf(player, contractId, form)
 	if requires.Mastery then
 		local have = PlayerData.GetContractMasteryLevel(player, contractId)
 		table.insert(list, {
-			Text = `Maestria do contrato ({contract and contract.DisplayName or contractId})`,
+			Text = `Contract mastery ({contract and contract.DisplayName or contractId})`,
 			Have = have,
 			Need = requires.Mastery,
 			Done = have >= requires.Mastery,
@@ -75,7 +76,7 @@ local function requirementsOf(player, contractId, form)
 	if requires.StyleMastery and entry and entry.FusionStyle then
 		local have = PlayerData.GetMasteryLevel(player, entry.FusionStyle)
 		table.insert(list, {
-			Text = `Maestria nos {entry.FusionStyle}`,
+			Text = `{SkillTreeData.StyleName(entry.FusionStyle)} mastery`,
 			Have = have,
 			Need = requires.StyleMastery,
 			Done = have >= requires.StyleMastery,
@@ -84,7 +85,7 @@ local function requirementsOf(player, contractId, form)
 	if requires.Quest then
 		local done = questCompleted(player, requires.Quest)
 		table.insert(list, {
-			Text = `Missão: {questName(requires.Quest) or "a provação final (em breve)"}`,
+			Text = `Quest: {questName(requires.Quest) or "the final trial (coming soon)"}`,
 			Have = if done then 1 else 0,
 			Need = 1,
 			Done = done,
@@ -103,7 +104,7 @@ function ContractService.GetOffer(player, npcId)
 	if not contractId or not ContractData.HasForms(contractId) then
 		return {
 			Mode = "Locked",
-			Reason = "Só Caçadores com um contrato podem evoluir o pacto. Escolha o caminho do Caçador no level 25.",
+			Reason = "Only Hunters with a contract can evolve their pact. Choose the Hunter path at level 25.",
 		}
 	end
 
@@ -146,13 +147,13 @@ function ContractService.Fuse(player, npcId)
 	local offer = ContractService.GetOffer(player, npcId)
 	if not offer or offer.Mode ~= "Fuse" then return false end
 	if not offer.Ready then
-		PlayerData.Notify(player, npcName(), "Você ainda não cumpre o que a fusão pede.", 4)
+		PlayerData.Notify(player, npcName(), "You do not meet the fusion requirements yet.", 4)
 		return false
 	end
 	if not PathModule.SetForm(player, "V2") then return false end
-	local title = offer.FusionName or `{offer.ContractName} + {offer.FusionStyle}`
-	PlayerData.Notify(player, "Fusão!", `{title}: o contrato e o estilo agora são uma coisa só.`, 8)
-	Remotes.Announcement:FireAllClients("FUSÃO", `{player.DisplayName} fundiu os {offer.FusionStyle} com o {offer.ContractName}!`, 5)
+	local title = offer.FusionName or `{offer.ContractName} + {SkillTreeData.StyleName(offer.FusionStyle)}`
+	PlayerData.Notify(player, "Fusion!", `{title}: the contract and the style are now one.`, 8)
+	Remotes.Announcement:FireAllClients("FUSION", `{player.DisplayName} fused their {SkillTreeData.StyleName(offer.FusionStyle)} with the {offer.ContractName}!`, 5)
 	return true
 end
 

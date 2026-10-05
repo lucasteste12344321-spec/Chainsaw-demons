@@ -21,8 +21,8 @@ local NPC_TAG = "QuestGiver"
 local NPC_RANGE = 20 -- distância máxima até o NPC para qualquer ação de caminho
 local ACTION_COOLDOWN = 0.5 -- segundos entre duas ações do mesmo jogador
 local REGEN_INTERVAL = 1 -- o loop do tempo de vida roda (e atualiza o atributo) 1x por segundo
-local NOTIFY_TITLE = "Caminho"
-local LOADING_TEXT = "Seus dados ainda estão carregando. Tente de novo em instantes."
+local NOTIFY_TITLE = "Path"
+local LOADING_TEXT = "Your data is still loading. Try again in a moment."
 
 -- Cores livres para times antigos que tenham a mesma cor de Humans/Fiends
 local SPARE_TEAM_COLORS = { "Dark stone grey", "Medium stone grey", "Bright violet", "Bright orange", "Bright green", "Black" }
@@ -348,13 +348,13 @@ function PathModule.CanChoose(player)
 		return false, LOADING_TEXT
 	end
 	if state.Path ~= "None" then
-		return false, `Você já é {displayName(state.Path)}. A escolha de caminho é permanente.`
+		return false, `You are already a {displayName(state.Path)}. The path choice is permanent.`
 	end
 	if PlayerData.GetLevel(player) < PathData.MinLevel then
-		return false, `Chegue ao level {PathData.MinLevel} para escolher um caminho.`
+		return false, `Reach level {PathData.MinLevel} to choose a path.`
 	end
 	if not hasCompletedQuest(player, PathData.RequiredQuest) then
-		return false, `Complete a missão "{questName(PathData.RequiredQuest)}" antes de escolher um caminho.`
+		return false, `Complete the "{questName(PathData.RequiredQuest)}" quest before choosing a path.`
 	end
 	return true, nil
 end
@@ -367,7 +367,7 @@ function PathModule.ChooseHunter(player, contractId)
 
 	local contract = if type(contractId) == "string" then PathData.Contracts[contractId] else nil
 	if not contract or contract.Unlock ~= "Path" or not ContractData.IsEnabled(contractId) then
-		return fail(player, "Esse contrato não pode ser o primeiro. Escolha um dos contratos oferecidos.")
+		return fail(player, "That contract cannot be your first. Choose one of the offered contracts.")
 	end
 
 	local state = getState(player)
@@ -378,9 +378,9 @@ function PathModule.ChooseHunter(player, contractId)
 	commitChange(player, state)
 
 	local sacrifice = if (contract.HPCost or 0) > 0
-		then ` Sacrifício: -{math.floor(contract.HPCost * 100 + 0.5)}% de vida máxima.`
+		then ` Sacrifice: -{math.floor(contract.HPCost * 100 + 0.5)}% max health.`
 		else ""
-	notify(player, `Você agora é um Caçador. Contrato: {contract.DisplayName} (teclas V e B).{sacrifice}`, 6)
+	notify(player, `You are now a Hunter. Contract: {contract.DisplayName} (keys V and B).{sacrifice}`, 6)
 	return true, nil
 end
 
@@ -392,7 +392,7 @@ function PathModule.ChooseFiend(player, fiendTypeId)
 
 	local fiendType = if type(fiendTypeId) == "string" then PathData.FiendTypes[fiendTypeId] else nil
 	if not fiendType or fiendType.Enabled == false then
-		return fail(player, "Esse tipo de Infernal não existe.")
+		return fail(player, "That Fiend type does not exist.")
 	end
 
 	local state = getState(player)
@@ -402,7 +402,7 @@ function PathModule.ChooseFiend(player, fiendTypeId)
 	state.Lifespan = PathData.MaxLifespan
 	commitChange(player, state)
 
-	notify(player, `Você agora é um {fiendType.DisplayName}. Seus poderes (teclas V e B) custam vida.`, 6)
+	notify(player, `You are now a {fiendType.DisplayName}. Your powers (keys V and B) cost health.`, 6)
 	return true, nil
 end
 
@@ -440,7 +440,7 @@ function PathModule.AddContract(player, contractId)
 	local contract = if type(contractId) == "string" then PathData.Contracts[contractId] else nil
 	if not contract or contract.Unlock ~= "Quest" or not ContractData.IsEnabled(contractId) then
 		warn(`[PathModule] AddContract com contrato inválido: {tostring(contractId)}`)
-		return false, "Contrato inválido."
+		return false, "Invalid contract."
 	end
 
 	local state = getState(player)
@@ -448,13 +448,13 @@ function PathModule.AddContract(player, contractId)
 		return fail(player, LOADING_TEXT)
 	end
 	if state.Path ~= "Hunter" then
-		return fail(player, "Só Caçadores podem fazer contratos com demônios.")
+		return fail(player, "Only Hunters can make contracts with devils.")
 	end
 	if table.find(state.Contracts, contractId) then
-		return fail(player, `Você já tem o contrato com o {contract.DisplayName}.`)
+		return fail(player, `You already have a contract with the {contract.DisplayName}.`)
 	end
 	if #state.Contracts >= PathData.MaxContracts then
-		return fail(player, `Você já tem {PathData.MaxContracts} contratos, o máximo permitido.`)
+		return fail(player, `You already have {PathData.MaxContracts} contract(s), the maximum allowed.`)
 	end
 
 	table.insert(state.Contracts, contractId)
@@ -462,9 +462,9 @@ function PathModule.AddContract(player, contractId)
 
 	local key = if #state.Contracts == 1 then "Z" else "X"
 	local sacrifice = if (contract.HPCost or 0) > 0
-		then ` Sacrifício: -{math.floor(contract.HPCost * 100 + 0.5)}% de vida máxima.`
+		then ` Sacrifice: -{math.floor(contract.HPCost * 100 + 0.5)}% max health.`
 		else ""
-	notify(player, `Novo contrato: {contract.DisplayName} (tecla {key}).{sacrifice}`, 6)
+	notify(player, `New contract: {contract.DisplayName} (key {key}).{sacrifice}`, 6)
 	return true, nil
 end
 
@@ -475,12 +475,12 @@ function PathModule.Reset(player)
 		return fail(player, LOADING_TEXT)
 	end
 	if state.Path == "None" then
-		return fail(player, "Você ainda não seguiu nenhum caminho.")
+		return fail(player, "You have not followed any path yet.")
 	end
 
 	local cost = PathData.ResetCost
 	if not PlayerData.SpendGold(player, cost) then
-		return fail(player, `Renunciar ao caminho custa {cost} Gold. Você tem {goldOf(player)}.`)
+		return fail(player, `Renouncing your path costs {cost} Gold. You have {goldOf(player)}.`)
 	end
 
 	local oldName = displayName(state.Path)
@@ -491,7 +491,7 @@ function PathModule.Reset(player)
 	state.PathResets = (tonumber(state.PathResets) or 0) + 1
 	commitChange(player, state)
 
-	notify(player, `Você renunciou ao caminho {oldName} por {cost} Gold e voltou a ser um Humano comum.`, 6)
+	notify(player, `You renounced the {oldName} path for {cost} Gold and became an ordinary Human again.`, 6)
 	return true, nil
 end
 
@@ -541,11 +541,11 @@ function PathModule.GetOffer(player, npcId)
 	end
 	if state.Path ~= "None" then
 		local info = PathData.Paths[state.Path]
-		local ownNPC = if info and info.NPC then npcName(info.NPC) else "o NPC do seu caminho"
+		local ownNPC = if info and info.NPC then npcName(info.NPC) else "your path's NPC"
 		return {
 			Path = offerPath,
 			Mode = "Locked",
-			Reason = `Você já é {displayName(state.Path)}. Para mudar, renuncie ao seu caminho com {ownNPC}.`,
+			Reason = `You are already a {displayName(state.Path)}. To change, renounce your path with {ownNPC}.`,
 		}
 	end
 
@@ -589,7 +589,7 @@ local function onPathAction(player, action, id, npcId)
 	if not npcPath then return end
 
 	if not isNearNPC(player, npcId) then
-		notify(player, "Chegue mais perto do NPC para fazer isso.", 3)
+		notify(player, "Get closer to the NPC to do that.", 3)
 		return
 	end
 
@@ -598,7 +598,7 @@ local function onPathAction(player, action, id, npcId)
 	elseif action == "ChooseHunter" or action == "ChooseFiend" then
 		local wanted = if action == "ChooseHunter" then "Hunter" else "Fiend"
 		if npcPath ~= wanted then
-			notify(player, `Para seguir o caminho {displayName(wanted)}, fale com {npcName(PathData.Paths[wanted].NPC)}.`, 4)
+			notify(player, `To follow the {displayName(wanted)} path, talk to {npcName(PathData.Paths[wanted].NPC)}.`, 4)
 			return
 		end
 		if wanted == "Hunter" then
@@ -611,7 +611,7 @@ local function onPathAction(player, action, id, npcId)
 		local state = getState(player)
 		local info = state and PathData.Paths[state.Path]
 		if state and state.Path ~= "None" and info and info.NPC ~= npcId then
-			notify(player, `Só {npcName(info.NPC)} pode desfazer o seu caminho.`, 4)
+			notify(player, `Only {npcName(info.NPC)} can undo your path.`, 4)
 			return
 		end
 		PathModule.Reset(player)
@@ -635,9 +635,9 @@ local function onSetAllyProtection(player, enabled)
 
 	PathModule.SetAllyProtection(player, enabled)
 	if enabled then
-		notify(player, "Proteção de aliados ligada: você não causa nem recebe dano do seu time.", 3)
+		notify(player, "Ally protection on: you do not deal or take damage from your team.", 3)
 	else
-		notify(player, "Proteção de aliados desligada: o dano entre aliados só acontece se os dois desligarem.", 4)
+		notify(player, "Ally protection off: damage between allies only happens if both turn it off.", 4)
 	end
 end
 

@@ -324,9 +324,9 @@ local function hasTechnique(player, cfg, silent)
 		lockedNoticeAt[player] = clock + LOCKED_NOTICE_INTERVAL
 		local info = SkillTreeData.Techniques[technique]
 		local entry = techniqueNodes[technique]
-		local need = if entry and entry.Mastery then ` (maestria {entry.Mastery.Level} + {entry.Cost} pontos)` else ""
-		PlayerData.Notify(player, "Técnica bloqueada",
-			`{if info then info.Name else technique}: desbloqueie na árvore de habilidades (M){need}.`, 4)
+		local need = if entry and entry.Mastery then ` (mastery {entry.Mastery.Level} + {entry.Cost} points)` else ""
+		PlayerData.Notify(player, "Technique locked",
+			`{if info then info.Name else technique}: unlock it in the skill tree (M){need}.`, 4)
 	end
 	return false
 end

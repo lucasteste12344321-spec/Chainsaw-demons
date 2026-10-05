@@ -93,7 +93,7 @@ local function finish(player, message)
 		enemy:Destroy()
 	end
 	if message and player.Parent then
-		PlayerData.Notify(player, "Treinador", message, 5)
+		PlayerData.Notify(player, "Trainer", message, 5)
 	end
 end
 
@@ -106,7 +106,7 @@ end
 function TrainerService.Start(player, mode, npcId, questId)
 	if mode ~= "Spar" and mode ~= "Duel" then return false end
 	if sessions[player] then
-		PlayerData.Notify(player, "Treinador", "Você já está treinando.", 3)
+		PlayerData.Notify(player, "Trainer", "You are already training.", 3)
 		return false
 	end
 	local npc = npcModel(npcId)
@@ -160,7 +160,7 @@ function TrainerService.Start(player, mode, npcId, questId)
 			QuestModule.OnSparHit(player)
 			local current, total = objectiveProgress(player, questId, "Spar")
 			if not current or current >= total then
-				finish(player, "Treino concluído! Bom trabalho.")
+				finish(player, "Training complete! Good job.")
 			end
 		end,
 	})
@@ -185,15 +185,15 @@ function TrainerService.Start(player, mode, npcId, questId)
 				enemyHumanoid.Health = enemyHumanoid.MaxHealth
 				if not warned and not session.Ended then
 					warned = true
-					PlayerData.Notify(player, "Treinador", "No treino eu não caio: aguente meus golpes (desviar também conta).", 5)
+					PlayerData.Notify(player, "Trainer", "I do not go down in training: endure my hits (dodging counts too).", 5)
 				end
 			end
 		end)
 	end
 
-	PlayerData.Notify(player, "Treinador", if mode == "Duel"
-		then "Duelo! Me derrote sem sair daqui."
-		else "Treino! Aguente meus golpes. Desviar também conta.", 5)
+	PlayerData.Notify(player, "Trainer", if mode == "Duel"
+		then "Duel! Beat me without leaving this spot."
+		else "Training! Endure my hits. Dodging counts too.", 5)
 
 	-- Fim por morte, distância, tempo, vida baixa (treino) ou missão que não está mais ativa
 	task.spawn(function()
@@ -206,15 +206,15 @@ function TrainerService.Start(player, mode, npcId, questId)
 			if not player.Parent then
 				finish(player, nil)
 			elseif not currentRoot or not currentHumanoid or currentHumanoid.Health <= 0 or currentCharacter ~= character then
-				finish(player, if mode == "Duel" then "Você caiu no duelo. Descanse e tente de novo." else "Treino interrompido.")
+				finish(player, if mode == "Duel" then "You lost the duel. Rest up and try again." else "Training interrupted.")
 			elseif not enemy.Parent then
 				finish(player, nil)
 			elseif (currentRoot.Position - anchor.Position).Magnitude > MAX_DISTANCE then
-				finish(player, "Você se afastou demais. Treino encerrado.")
+				finish(player, "You went too far away. Training ended.")
 			elseif os.clock() - session.Started > SESSION_TIME[mode] then
-				finish(player, "O tempo acabou. Fale comigo para tentar de novo.")
+				finish(player, "Time is up. Talk to me to try again.")
 			elseif mode == "Spar" and currentHumanoid.Health < currentHumanoid.MaxHealth * STOP_HEALTH then
-				finish(player, "Chega por hoje: recupere a vida e volte para continuar.")
+				finish(player, "That is enough for today: recover your health and come back to continue.")
 			elseif questId and not objectiveProgress(player, questId, mode) then
 				finish(player, nil)
 			end

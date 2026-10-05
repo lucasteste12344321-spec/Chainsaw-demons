@@ -45,7 +45,7 @@ local function onClaim(player, action)
 	local profile = PlayerData.GetProfile(player)
 	if not profile or type(profile.Codes) ~= "table" or profile.Codes[MARK] then return end
 	if not isMember(player) then
-		PlayerData.Notify(player, "Grupo", "Entre no grupo do jogo para ganhar a recompensa.", 5)
+		PlayerData.Notify(player, "Group", "Join the game's group to get the reward.", 5)
 		return
 	end
 	profile.Codes[MARK] = true
@@ -57,10 +57,10 @@ local function onClaim(player, action)
 	if REWARD.Spins > 0 and type(profile.Spins) == "number" then
 		profile.Spins += REWARD.Spins
 		player:SetAttribute("ClanSpins", profile.Spins)
-		table.insert(parts, if REWARD.Spins == 1 then "+1 giro de clã" else `+{REWARD.Spins} giros de clã`)
+		table.insert(parts, if REWARD.Spins == 1 then "+1 clan spin" else `+{REWARD.Spins} clan spins`)
 	end
 	player:SetAttribute("GroupRewarded", true)
-	PlayerData.Notify(player, "Obrigado por entrar no grupo!", table.concat(parts, " e "), 6)
+	PlayerData.Notify(player, "Thanks for joining the group!", table.concat(parts, " and "), 6)
 end
 Remotes.GroupReward.OnServerEvent:Connect(onClaim)
 

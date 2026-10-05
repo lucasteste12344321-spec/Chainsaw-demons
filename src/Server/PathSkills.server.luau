@@ -937,7 +937,7 @@ local function onUsePower(player, slot, aimPosition)
 	if skill.Kind == "Mark" then
 		ctx.Target = findMarkTarget(ctx)
 		if not ctx.Target then
-			notice(player, skill.Name, "Nenhum alvo à frente.")
+			notice(player, skill.Name, "No target in front.")
 			return
 		end
 	elseif skill.Kind == "Dash" and humanoid.SeatPart then
@@ -949,7 +949,7 @@ local function onUsePower(player, slot, aimPosition)
 	if type(skill.HealthCost) == "number" and skill.HealthCost > 0 then
 		healthCost = skill.HealthCost * humanoid.MaxHealth
 		if humanoid.Health <= healthCost then
-			notice(player, skill.Name, "Vida insuficiente para usar este poder.")
+			notice(player, skill.Name, "Not enough health to use this power.")
 			return
 		end
 	end
@@ -958,7 +958,7 @@ local function onUsePower(player, slot, aimPosition)
 	local hybridFree = player:GetAttribute("Hybrid") == true and path ~= "Hunter"
 	if type(skill.LifespanCost) == "number" and skill.LifespanCost > 0 and not hybridFree then
 		if not PathModule.SpendLifespan(player, skill.LifespanCost) then
-			notice(player, skill.Name, "Tempo de vida insuficiente para usar este poder.")
+			notice(player, skill.Name, "Not enough lifespan to use this power.")
 			return
 		end
 	end

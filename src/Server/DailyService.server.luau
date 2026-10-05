@@ -98,8 +98,8 @@ local function progress(player, kind, target)
 				mission.Progress += 1
 				changed = true
 				if mission.Progress >= mission.Goal then
-					PlayerData.Notify(player, "Missão diária completa!", DailyData.TextFor(entry, mission.Goal)
-						.. ". Aperte T para resgatar.", 5)
+					PlayerData.Notify(player, "Daily quest complete!", DailyData.TextFor(entry, mission.Goal)
+						.. ". Press T to claim.", 5)
 				end
 			end
 		end
@@ -119,7 +119,7 @@ local function claim(player, index)
 	local streakBonus = 1 + math.min(daily.Streak, DailyData.Bonus.StreakMax - 1) * DailyData.Bonus.StreakGold
 	local gold = PlayerData.AddGold(player, math.floor(reward.Gold * streakBonus)) or 0
 	local xp = PlayerData.AddXP(player, math.floor(StatConfig.XPNeeded(level) * reward.XPFraction)) or 0
-	PlayerData.Notify(player, "Missão diária", `+{gold} Gold e +{xp} XP.`, 4)
+	PlayerData.Notify(player, "Daily quest", `+{gold} Gold and +{xp} XP.`, 4)
 end
 
 local function claimBonus(player)
@@ -135,7 +135,7 @@ local function claimBonus(player)
 	daily.LastFullDay = daily.Day
 	profile.Spins = math.clamp((profile.Spins or 0) + DailyData.Bonus.Spins, 0, 9999)
 	player:SetAttribute("ClanSpins", profile.Spins)
-	PlayerData.Notify(player, "Todas as diárias!", `+{DailyData.Bonus.Spins} giro de clã. Sequência: {daily.Streak} dia(s).`, 6)
+	PlayerData.Notify(player, "All dailies done!", `+{DailyData.Bonus.Spins} clan spin. Streak: {daily.Streak} day(s).`, 6)
 end
 
 Remotes.DailyAction.OnServerEvent:Connect(function(player, action, index)

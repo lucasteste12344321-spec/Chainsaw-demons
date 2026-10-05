@@ -94,7 +94,7 @@ local function rewardEvent()
 				PlayerData.AddGold(player, current.Def.Gold)
 				PlayerData.AddXP(player, current.Def.XP)
 				Quests.OnActivity(player, "WorldEvent", current.Def.Id, tostring(current.Cycle))
-				PlayerData.Notify(player, "A região agradece", `{current.Def.Name}: +{current.Def.Gold} Gold e +{current.Def.XP} XP`, 5)
+				PlayerData.Notify(player, "The region thanks you", `{current.Def.Name}: +{current.Def.Gold} Gold and +{current.Def.XP} XP`, 5)
 			end
 		end
 	end
@@ -121,7 +121,7 @@ for _, node in nodes do
 		local kind, target = node:GetAttribute("ObjectiveType"), node:GetAttribute("Target")
 		if not needs(player, kind, target, node.Name) then
 			times[node.Name] = now + 3
-			PlayerData.Notify(player, "Exploração", "Este ponto serve a uma missão da região. Fale com os moradores para aceitar o trabalho.", 3)
+			PlayerData.Notify(player, "Exploration", "This spot is for a regional quest. Talk to the villagers to take the job.", 3)
 			return
 		end
 		times[node.Name] = now + (node:GetAttribute("RespawnSeconds") or 3)
@@ -196,7 +196,7 @@ task.spawn(function()
 					local target = node:GetAttribute("Target")
 					if needs(player, "Explore", target, node.Name) then
 						Quests.OnActivity(player, "Explore", target, node.Name)
-						PlayerData.Notify(player, "Local descoberto", node:GetAttribute("Label"), 3)
+						PlayerData.Notify(player, "Place discovered", node:GetAttribute("Label"), 3)
 					end
 				end
 			end

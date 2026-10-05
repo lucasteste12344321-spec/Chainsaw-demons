@@ -108,9 +108,9 @@ local function prepare(player, spot)
 	local root, humanoid = alive(player)
 	local data = save(player)
 	if not root or not data or (root.Position - spot.Position).Magnitude > Data.SpotRange then return end
-	if not data.HasRod then PlayerData.Notify(player, "Pesca", "Pegue a vara gratuita com Daichi no píer principal. Use R para abrir a banca."); return end
-	if Data.BagCount(data) >= Data.BagLimit then PlayerData.Notify(player, "Cesta cheia", "Venda seus peixes para Daichi antes de continuar."); return end
-	finish(player, "Você mudou de ponto de pesca.")
+	if not data.HasRod then PlayerData.Notify(player, "Fishing", "Get the free rod from Daichi at the main pier. Press R to open his stall."); return end
+	if Data.BagCount(data) >= Data.BagLimit then PlayerData.Notify(player, "Basket full", "Sell your fish to Daichi before continuing."); return end
+	finish(player, "You switched fishing spots.")
 	local item = rod(player)
 	if not item then return end
 	humanoid:EquipTool(item)
@@ -150,7 +150,7 @@ local function start(player, spotId, strength)
 	local origin = root.Position + Vector3.new(0, 2, 0)
 	local obstruction = workspace:Raycast(origin, point + Vector3.new(0, 1.5, 0) - origin, ray)
 	if obstruction and (obstruction.Position - point).Magnitude > 5 then
-		PlayerData.Notify(player, "Pesca", "A linha está bloqueada. Fique na ponta do píer."); return
+		PlayerData.Notify(player, "Fishing", "The line is blocked. Stand at the end of the pier."); return
 	end
 	local now = os.clock()
 	local session = { Id = HttpService:GenerateGUID(false), Spot = spot, Point = point, Origin = root.Position, Character = character,
@@ -169,19 +169,19 @@ local function action(player, kind, id, value)
 		local data = save(player)
 		if not data or not nearCook(player) or sessions[player] then return end
 		local profile = PlayerData.GetProfile(player)
-		if (profile.Quests.Completed.Side_HotSupper or 0) <= 0 then PlayerData.Notify(player,"Receita de Nori","Conclua a missão Jantar no fim do mundo para aprender a receita."); return end
-		if data.Meals >= 20 then PlayerData.Notify(player,"Despensa cheia","Você já tem 20 sopas."); return end
-		if data.Counts.RiverCarp < 2 or data.Counts.Trout < 1 then PlayerData.Notify(player,"Ingredientes","Você precisa de 2 carpas e 1 truta na cesta."); return end
+		if (profile.Quests.Completed.Side_HotSupper or 0) <= 0 then PlayerData.Notify(player,"Nori's recipe","Complete the Supper at the End of the World quest to learn the recipe."); return end
+		if data.Meals >= 20 then PlayerData.Notify(player,"Pantry full","You already have 20 soups."); return end
+		if data.Counts.RiverCarp < 2 or data.Counts.Trout < 1 then PlayerData.Notify(player,"Ingredients","You need 2 carp and 1 trout in your basket."); return end
 		data.Counts.RiverCarp -= 2; data.Counts.Trout -= 1; data.Meals += 1
-		PlayerData.Notify(player,"Sopa preparada","Use a cesta de pesca para tomar a sopa fora de combate.",4); sendMenu(player); return
+		PlayerData.Notify(player,"Soup ready","Use the fishing basket to eat the soup out of combat.",4); sendMenu(player); return
 	end
 	if kind == "Eat" then
 		local data = save(player); local _, humanoid = alive(player); local now = os.clock()
 		if not data or not humanoid or sessions[player] or healing[player] or data.Meals < 1 then return end
-		if humanoid.Health >= humanoid.MaxHealth then PlayerData.Notify(player,"Sopa","Sua vida já está cheia."); return end
-		if now - (recentDamage[player] or -100) < 10 or now < (mealCooldowns[player] or 0) then PlayerData.Notify(player,"Sopa","Espere 10 segundos sem sofrer dano e 60 segundos entre refeições."); return end
+		if humanoid.Health >= humanoid.MaxHealth then PlayerData.Notify(player,"Soup","Your health is already full."); return end
+		if now - (recentDamage[player] or -100) < 10 or now < (mealCooldowns[player] or 0) then PlayerData.Notify(player,"Soup","Wait 10 seconds without taking damage and 60 seconds between meals."); return end
 		data.Meals -= 1; mealCooldowns[player] = now + 60; healing[player] = humanoid; sendMenu(player)
-		PlayerData.Notify(player,"Refeição quente","Recuperando 25% de vida em 5 segundos. Sofrer dano interrompe a recuperação.",5)
+		PlayerData.Notify(player,"Hot meal","Recovering 25% health over 5 seconds. Taking damage interrupts it.",5)
 		task.spawn(function()
 			for _ = 1, 5 do
 				task.wait(1)
@@ -216,15 +216,15 @@ local function action(player, kind, id, value)
 			if amount > 0 then
 				for _, fishId in Data.Order do data.Counts[fishId] = 0 end
 				amount = PlayerData.AddGold(player, amount, true, true) or amount
-				PlayerData.Notify(player, "Peixes vendidos", `Você recebeu {amount} Gold.`, 4)
+				PlayerData.Notify(player, "Fish sold", `You got {amount} Gold.`, 4)
 			end
 		elseif kind == "Upgrade" then
 			local nextRod = Data.Rods[data.RodTier + 1]
 			if not data.HasRod or not nextRod then return end
-			if data.Catches < nextRod.Catches then PlayerData.Notify(player, "Vara", `Capture {nextRod.Catches} peixes ao todo para liberar esta melhoria.`); return end
-			if not PlayerData.SpendGold(player, nextRod.Price) then PlayerData.Notify(player, "Vara", `A melhoria custa {nextRod.Price} Gold.`); return end
+			if data.Catches < nextRod.Catches then PlayerData.Notify(player, "Rod", `Catch {nextRod.Catches} fish in total to unlock this upgrade.`); return end
+			if not PlayerData.SpendGold(player, nextRod.Price) then PlayerData.Notify(player, "Rod", `The upgrade costs {nextRod.Price} Gold.`); return end
 			data.RodTier += 1
-			PlayerData.Notify(player, "Vara melhorada", nextRod.Name, 4)
+			PlayerData.Notify(player, "Rod upgraded", nextRod.Name, 4)
 		end
 		sendMenu(player); return
 	end
@@ -284,7 +284,7 @@ function Service.Init(world)
 			local held = character and character:FindFirstChildOfClass("Tool")
 			if not root or character ~= session.Character or not held or not held:GetAttribute("FishingRod")
 				or (root.Position - session.Origin).Magnitude > Data.MoveLimit then
-				finish(player, "Pesca interrompida: você se afastou, trocou de equipamento ou foi atingido."); continue
+				finish(player, "Fishing interrupted: you moved away, switched equipment or got hit."); continue
 			end
 			if session.Phase == "Casting" and now >= session.Next then
 				session.Phase = "Waiting"; session.Next = now + rng:NextNumber(4, 9)
@@ -293,10 +293,10 @@ function Service.Init(world)
 				session.Phase = "Bite"; session.Next = now + Data.HookWindow
 				Remotes.FishingState:FireClient(player, { Phase = "Bite", Id = session.Id, Deadline = workspace:GetServerTimeNow() + Data.HookWindow })
 				fx("Bite", player, session)
-			elseif session.Phase == "Bite" and now > session.Next then finish(player, "O peixe escapou da isca. Tente fisgar quando a boia afundar.")
+			elseif session.Phase == "Bite" and now > session.Next then finish(player, "The fish got away. Try to hook it when the bobber sinks.")
 			elseif session.Phase == "Reeling" then
 				local result = Rules.Step(session, session.Holding, step, now - session.ReelStart, Data.Rods[session.Tier].Control, Data.Fish[session.Fish].Difficulty)
-				if result then finish(player, if result == "Snapped" then "A linha arrebentou. Solte um pouco antes da tensão chegar ao vermelho." else "O peixe escapou. Alterne recolher e aliviar a linha.", result == "Caught")
+				if result then finish(player, if result == "Snapped" then "The line snapped. Ease off a bit before the tension reaches red." else "O peixe escapou. Alterne recolher e aliviar a linha.", result == "Caught")
 				elseif now - session.Sent >= 0.1 then
 					session.Sent = now
 					Remotes.FishingState:FireClient(player, { Phase = "Reeling", Id = session.Id, Tension = session.Tension, Progress = session.Progress })
@@ -315,7 +315,7 @@ function Service.Init(world)
 				for i, spot in list do
 					spot:SetAttribute("Hotspot", i == index)
 					local prompt = spot:FindFirstChildOfClass("ProximityPrompt")
-					if prompt then prompt.ObjectText = if i == index then "Rio Kuro • cardume ativo" else "Rio Kuro" end
+					if prompt then prompt.ObjectText = if i == index then "Kuro River • active school" else "Kuro River" end
 				end
 			end
 			task.wait(5)

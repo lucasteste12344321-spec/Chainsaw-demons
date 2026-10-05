@@ -213,8 +213,8 @@ local function giveRewards(state, humanoid, enemyType, stats, config)
 		local player = Players:GetPlayerByUserId(userId)
 		if not player then continue end
 		if damage < needed then
-			PlayerData.Notify(player, `{stats.DisplayName} derrotado!`,
-				`Você precisava causar pelo menos {math.ceil(needed)} de dano para ganhar a recompensa.`, 6)
+			PlayerData.Notify(player, `{stats.DisplayName} defeated!`,
+				`You needed to deal at least {math.ceil(needed)} damage to earn the reward.`, 6)
 			continue
 		end
 		local awardedXP = PlayerData.AddXP(player, stats.XP) or 0
@@ -225,7 +225,7 @@ local function giveRewards(state, humanoid, enemyType, stats, config)
 		if styleDrop and not PlayerData.HasStyle(player, styleDrop.Style)
 			and rng:NextNumber() < Passes.DropChance(player, styleDrop.Chance) and PlayerData.UnlockStyle(player, styleDrop.Style) then
 			local style = CombatStyles.Styles[styleDrop.Style]
-			table.insert(won, `estilo {style and style.DisplayName or styleDrop.Style}`)
+			table.insert(won, `{style and style.DisplayName or styleDrop.Style} style`)
 		end
 		for _, drop in config.Drops or {} do
 			local item = ItemData.Get(drop.Item)
@@ -233,9 +233,9 @@ local function giveRewards(state, humanoid, enemyType, stats, config)
 				table.insert(won, item.Name)
 			end
 		end
-		local text = `+{awardedXP} XP e +{awardedGold} Gold.`
-			.. (if #won > 0 then ` Drop: {table.concat(won, ", ")}!` else " Nenhum item desta vez.")
-		PlayerData.Notify(player, `{stats.DisplayName} derrotado!`, text, 7)
+		local text = `+{awardedXP} XP and +{awardedGold} Gold.`
+			.. (if #won > 0 then ` Drop: {table.concat(won, ", ")}!` else " No items this time.")
+		PlayerData.Notify(player, `{stats.DisplayName} defeated!`, text, 7)
 	end
 end
 
