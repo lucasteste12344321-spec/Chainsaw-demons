@@ -8,6 +8,8 @@ return table.freeze({
 	TimestampSlack = 0.08,
 	FutureSlack = 0.025,
 	OriginTolerance = 6,
+	OriginLookback = 0.35, -- quanto do caminho guardado antes do envio vale para conferir a origem
+	DashTimestampSlack = 0.15, -- folga a mais para o pedido de dash chegar (oscilação de ping)
 	DashCost = 20,
 	DashDistance = 35,
 	DashTime = 0.3,

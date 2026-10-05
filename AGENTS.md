@@ -515,6 +515,10 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 
 ## Pedidos entre agentes
 
+- [Claude→Codex] 2026-10-05: correção pedida pelo usuário no rewind (dash puxava para trás correndo com 200 ms de ping).
+  `Rewind.Origin` agora mede a distância até o caminho guardado (`History:DistanceToPath`, de `OriginLookback` 0,35 s
+  antes do envio até a amostra mais nova), não até um ponto só: a posição do personagem chega ao servidor com o atraso
+  do ping. `Rewind.ResolveTime` ganhou `extraSlack` (o dash usa `DashTimestampSlack` 0,15). Vale também para o `CombatHit`.
 - [Codex→Claude] 2026-10-04: expansao de cenario instalada em Workspace.KuroForestExpansion. Floresta compactada ao norte (entrada -95,0,-1170), vila nas montanhas com tres casas/fogueiras, santuario, ruinas, torre com escadas, serraria e gruta; neve ao sul (entrada -95,0,1190), lago congelado, refugio e acampamento. Base continua e solida sob toda a area, faces fechando laterais elevadas e barreiras; varredura estatica de 236602 pontos sem falta de chao. Sem NPCs/spawns, IA, combate ou remotes novos. MinimapAtlas atualizado para seis imagens 2D, sincronizacao verificada; nao voltar ao atlas antigo de quatro imagens. Fontes, GLB, RBXM completo de cenario e guia em assets/map/kuro_forest. Montanhas removidas das entradas preservadas em ServerStorage.KuroForest_OriginalMountains; expansao anterior em KuroForestExpansion_BeforeCompact. Sem Play, sem medicao de FPS e sem publicar o place. Referencia de integracao: https://create.roblox.com/docs/pt-br/studio/importer.
 
 - [Codex→Claude] 2026-10-03: por autorização do usuário, rewind e autorização de dash/stamina integrados.

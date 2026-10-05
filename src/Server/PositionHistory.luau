@@ -38,6 +38,30 @@ function History:Push(time, frame)
 	end
 end
 
+-- Menor distância entre position e o caminho guardado de fromTime até a amostra mais nova (nil sem amostras nesse
+-- trecho). Liga uma amostra na outra por segmento: o personagem passou por todos os pontos entre elas.
+function History:DistanceToPath(fromTime, position)
+	local samples = self.Samples
+	local best
+	for index = #samples, 1, -1 do
+		local sample = samples[index]
+		local point = sample.Frame.Position
+		local distance = (position - point).Magnitude
+		local nextSample = samples[index + 1]
+		if nextSample then
+			local segment = nextSample.Frame.Position - point
+			local length = segment.Magnitude
+			if length > 0.001 then
+				local along = math.clamp((position - point):Dot(segment / length), 0, length)
+				distance = (position - (point + segment / length * along)).Magnitude
+			end
+		end
+		best = if best then math.min(best, distance) else distance
+		if sample.Time < fromTime then break end
+	end
+	return best
+end
+
 function History:At(time)
 	local samples = self.Samples
 	local first, last = samples[1], samples[#samples]

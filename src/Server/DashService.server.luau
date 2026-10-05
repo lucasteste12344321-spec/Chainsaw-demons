@@ -86,7 +86,7 @@ local function onDash(player, character, seq, direction, timestamp, origin)
 	if typeof(direction) ~= "Vector3" or not History.Finite(direction.X) or not History.Finite(direction.Y)
 		or not History.Finite(direction.Z) or math.abs(direction.Y) > 0.01
 		or direction.Magnitude < 0.9 or direction.Magnitude > 1.1 then deny(); return end
-	local _, sentAt = Rewind.ResolveTime(player, timestamp, now)
+	local _, sentAt = Rewind.ResolveTime(player, timestamp, now, Config.DashTimestampSlack)
 	if not sentAt or not Rewind.Origin(character, sentAt, origin) then deny(); return end
 	local cost = Config.DashCost * math.max(0, 1 - effect(player, "DashCost"))
 	if state.Stamina < cost then deny(); return end
