@@ -1282,7 +1282,8 @@ local fishingButton = menuButton(3, nil, "釣")
 local passesButton = menuButton(4, nil, "★")
 local groupButton = menuButton(5, nil, "団") -- some depois de ganhar a recompensa do grupo
 local settingsButton = menuButton(6, nil, "≡")
--- Ícones em imagem nos botões redondos (o da árvore ainda não tem: fica o ⛓)
+-- Ícones em imagem nos botões redondos
+Icons.Apply(treeButton, "skillTree")
 Icons.Apply(inventoryButton, "inventory")
 Icons.Apply(fishingButton, "fishing")
 Icons.Apply(passesButton, "passes")

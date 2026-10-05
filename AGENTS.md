@@ -705,7 +705,7 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 - `src/Shared/Icons.luau`: IDs das imagens que o usuário subiu (feitas pelo ChatGPT), `Icons.Get(nome)`,
   `Icons.Effect(chaveDoEfeito)` e `Icons.Apply(guiObject, nome, escala?)` / `Icons.Clear` (ImageLabel "Icon" no lugar do
   texto; sem ID, continua o kanji). Em uso: botões redondos da HUD (inventário, pesca, passes, grupo, configurações,
-  tablet), Gold, chips de bônus, título do tablet e trilhas dos Milestones. Falta ícone da árvore de habilidades.
+  tablet, árvore), Gold, chips de bônus, título do tablet e trilhas dos Milestones.
 
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
