@@ -15,36 +15,36 @@ PathData.LifespanRegen = 0.25 -- por segundo
 -- Ids de caminho salvos no perfil: "None" (padrão), "Hunter", "Fiend"
 PathData.Paths = {
 	None = {
-		DisplayName = "Humano",
+		DisplayName = "Human",
 		Glyph = "人", -- kanji das telas (estilo escuro)
 		Team = "Humans",
 		Color = Color3.fromRGB(210, 210, 215),
-		Description = "Uma pessoa comum. A partir do level 25 pode escolher um caminho.",
+		Description = "An ordinary person. From level 25 they can choose a path.",
 	},
 	Hunter = {
-		DisplayName = "Caçador",
+		DisplayName = "Hunter",
 		Glyph = "狩",
 		Team = "Humans",
 		NPC = "Veterano",
 		Color = Color3.fromRGB(70, 150, 255),
-		Description = "Humanos que fazem contratos com demônios. Ganham poderes em troca de sacrifícios: "
-			.. "parte da vida máxima enquanto o contrato existir e tempo de vida a cada uso.",
+		Description = "Humans who make contracts with devils. They gain powers in exchange for sacrifices: "
+			.. "part of their max health while the contract lasts and lifespan with every use.",
 	},
 	Fiend = {
-		DisplayName = "Infernal",
+		DisplayName = "Fiend",
 		Glyph = "魔",
 		Team = "Fiends",
 		NPC = "Anciao",
 		Color = Color3.fromRGB(220, 38, 38),
-		Description = "Demônios que possuem o cadáver de um humano para sobreviver. Perderam parte do poder "
-			.. "original, mas mantêm habilidades sobrenaturais. Os poderes custam o próprio sangue (vida).",
+		Description = "Devils that possess a human corpse to survive. They lost part of their original power, "
+			.. "but keep supernatural abilities. Their powers cost their own blood (health).",
 	},
 }
 
 -- Times (o servidor cria os que faltarem)
 PathData.Teams = {
-	Humans = { DisplayName = "Humanos", BrickColor = BrickColor.new("Bright blue") },
-	Fiends = { DisplayName = "Infernais", BrickColor = BrickColor.new("Really red") },
+	Humans = { DisplayName = "Humans", BrickColor = BrickColor.new("Bright blue") },
+	Fiends = { DisplayName = "Fiends", BrickColor = BrickColor.new("Really red") },
 }
 
 --[[
@@ -63,25 +63,25 @@ Habilidade: {
 
 PathData.Contracts = {
 	Raposa = {
-		DisplayName = "Demônio Raposa",
+		DisplayName = "Fox Devil",
 		Icon = "🦊",
 		Glyph = "狐",
-		Description = "A cabeça de uma raposa gigante sai de um portal: morde o ponto mirado (V) ou avança em linha reta (B). Inimigos com pouca vida são devorados. Com maestria, funde com os Punhos.",
+		Description = "A giant fox head bursts out of a portal: it bites the targeted spot (V) or charges in a straight line (B). Low-health enemies are devoured. With mastery, it fuses with your Fists.",
 		HPCost = 0, -- fração da vida máxima perdida enquanto tiver o contrato
 		Unlock = "Path", -- "Path": pode ser o primeiro contrato | "Quest": liberado por missão
 		-- Poderes, passivos e formas (V1, V2 com Punhos, Ultimate) no ContractData; Skill = o V da forma V1
 		Skill = ContractData.GetSkill("Raposa", "V1", "Z"),
 	},
 	Fantasma = {
-		DisplayName = "Demônio Fantasma",
+		DisplayName = "Ghost Devil",
 		Icon = "👻",
 		Glyph = "霊",
-		Description = "Mãos invisíveis agarram e prendem todos em volta do alvo.",
+		Description = "Invisible hands grab and hold everyone around the target.",
 		HPCost = 0.1,
 		Unlock = "Path",
 		Skill = {
 			Id = "MaosFantasma",
-			Name = "Mãos Fantasmas",
+			Name = "Ghost Hands",
 			Icon = "👻",
 			Glyph = "霊",
 			Kind = "Area",
@@ -94,16 +94,16 @@ PathData.Contracts = {
 		},
 	},
 	Futuro = {
-		DisplayName = "Demônio do Futuro",
+		DisplayName = "Future Devil",
 		Icon = "👁️",
 		Glyph = "眼",
-		Description = "Vê alguns segundos à frente. Passivo: 10% de chance de esquivar de qualquer golpe.",
+		Description = "Sees a few seconds ahead. Passive: 10% chance to dodge any hit.",
 		HPCost = 0.1,
 		Unlock = "Quest",
 		Passive = { DodgeChance = 0.1 },
 		Skill = {
 			Id = "VisaoFutura",
-			Name = "Visão do Futuro",
+			Name = "Future Sight",
 			Icon = "👁️",
 			Glyph = "眼",
 			Kind = "Buff",
@@ -114,15 +114,15 @@ PathData.Contracts = {
 		},
 	},
 	Maldicao = {
-		DisplayName = "Demônio da Maldição",
+		DisplayName = "Curse Devil",
 		Icon = "📌",
 		Glyph = "呪",
-		Description = "Crava um prego no alvo. Depois de alguns segundos, a maldição explode com dano enorme.",
+		Description = "Drives a nail into the target. After a few seconds, the curse explodes for huge damage.",
 		HPCost = 0.2,
 		Unlock = "Quest",
 		Skill = {
 			Id = "PregoMaldito",
-			Name = "Prego Maldito",
+			Name = "Cursed Nail",
 			Icon = "📌",
 			Glyph = "釘",
 			Kind = "Mark",
@@ -147,15 +147,15 @@ PathData.FiendPassive = { MaxHPBonus = 0.15 }
 
 PathData.FiendTypes = {
 	Sangue = {
-		DisplayName = "Infernal do Sangue",
+		DisplayName = "Blood Fiend",
 		Icon = "🩸",
 		Glyph = "血",
-		Description = "Molda o próprio sangue em armas. Recupera vida ao causar dano.",
+		Description = "Shapes their own blood into weapons. Recovers health when dealing damage.",
 		Passive = { LifeSteal = 0.1 }, -- fração do dano causado que vira vida
 		Skills = {
 			Z = {
 				Id = "LancaSangue",
-				Name = "Lança de Sangue",
+				Name = "Blood Spear",
 				Icon = "🩸",
 				Glyph = "血",
 				Kind = "Projectile",
@@ -169,7 +169,7 @@ PathData.FiendTypes = {
 			},
 			X = {
 				Id = "MarteloSangue",
-				Name = "Martelo de Sangue",
+				Name = "Blood Hammer",
 				Icon = "🔨",
 				Glyph = "槌",
 				Kind = "Area",
@@ -184,15 +184,15 @@ PathData.FiendTypes = {
 	},
 	Tubarao = {
 		Enabled = false, -- Desativado enquanto o Infernal do Sangue recebe o kit visual.
-		DisplayName = "Infernal Tubarão",
+		DisplayName = "Shark Fiend",
 		Icon = "🦈",
 		Glyph = "鮫",
-		Description = "Nada pelo chão como se fosse água. Mais rápido que os outros Infernais.",
+		Description = "Swims through the ground as if it were water. Faster than other Fiends.",
 		Passive = { SpeedBonus = 4 }, -- somado à velocidade de andar
 		Skills = {
 			Z = {
 				Id = "MergulhoTubarao",
-				Name = "Mergulho",
+				Name = "Dive",
 				Icon = "🌊",
 				Glyph = "波",
 				Kind = "Dash",
@@ -205,7 +205,7 @@ PathData.FiendTypes = {
 			},
 			X = {
 				Id = "MordidaTubarao",
-				Name = "Mordida Voraz",
+				Name = "Ravenous Bite",
 				Icon = "🦈",
 				Glyph = "鮫",
 				Kind = "Cone",

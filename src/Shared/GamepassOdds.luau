@@ -33,11 +33,11 @@ function Odds.BossOutcomes(drops, vip, restricted)
 end
 function Odds.Text(restricted, owned)
 	local lines = {
-		"PASSES PERMANENTES · compra única",
-		"2× XP e 2× Gold são separados do VIP. Os bônus multiplicam o ganho de jogo após bônus de clã. Códigos, reembolsos e comandos de admin não são multiplicados.",
-		"VIP: 5 giros ao entrar ou resgatar a cada dia. Renova à meia-noite de Brasília; dias sem jogar não acumulam. Se a reserva de 9.999 giros estiver cheia, use giros antes de resgatar.",
-		"Servidor VIP: um servidor reservado pessoal, com acesso pelo botão da loja. Não é uma assinatura de servidor privado nativo do Roblox.",
-		if restricted then "SUA CONTA: o bônus de sorte não se aplica; os 5 giros viram créditos para a escolha garantida de clã, como no menu de clãs." else "VIP dobra a chance de cada item de chefe (máximo 100%). Não duplica a quantidade nem altera a raridade dos peixes. É necessário atingir a contribuição mínima de dano do chefe.",
+		"PERMANENT PASSES · one-time purchase",
+		"2× XP and 2× Gold are separate from VIP. The bonuses multiply in-game earnings after the clan bonus. Codes, refunds and admin commands are not multiplied.",
+		"VIP: 5 spins when you join or claim each day. Resets at midnight Brasília time (UTC-3); days you do not play do not stack. If your 9,999-spin reserve is full, use some spins before claiming.",
+		"VIP server: a personal reserved server, accessed through the shop button. It is not a native Roblox private server subscription.",
+		if restricted then "YOUR ACCOUNT: the luck bonus does not apply; the 5 spins become credits for a guaranteed clan choice, as in the clan menu." else "VIP doubles the chance of each boss item (max 100%). It does not double the amount or change fish rarity. You must reach the minimum damage contribution on the boss.",
 		"",
 	}
 	for key, boss in Bosses.Bosses do
@@ -45,29 +45,29 @@ function Odds.Text(restricted, owned)
 		local styleDrop = boss.StyleDrop
 		if styleDrop then
 			local style = Styles.Styles[styleDrop.Style]
-			table.insert(lines, string.format("%s — estilo %s (sorteio à parte, só para quem ainda não tem): normal %.2f%% · VIP %.2f%%",
+			table.insert(lines, string.format("%s — %s style (separate roll, only if you do not have it yet): normal %.2f%% · VIP %.2f%%",
 				boss.Title or key, style and style.DisplayName or styleDrop.Style, styleDrop.Chance * 100,
 				Config.DropChance(styleDrop.Chance, true, restricted) * 100))
 		end
 		if boss.Drops and #boss.Drops > 0 then
-			table.insert(lines, (boss.Title or key) .. " — chances por item (sorteios independentes):")
+			table.insert(lines, (boss.Title or key) .. " — chance per item (independent rolls):")
 			for _, drop in boss.Drops do
 				local item = Items.Get(drop.Item)
 				local boosted = Config.DropChance(drop.Chance, true, restricted)
 				table.insert(lines, string.format("%s: normal %.2f%% · VIP %.2f%%", item and item.Name or drop.Item, drop.Chance*100, boosted*100))
 			end
-			table.insert(lines, if owned then "Resultados com seu VIP ativo:" else "Todos os resultados ao usar VIP:")
+			table.insert(lines, if owned then "Results with your active VIP:" else "All results when using VIP:")
 			for _, row in Odds.BossOutcomes(boss.Drops, true, restricted) do
 				local names = {}; for _, id in row.Names do local item = Items.Get(id); table.insert(names, item and item.Name or id) end
-				table.insert(lines, string.format("%s — %.4f%%", if #names == 0 then "Nenhum item" else table.concat(names, " + "), row.Units / 10000))
+				table.insert(lines, string.format("%s — %.4f%%", if #names == 0 then "No item" else table.concat(names, " + "), row.Units / 10000))
 			end
 			table.insert(lines, "")
 		end
 	end
-	table.insert(lines, "CLÃS — o VIP não modifica estas chances:")
+	table.insert(lines, "CLANS — VIP does not change these chances:")
 	local rows = {}; for _, clan in Clans.Clans do table.insert(rows, {Name = clan.Name, Chance = Clans.Chance(clan.Id)}) end
 	for _, row in percentages(rows) do table.insert(lines, string.format("%s — %.4f%%", row.Name, row.Units / 10000)) end
-	table.insert(lines, "Percentuais apresentados com arredondamento; todos os resultados de cada tabela somam 100%.")
+	table.insert(lines, "Percentages are rounded; all results in each table add up to 100%.")
 	return table.concat(lines, "\n\n")
 end
 return Odds

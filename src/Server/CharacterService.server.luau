@@ -148,7 +148,7 @@ local function onClanSpin(player)
 	Remotes.ClanResult:FireClient(player, clanId, profile.Spins)
 
 	local clan = ClanData.Get(clanId)
-	if clan.Rarity == "Lendário" then
+	if clan.Rarity == "Legendary" then
 		task.delay(LEGENDARY_ANNOUNCE_DELAY, function()
 			if player.Parent then
 				Remotes.Announcement:FireAllClients("Clã lendário!", `{player.DisplayName} tirou o clã {clan.Name} {clan.Kanji}!`, 6)

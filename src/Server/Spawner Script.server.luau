@@ -118,6 +118,9 @@ end
 local typesByName = {}
 for enemyType, data in EnemyData do
 	typesByName[normalize(enemyType)] = enemyType
+	if type(data.LegacyName) == "string" then
+		typesByName[normalize(data.LegacyName)] = enemyType
+	end
 	if type(data.DisplayName) == "string" then
 		typesByName[normalize(data.DisplayName)] = enemyType
 	end

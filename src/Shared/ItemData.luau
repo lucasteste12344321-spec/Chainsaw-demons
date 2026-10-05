@@ -3,52 +3,52 @@ local ItemData = {}
 
 -- Onde cada item veste, na ordem das casas do inventário
 ItemData.Slots = {
-	{ Id = "Head", Name = "Cabeça" },
-	{ Id = "Hat", Name = "Chapéu" },
-	{ Id = "Neck", Name = "Pescoço" },
-	{ Id = "ShoulderLeft", Name = "Ombro esq." },
-	{ Id = "ShoulderRight", Name = "Ombro dir." },
+	{ Id = "Head", Name = "Head" },
+	{ Id = "Hat", Name = "Hat" },
+	{ Id = "Neck", Name = "Neck" },
+	{ Id = "ShoulderLeft", Name = "Left Shoulder" },
+	{ Id = "ShoulderRight", Name = "Right Shoulder" },
 }
 
 ItemData.Items = {
 	OgreHorns = {
-		Name = "Chifres de Ogro",
-		Rarity = "Incomum",
+		Name = "Ogre Horns",
+		Rarity = "Uncommon",
 		Slot = "Hat",
 		Effects = { Forca = 8, GuardDamage = 0.1 },
-		Description = "Arrancados do Rei Goblin. Cada golpe sai mais pesado.",
+		Description = "Torn from the Goblin King. Every hit lands heavier.",
 		Accessory = "ogre horns",
 	},
 	OgreShoulderRight = {
-		Name = "Ombreira de Ogro (direita)",
-		Rarity = "Raro",
+		Name = "Ogre Pauldron (right)",
+		Rarity = "Rare",
 		Slot = "ShoulderRight",
 		Effects = { Defesa = 3, HP = 60 },
-		Description = "Feita para aguentar pancada. Couro grosso e ferro velho.",
+		Description = "Made to take a beating. Thick leather and old iron.",
 		Accessory = "right ogre shoulder",
 	},
 	OgreShoulderLeft = {
-		Name = "Ombreira de Ogro (esquerda)",
-		Rarity = "Raro",
+		Name = "Ogre Pauldron (left)",
+		Rarity = "Rare",
 		Slot = "ShoulderLeft",
 		Effects = { Defesa = 3, GuardMax = 0.1 },
-		Description = "O lado da guarda: segura mais golpes antes de quebrar.",
+		Description = "The guarding side: holds more hits before breaking.",
 		Accessory = "left ogre shoulder",
 	},
 	OgreChain = {
-		Name = "Corrente de Ogro",
-		Rarity = "Épico",
+		Name = "Ogre Chain",
+		Rarity = "Epic",
 		Slot = "Neck",
 		Effects = { HP = 150, Regen = 0.005 },
-		Description = "Prendia o Rei ao trono. Pesada, mas o corpo se acostuma.",
+		Description = "It bound the King to his throne. Heavy, but the body gets used to it.",
 		Accessory = "Ogre chain",
 	},
 	OgreHead = {
-		Name = "Cabeça de Ogro",
-		Rarity = "Lendário",
+		Name = "Ogre Head",
+		Rarity = "Legendary",
 		Slot = "Head",
 		Effects = { HP = 200, Forca = 15, Defesa = 4 },
-		Description = "A cabeça do próprio Rei Goblin. Quem veste herda um pouco da força dele.",
+		Description = "The Goblin King's own head. Whoever wears it inherits a bit of his strength.",
 		Accessory = "Ogro Head",
 	},
 
@@ -56,41 +56,41 @@ ItemData.Items = {
 	-- copia para VFX.Items.<Id> ao iniciar, se ainda não existir lá); o Denji é do tamanho de jogador.
 	-- Não cai mais (pedido do usuário, 2026-10-05): fica aqui só para quem já tinha continuar com ele
 	DenjiHair = {
-		Name = "Cabelo do Denji",
-		Rarity = "Raro",
+		Name = "Denji's Hair",
+		Rarity = "Rare",
 		Slot = "Hat",
 		Effects = { Forca = 10, Velocidade = 2 },
-		Description = "Bagunçado de propósito. Dizem que deixa qualquer um mais rápido para fugir de dívida.",
+		Description = "Messy on purpose. They say it makes anyone faster at running from debt.",
 		Source = { Template = "Denji", Accessory = "MessyAnimeHairstyleAccessory" },
 	},
 	DenjiEyepatch = {
-		Name = "Tapa-olho do Denji",
-		Rarity = "Épico",
+		Name = "Denji's Eyepatch",
+		Rarity = "Epic",
 		Slot = "Head",
 		Effects = { Forca = 14, DodgeChance = 0.03 },
-		Description = "Um olho só, mas enxerga o golpe chegando.",
+		Description = "Just one eye, but it sees the hit coming.",
 		Source = { Template = "Denji", Accessory = "Accessory (Meshes/denji eyepatch (2)Accessory)" },
 	},
 	Pochita = {
 		Name = "Pochita",
-		Rarity = "Lendário",
+		Rarity = "Legendary",
 		Slot = "ShoulderLeft",
 		Effects = { HP = 250, Forca = 10, Regen = 0.008 },
-		Description = "O melhor amigo do Denji. Fica do seu lado e não deixa você cair.",
+		Description = "Denji's best friend. Stays by your side and never lets you fall.",
 		Source = { Template = "Denji", Accessory = "SawBestFriend" },
 	},
 }
 
 ItemData.RarityColors = {
-	["Comum"] = Color3.fromRGB(200, 200, 200),
-	["Incomum"] = Color3.fromRGB(110, 220, 110),
-	["Raro"] = Color3.fromRGB(80, 160, 255),
-	["Épico"] = Color3.fromRGB(190, 100, 255),
-	["Lendário"] = Color3.fromRGB(255, 190, 40),
+	["Common"] = Color3.fromRGB(200, 200, 200),
+	["Uncommon"] = Color3.fromRGB(110, 220, 110),
+	["Rare"] = Color3.fromRGB(80, 160, 255),
+	["Epic"] = Color3.fromRGB(190, 100, 255),
+	["Legendary"] = Color3.fromRGB(255, 190, 40),
 }
 
 -- Ordem das raridades (da mais comum para a mais rara), para ordenar o inventário
-ItemData.RarityOrder = { ["Comum"] = 1, ["Incomum"] = 2, ["Raro"] = 3, ["Épico"] = 4, ["Lendário"] = 5 }
+ItemData.RarityOrder = { ["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 3, ["Epic"] = 4, ["Legendary"] = 5 }
 
 local slotsById = {}
 for index, slot in ItemData.Slots do

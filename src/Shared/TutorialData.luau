@@ -17,11 +17,11 @@ TutorialData.SkipForLevel = 5 -- perfil de antes do tutorial com este level ou m
 TutorialData.CompleteSound = 138029541636833 -- "to_checkpoint" (Audioscape)
 
 TutorialData.Chapters = {
-	Inicio = "PRIMEIROS PASSOS",
-	Combate = "COMBATE",
-	Caca = "CAÇADA",
-	Forca = "FICANDO MAIS FORTE",
-	Fim = "PRÓXIMOS PASSOS",
+	Inicio = "FIRST STEPS",
+	Combate = "COMBAT",
+	Caca = "THE HUNT",
+	Forca = "GETTING STRONGER",
+	Fim = "NEXT STEPS",
 }
 
 TutorialData.Steps = {
@@ -29,17 +29,17 @@ TutorialData.Steps = {
 	{
 		Id = "Welcome",
 		Chapter = "Inicio",
-		Title = "Bem-vindo, caçador",
-		Text = "A cidade está infestada de demônios. Este guia rápido mostra o básico: andar, lutar, missões e como ficar "
-			.. "mais forte. Leva uns 5 minutos e no fim tem recompensa.",
-		Button = "COMEÇAR",
+		Title = "Welcome, hunter",
+		Text = "The city is infested with devils. This quick guide shows the basics: moving, fighting, quests and how to "
+			.. "get stronger. It takes about 5 minutes and there is a reward at the end.",
+		Button = "START",
 	},
 	{
 		Id = "Move",
 		Chapter = "Inicio",
-		Title = "Andando",
-		Text = "Ande com {W} {A} {S} {D}.",
-		TouchText = "Arraste o controle no canto esquerdo da tela para andar.",
+		Title = "Moving",
+		Text = "Move with {W} {A} {S} {D}.",
+		TouchText = "Drag the stick on the left side of the screen to move.",
 		Check = "Move",
 		Goal = 30,
 		Unit = "m",
@@ -47,9 +47,9 @@ TutorialData.Steps = {
 	{
 		Id = "Camera",
 		Chapter = "Inicio",
-		Title = "Câmera",
-		Text = "Segure o {botão direito} do mouse e arraste para girar a câmera. A rodinha aproxima e afasta.",
-		TouchText = "Arraste o dedo no meio da tela para girar a câmera. Faça pinça para aproximar.",
+		Title = "Camera",
+		Text = "Hold the {right mouse button} and drag to turn the camera. The scroll wheel zooms in and out.",
+		TouchText = "Drag your finger across the middle of the screen to turn the camera. Pinch to zoom.",
 		Check = "Camera",
 		Goal = 180,
 		Unit = "°",
@@ -57,9 +57,9 @@ TutorialData.Steps = {
 	{
 		Id = "Jump",
 		Chapter = "Inicio",
-		Title = "Pulo",
-		Text = "Pule com {Espaço}.",
-		TouchText = "Toque no botão de pulo, embaixo à direita.",
+		Title = "Jumping",
+		Text = "Jump with {Space}.",
+		TouchText = "Tap the jump button at the bottom right.",
 		Check = "Jump",
 		Goal = 2,
 	},
@@ -67,9 +67,9 @@ TutorialData.Steps = {
 		Id = "Dash",
 		Chapter = "Inicio",
 		Title = "Dash",
-		Text = "Aperte {Q} enquanto anda para dar um dash. Ele gasta fôlego (a barra branca) e recarrega em 1 s: ótimo "
-			.. "para fugir de um golpe.",
-		TouchText = "Toque no botão Q, embaixo, para dar um dash. Ele gasta fôlego (a barra branca).",
+		Text = "Press {Q} while moving to dash. It uses stamina (the white bar) and recharges in 1 s: great for "
+			.. "escaping an attack.",
+		TouchText = "Tap the Q button at the bottom to dash. It uses stamina (the white bar).",
 		Check = "Dash",
 		Goal = 2,
 		Anchor = "Slot_Q",
@@ -77,9 +77,9 @@ TutorialData.Steps = {
 	{
 		Id = "Run",
 		Chapter = "Inicio",
-		Title = "Corrida automática",
-		Text = "Ao andar você já corre sozinho. Segure {Ctrl} para andar devagar. Dá para desligar nas configurações (≡).",
-		TouchText = "Ao andar você já corre sozinho. Dá para desligar nas configurações (≡).",
+		Title = "Auto run",
+		Text = "You run automatically while moving. Hold {Ctrl} to walk slowly. You can turn it off in the settings (≡).",
+		TouchText = "You run automatically while moving. You can turn it off in the settings (≡).",
 		Anchor = "SettingsButton",
 	},
 
@@ -87,9 +87,9 @@ TutorialData.Steps = {
 	{
 		Id = "Punch",
 		Chapter = "Combate",
-		Title = "Primeiro soco",
-		Text = "Um boneco de treino apareceu na sua frente. Com os Punhos na mão (tecla {1}), {clique} nele para socar.",
-		TouchText = "Um boneco de treino apareceu na sua frente. Com os Punhos na mão (botão 1), toque na tela para socar.",
+		Title = "First punch",
+		Text = "A training dummy appeared in front of you. With your Fists equipped (key {1}), {click} it to punch.",
+		TouchText = "A training dummy appeared in front of you. With your Fists equipped (button 1), tap the attack button to punch.",
 		Check = "DummyHits",
 		Goal = 3,
 		Target = "Dummy",
@@ -100,7 +100,7 @@ TutorialData.Steps = {
 		Id = "Combo",
 		Chapter = "Combate",
 		Title = "Combo",
-		Text = "Agora acerte {5 socos seguidos} sem parar. O 5º golpe do combo arremessa o inimigo.",
+		Text = "Now land {5 punches in a row} without stopping. The 5th hit of the combo knocks the enemy away.",
 		Check = "DummyCombo",
 		Goal = 5,
 		Target = "Dummy",
@@ -109,10 +109,10 @@ TutorialData.Steps = {
 	{
 		Id = "Block",
 		Chapter = "Combate",
-		Title = "Guarda",
-		Text = "Segure {F} para levantar a guarda. Bem no começo dela, o golpe inimigo vira {parry} e quem bateu fica "
-			.. "atordoado. Se a guarda esvaziar, ela quebra.",
-		TouchText = "Segure o botão F para levantar a guarda. Bem no começo dela, o golpe inimigo vira parry.",
+		Title = "Guard",
+		Text = "Hold {F} to raise your guard. Right at the start of it, an enemy hit becomes a {parry} and the attacker is "
+			.. "stunned. If your guard runs out, it breaks.",
+		TouchText = "Hold the F button to raise your guard. Right at the start of it, an enemy hit becomes a parry.",
 		Check = "Block",
 		Goal = 2,
 		Unit = "s",
@@ -123,9 +123,9 @@ TutorialData.Steps = {
 	{
 		Id = "Skills",
 		Chapter = "Combate",
-		Title = "Técnicas",
-		Text = "{Z} {X} {C} são as técnicas do estilo na mão. Elas começam travadas: lutando você ganha maestria e "
-			.. "libera cada uma na árvore de habilidades.",
+		Title = "Techniques",
+		Text = "{Z} {X} {C} are the techniques of the style you are holding. They start locked: fighting earns mastery "
+			.. "and you unlock each one in the skill tree.",
 		Anchor = "Skills",
 	},
 
@@ -133,9 +133,9 @@ TutorialData.Steps = {
 	{
 		Id = "Travel",
 		Chapter = "Caca",
-		Title = "Rua dos Goblins",
-		Text = "Os Goblins, os demônios mais fracos, estão do outro lado da cidade. Siga a {seta vermelha}. O minimapa "
-			.. "também mostra o caminho.",
+		Title = "Goblin Street",
+		Text = "Goblins, the weakest devils, are on the other side of the city. Follow the {red arrow}. The minimap "
+			.. "also shows the way.",
 		Check = "ReachGoblins",
 		Target = "GoblinZone",
 		Anchor = "Minimap",
@@ -143,10 +143,10 @@ TutorialData.Steps = {
 	{
 		Id = "Kill",
 		Chapter = "Caca",
-		Title = "Primeiro sangue",
-		Text = "Derrote um Goblin. Ele bate de volta: quando ele erguer a faca, levante a guarda ({F}) ou saia com o "
+		Title = "First blood",
+		Text = "Defeat a Goblin. It fights back: when it raises its knife, raise your guard ({F}) or get away with a "
 			.. "dash ({Q}).",
-		TouchText = "Derrote um Goblin. Quando ele erguer a faca, segure F para a guarda ou use o dash (Q).",
+		TouchText = "Defeat a Goblin. When it raises its knife, hold F to guard or use the dash (Q).",
 		Check = "Kill",
 		Goal = 1,
 		Target = "Goblin",
@@ -154,25 +154,25 @@ TutorialData.Steps = {
 	{
 		Id = "Vitals",
 		Chapter = "Caca",
-		Title = "Vida e XP",
-		Text = "Cada demônio derrotado dá XP e Gold. O anel enche até o próximo level. A barra vermelha é sua vida e a "
-			.. "branca o fôlego do dash.",
+		Title = "Health and XP",
+		Text = "Every devil you defeat gives XP and Gold. The ring fills up to the next level. The red bar is your health "
+			.. "and the white one is your dash stamina.",
 		Anchor = "Vitals",
 	},
 	{
 		Id = "Quests",
 		Chapter = "Caca",
-		Title = "Missões",
-		Text = "Suas missões ficam aqui. As principais começam sozinhas e dão bastante XP. {N} mostra ou esconde a lista.",
-		TouchText = "Suas missões ficam aqui. As principais começam sozinhas e dão bastante XP. Toque no título para "
-			.. "mostrar ou esconder a lista.",
+		Title = "Quests",
+		Text = "Your quests are listed here. Main quests start on their own and give a lot of XP. {N} shows or hides the list.",
+		TouchText = "Your quests are listed here. Main quests start on their own and give a lot of XP. Tap the title to "
+			.. "show or hide the list.",
 		Anchor = "QuestTracker",
 	},
 	{
 		Id = "Level",
 		Chapter = "Caca",
-		Title = "Subindo de level",
-		Text = "Continue caçando Goblins até chegar ao {level 2}.",
+		Title = "Leveling up",
+		Text = "Keep hunting Goblins until you reach {level 2}.",
 		Check = "Level",
 		Goal = 2,
 		Target = "Goblin",
@@ -183,44 +183,44 @@ TutorialData.Steps = {
 	{
 		Id = "OpenTree",
 		Chapter = "Forca",
-		Title = "Árvore de habilidades",
-		Text = "Cada level dá 1 ponto de habilidade. Abra a árvore com {M} ou com este botão.",
-		TouchText = "Cada level dá 1 ponto de habilidade. Toque neste botão para abrir a árvore.",
+		Title = "Skill tree",
+		Text = "Every level gives 1 skill point. Open the tree with {M} or with this button.",
+		TouchText = "Every level gives 1 skill point. Tap this button to open the tree.",
 		Check = "TreeOpen",
 		Anchor = "TreeButton",
 	},
 	{
 		Id = "Unlock",
 		Chapter = "Forca",
-		Title = "Gastando o ponto",
-		Text = "Clique num nó ligado ao centro, como {Vigor I} (mais vida) ou {Punho firme I} (mais força), e desbloqueie.",
-		TouchText = "Toque num nó ligado ao centro, como Vigor I (mais vida) ou Punho firme I (mais força), e desbloqueie.",
+		Title = "Spending the point",
+		Text = "Click a node connected to the center, like {Vigor I} (more health) or {Iron Fist I} (more strength), and unlock it.",
+		TouchText = "Tap a node connected to the center, like Vigor I (more health) or Iron Fist I (more strength), and unlock it.",
 		Check = "Unlock",
 	},
 	{
 		Id = "CloseTree",
 		Chapter = "Forca",
-		Title = "Pronto!",
-		Text = "O bônus já vale. Feche a árvore ({M} ou o ×).",
-		TouchText = "O bônus já vale. Feche a árvore no ×.",
+		Title = "Done!",
+		Text = "The bonus is already active. Close the tree ({M} or the ×).",
+		TouchText = "The bonus is already active. Close the tree with the ×.",
 		Check = "TreeClosed",
 	},
 	{
 		Id = "Inventory",
 		Chapter = "Forca",
-		Title = "Inventário",
-		Text = "Os chefes deixam itens. Abra o inventário com {G} para vestir e ganhar os bônus deles.",
-		TouchText = "Os chefes deixam itens. Toque neste botão para abrir o inventário e vestir os itens.",
+		Title = "Inventory",
+		Text = "Bosses drop items. Open the inventory with {G} to wear them and get their bonuses.",
+		TouchText = "Bosses drop items. Tap this button to open the inventory and wear your items.",
 		Check = "InventoryOpen",
 		Anchor = "InventoryButton",
 	},
 	{
 		Id = "Talk",
 		Chapter = "Forca",
-		Title = "Mestre Espadachim",
-		Text = "Fale com o Mestre Espadachim (chegue perto e aperte {E}). Os NPCs dão missões, e ele ensina a {Katana} a "
-			.. "partir do level 15.",
-		TouchText = "Fale com o Mestre Espadachim (chegue perto e toque em Falar). Ele ensina a Katana a partir do level 15.",
+		Title = "Master Swordsman",
+		Text = "Talk to the Master Swordsman (get close and press {E}). NPCs give quests, and he teaches the {Katana} "
+			.. "from level 15.",
+		TouchText = "Talk to the Master Swordsman (get close and tap Talk). He teaches the Katana from level 15.",
 		Check = "Dialog",
 		Target = "NPC:Mestre",
 	},
@@ -229,11 +229,11 @@ TutorialData.Steps = {
 	{
 		Id = "Finish",
 		Chapter = "Fim",
-		Title = "Tudo pronto!",
-		Text = "Seus próximos objetivos:\n• {Level 3}: o Sargento Otávio te chama para a guarda.\n• {Level 15}: a Katana com o "
-			.. "Mestre Espadachim.\n• {Level 25}: escolha seu caminho, Caçador (contratos com demônios) ou Infernal.\n\n"
-			.. "Recompensa: $REWARD.", -- $REWARD vem de TutorialData.Reward (o cliente escreve)
-		Button = "CONCLUIR",
+		Title = "All set!",
+		Text = "Your next goals:\n• {Level 3}: Sergeant Otávio calls you to join the guard.\n• {Level 15}: the Katana from the "
+			.. "Master Swordsman.\n• {Level 25}: choose your path, Hunter (contracts with devils) or Fiend.\n\n"
+			.. "Reward: $REWARD.", -- $REWARD vem de TutorialData.Reward (o cliente escreve)
+		Button = "FINISH",
 		Final = true,
 	},
 }

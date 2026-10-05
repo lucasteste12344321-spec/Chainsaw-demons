@@ -3,9 +3,9 @@
 local Config = {}
 Config.Order = { "DoubleXP", "DoubleGold", "VIP", "ExtraSlots" }
 Config.Passes = {
-	DoubleXP = { Id = 2006715499, Name = "2× XP", Description = "Dobra o XP de combate, missões, eventos e pesca. Acumula com o bônus do clã. Não inclui códigos nem maestria." },
-	DoubleGold = { Id = 2006961470, Name = "2× Gold", Description = "Dobra o Gold de combate, missões, eventos e venda de peixes. Não multiplica códigos, reembolsos ou valores de admin." },
-	VIP = { Id = 2005803494, Name = "VIP", Description = "2× chance de itens dos chefes, 5 giros de clã por dia e seu servidor reservado. Os passes de XP e Gold são vendidos separadamente." },
+	DoubleXP = { Id = 2006715499, Name = "2× XP", Description = "Doubles XP from combat, quests, events and fishing. Stacks with your clan bonus. Does not include codes or mastery." },
+	DoubleGold = { Id = 2006961470, Name = "2× Gold", Description = "Doubles Gold from combat, quests, events and fish sales. Does not multiply codes, refunds or admin values." },
+	VIP = { Id = 2005803494, Name = "VIP", Description = "2× boss item chance, 5 clan spins per day and your own reserved server. The XP and Gold passes are sold separately." },
 	-- Saves extras (PlayerData): libera o 2º e o 3º save (250 Robux).
 	ExtraSlots = { Id = 2005809666, Name = "+2 Save Slots", Description = "Unlocks save slots 2 and 3: play other characters with their own level, clan, path and items." },
 }

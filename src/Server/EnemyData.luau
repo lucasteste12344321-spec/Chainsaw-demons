@@ -16,7 +16,8 @@ return {
 	},
 	GoblinLadrao = {
 		-- Rápido e frágil (vida x0,9), carrega o que roubou (Gold x1,15)
-		DisplayName = "Goblin Ladrão",
+		DisplayName = "Goblin Thief",
+		LegacyName = "Goblin Ladrão", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Template = "Goblin",
 		Tint = Color3.fromRGB(125, 90, 55),
 		Scale = 0.9,
@@ -35,7 +36,8 @@ return {
 		-- Boss do fim dos Goblins (modelo "King Goblin", já gigante: sem Scale/Tint). Dano x1,6, XP e Gold x10.
 		-- Trono, ataques especiais, fase 2 e drops em ReplicatedStorage.BossData (quem cuida é o BossService);
 		-- animações e golpes comuns no kit (EnemyKits["King Goblin"]).
-		DisplayName = "Rei Goblin",
+		DisplayName = "Goblin King",
+		LegacyName = "Rei Goblin", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Template = "King Goblin",
 		Level = 20,
 		Health = 8000,
@@ -87,7 +89,8 @@ return {
 	-- ===== Demônios da cidade (level 20 a 100) =====
 	Ratazana = {
 		-- Bando: vida x0,5, dano x0,6, XP e Gold x0,5. Zonas com MaxEnemies 5 ou 6
-		DisplayName = "Ratazana do Canal",
+		DisplayName = "Canal Rat",
+		LegacyName = "Ratazana do Canal", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Level = 20,
 		Health = 620,
 		Damage = 44,
@@ -102,7 +105,8 @@ return {
 	},
 	Manequim = {
 		-- Tanque de golpe forte: vida x1,3, dano x1,4, XP e Gold x1,3
-		DisplayName = "Manequim",
+		DisplayName = "Mannequin",
+		LegacyName = "Manequim", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Level = 30,
 		Health = 2392,
 		Damage = 148,
@@ -117,7 +121,8 @@ return {
 	},
 	Passageiro = {
 		-- Assassino: vida x0,9, dano x1,1, XP e Gold x1,1
-		DisplayName = "Passageiro do Metrô",
+		DisplayName = "Subway Passenger",
+		LegacyName = "Passageiro do Metrô", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Level = 40,
 		Health = 2196,
 		Damage = 152,
@@ -131,7 +136,8 @@ return {
 	},
 	Operario = {
 		-- Brutamontes de marreta: vida x1,6, dano x1,5, XP e Gold x1,4
-		DisplayName = "Operário Possuído",
+		DisplayName = "Possessed Worker",
+		LegacyName = "Operário Possuído", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Scale = 1.2,
 		Level = 50,
 		Health = 4864,
@@ -147,7 +153,8 @@ return {
 	},
 	CaoDeRua = {
 		-- Rápido: vida x0,8, dano x0,9
-		DisplayName = "Cão de Rua",
+		DisplayName = "Street Dog",
+		LegacyName = "Cão de Rua", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Level = 60,
 		Health = 2912,
 		Damage = 182,
@@ -161,7 +168,8 @@ return {
 	},
 	Enfermeira = {
 		-- Frágil e perigosa: vida x0,8, dano x1,1 (vai arremessar agulhas quando o projétil existir)
-		DisplayName = "Enfermeira de Agulhas",
+		DisplayName = "Needle Nurse",
+		LegacyName = "Enfermeira de Agulhas", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Level = 70,
 		Health = 3392,
 		Damage = 257,
@@ -175,7 +183,8 @@ return {
 	},
 	Afogado = {
 		-- Resistente: vida x1,2, dano x1,1, XP e Gold x1,1 (vai agarrar e puxar)
-		DisplayName = "Afogado",
+		DisplayName = "Drowned One",
+		LegacyName = "Afogado", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Level = 80,
 		Health = 5808,
 		Damage = 292,
@@ -189,7 +198,8 @@ return {
 	},
 	Engravatado = {
 		-- Vida x1,1, dano x1,2, XP e Gold x1,2 (vai chamar capangas)
-		DisplayName = "Engravatado Sem Rosto",
+		DisplayName = "Faceless Suit",
+		LegacyName = "Engravatado Sem Rosto", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Level = 90,
 		Health = 5984,
 		Damage = 357,
@@ -203,7 +213,8 @@ return {
 	},
 	Relogio = {
 		-- Boss final: vida x12, dano x1,8, XP e Gold x15. Zona com MaxEnemies = 1 e RespawnTime longo
-		DisplayName = "Relógio",
+		DisplayName = "Clock",
+		LegacyName = "Relógio", -- nome antigo (zonas de spawn com o nome em português continuam valendo)
 		Scale = 1.8,
 		Level = 100,
 		Health = 72480,
@@ -223,7 +234,7 @@ return {
 	-- (cópia do NPC Treinador ou do StarterCharacter, kit EnemyKits.TreinadorTreino). Os números seguem a curva do
 	-- level do jogador (o TrainerService passa o level dele, no mínimo 10).
 	TreinoTreinador = {
-		DisplayName = "Treinador (treino)", -- o nome deixa claro que ele não cai (a vida volta)
+		DisplayName = "Trainer (training)", -- o nome deixa claro que ele não cai (a vida volta)
 		Template = "TreinadorTreino",
 		Level = 10,
 		Health = 4000, -- no treino a vida volta (não morre)
@@ -238,7 +249,7 @@ return {
 		Gold = 0,
 	},
 	DueloTreinador = {
-		DisplayName = "Treinador",
+		DisplayName = "Trainer",
 		Template = "TreinadorTreino",
 		Level = 25,
 		Health = 2600,

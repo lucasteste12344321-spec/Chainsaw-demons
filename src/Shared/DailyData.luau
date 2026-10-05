@@ -14,12 +14,12 @@ DailyData.DayOffsetSeconds = -3 * 3600 -- meia-noite de Brasília (UTC-3)
 -- Missões possíveis. Goal pode crescer com o level (GoalPerLevel por level, até GoalMax). MinLevel/MaxLevel limitam
 -- quem recebe. Weight: chance relativa no sorteio.
 DailyData.Pool = {
-	{ Id = "KillAny", Kind = "Kill", Text = "Derrote %d inimigos", Goal = 15, GoalPerLevel = 0.3, GoalMax = 40, Weight = 3 },
-	{ Id = "KillGoblin", Kind = "Kill", Target = "Goblin", Text = "Derrote %d Goblins", Goal = 12, MaxLevel = 15, Weight = 2 },
-	{ Id = "KillLadrao", Kind = "Kill", Target = "GoblinLadrao", Text = "Derrote %d Goblins Ladrões", Goal = 10, MinLevel = 10, Weight = 2 },
-	{ Id = "Boss", Kind = "Boss", Text = "Ajude a derrotar %d chefe (Rei Goblin ou Lord Chainsaw)", Goal = 1, MinLevel = 12, Weight = 1 },
-	{ Id = "Fish", Kind = "Fish", Text = "Pesque %d peixes", Goal = 4, Weight = 2 },
-	{ Id = "Power", Kind = "Power", Text = "Use os poderes do seu caminho %d vezes", Goal = 12, NeedsPath = true, Weight = 2 },
+	{ Id = "KillAny", Kind = "Kill", Text = "Defeat %d enemies", Goal = 15, GoalPerLevel = 0.3, GoalMax = 40, Weight = 3 },
+	{ Id = "KillGoblin", Kind = "Kill", Target = "Goblin", Text = "Defeat %d Goblins", Goal = 12, MaxLevel = 15, Weight = 2 },
+	{ Id = "KillLadrao", Kind = "Kill", Target = "GoblinLadrao", Text = "Defeat %d Goblin Thieves", Goal = 10, MinLevel = 10, Weight = 2 },
+	{ Id = "Boss", Kind = "Boss", Text = "Help defeat %d boss (Goblin King or Lord Chainsaw)", Goal = 1, MinLevel = 12, Weight = 1 },
+	{ Id = "Fish", Kind = "Fish", Text = "Catch %d fish", Goal = 4, Weight = 2 },
+	{ Id = "Power", Kind = "Power", Text = "Use your path powers %d times", Goal = 12, NeedsPath = true, Weight = 2 },
 }
 
 -- Recompensa de cada missão (a partir do level): Gold e uma fração do XP que falta para o próximo level

@@ -10,24 +10,30 @@ SkillTreeData.Fork = 90
 -- Icon: kanji (a tela é preto e branco, estilo mangá; emoji sairia colorido)
 -- Angle: direção do galho na tela (0 = direita, 90 = para baixo). Os estilos ficam lado a lado, à direita.
 SkillTreeData.Branches = {
-	Punhos = { Name = "PUNHOS", Icon = "拳", Angle = -30, Color = Color3.fromRGB(214, 22, 32) },
+	Punhos = { Name = "FISTS", Icon = "拳", Angle = -30, Color = Color3.fromRGB(214, 22, 32) },
 	Katana = { Name = "KATANA", Icon = "刀", Angle = 30, Color = Color3.fromRGB(225, 225, 235) },
-	Forca = { Name = "FORÇA", Icon = "力", Angle = -90, Color = Color3.fromRGB(255, 122, 24) },
-	Vitalidade = { Name = "VITALIDADE", Icon = "命", Angle = -150, Color = Color3.fromRGB(235, 70, 95) },
-	Guarda = { Name = "GUARDA", Icon = "守", Angle = 150, Color = Color3.fromRGB(70, 150, 255) },
-	Agilidade = { Name = "AGILIDADE", Icon = "速", Angle = 90, Color = Color3.fromRGB(255, 204, 36) },
+	Forca = { Name = "STRENGTH", Icon = "力", Angle = -90, Color = Color3.fromRGB(255, 122, 24) },
+	Vitalidade = { Name = "VITALITY", Icon = "命", Angle = -150, Color = Color3.fromRGB(235, 70, 95) },
+	Guarda = { Name = "GUARD", Icon = "守", Angle = 150, Color = Color3.fromRGB(70, 150, 255) },
+	Agilidade = { Name = "AGILITY", Icon = "速", Angle = 90, Color = Color3.fromRGB(255, 204, 36) },
 }
 
 -- Técnicas travadas pela árvore (os estilos apontam para elas em CombatStyles: Technique = "...")
 SkillTreeData.Techniques = {
-	PunhosRajada = { Name = "Rajada", Key = "Z", Style = "Punhos" },
-	PunhosCarregado = { Name = "Soco carregado", Key = "X", Style = "Punhos" },
-	PunhosUppercut = { Name = "Uppercut aéreo", Key = "Espaço + 4º soco", Style = "Punhos" },
-	KatanaAvanco = { Name = "Avanço cortante", Key = "Z", Style = "Katana" },
-	KatanaAgarrao = { Name = "Agarrão", Key = "X", Style = "Katana" },
-	KatanaSaque = { Name = "Saque", Key = "C", Style = "Katana" },
-	KatanaUppercut = { Name = "Corte ascendente", Key = "Espaço + 4º corte", Style = "Katana" },
+	PunhosRajada = { Name = "Barrage", Key = "Z", Style = "Punhos" },
+	PunhosCarregado = { Name = "Charged Punch", Key = "X", Style = "Punhos" },
+	PunhosUppercut = { Name = "Aerial Uppercut", Key = "Space + 4th punch", Style = "Punhos" },
+	KatanaAvanco = { Name = "Dashing Slash", Key = "Z", Style = "Katana" },
+	KatanaAgarrao = { Name = "Grab", Key = "X", Style = "Katana" },
+	KatanaSaque = { Name = "Quick Draw", Key = "C", Style = "Katana" },
+	KatanaUppercut = { Name = "Rising Slash", Key = "Space + 4th slash", Style = "Katana" },
 }
+
+-- Nome dos estilos para o jogador (o Id interno continua "Punhos", "Motosserra": salvo nos perfis)
+SkillTreeData.StyleNames = { Punhos = "Fists", Katana = "Katana", Motosserra = "Chainsaw" }
+function SkillTreeData.StyleName(id)
+	return SkillTreeData.StyleNames[id] or id
+end
 
 -- Maestria: XP por golpe que acerta com o estilo; para ir do nível L ao L+1 precisa de Need(L).
 -- Até 300 (2026-10-01, formas dos contratos: a fusão pede 120 e a Ultimate 300; ContractData). A árvore usa só
@@ -60,117 +66,117 @@ local function node(id, branch, depth, side, name, icon, cost, requires, effects
 end
 
 SkillTreeData.Nodes = {
-	node("Root", nil, 0, 0, "Personagem", "鎖", 0, {}, {}, {
+	node("Root", nil, 0, 0, "Character", "鎖", 0, {}, {}, {
 		Default = true,
-		Flavor = "Todo caçador de demônios começa em algum lugar.",
+		Flavor = "Every devil hunter starts somewhere.",
 	}),
 
 	-- ===== Punhos (estilo): técnicas pedem maestria =====
-	node("Punhos", "Punhos", 1, 0, "Estilo: Punhos", "拳", 0, { "Root" }, {}, {
+	node("Punhos", "Punhos", 1, 0, "Style: Fists", "拳", 0, { "Root" }, {}, {
 		Default = true,
-		Flavor = "Combo de 5 socos e guarda (F). Lute com os Punhos para subir a maestria e liberar as técnicas.",
+		Flavor = "5-punch combo and guard (F). Fight with your Fists to raise mastery and unlock the techniques.",
 	}),
-	node("PunhosRajada", "Punhos", 2, 0, "Rajada", "連", 3, { "Punhos" }, { Technique = "PunhosRajada" }, {
+	node("PunhosRajada", "Punhos", 2, 0, "Barrage", "連", 3, { "Punhos" }, { Technique = "PunhosRajada" }, {
 		Mastery = { Style = "Punhos", Level = 6 },
-		Flavor = "Uma sequência rápida de socos que prende o alvo na sua frente.",
+		Flavor = "A fast flurry of punches that pins the target in front of you.",
 	}),
-	node("PunhosUppercut", "Punhos", 2, -1, "Uppercut aéreo", "昇", 2, { "Punhos" }, { Technique = "PunhosUppercut" }, {
+	node("PunhosUppercut", "Punhos", 2, -1, "Aerial Uppercut", "昇", 2, { "Punhos" }, { Technique = "PunhosUppercut" }, {
 		Mastery = { Style = "Punhos", Level = 3 },
-		Flavor = "No ar, o 4º soco do combo lança o alvo para cima.",
+		Flavor = "In the air, the 4th punch of the combo launches the target upward.",
 	}),
-	node("PunhosCarregado", "Punhos", 3, 0, "Soco carregado", "溜", 4, { "PunhosRajada" }, { Technique = "PunhosCarregado" }, {
+	node("PunhosCarregado", "Punhos", 3, 0, "Charged Punch", "溜", 4, { "PunhosRajada" }, { Technique = "PunhosCarregado" }, {
 		Mastery = { Style = "Punhos", Level = 12 },
-		Flavor = "Segure para carregar e solte: quanto mais carregado, mais forte. Carga máxima quebra a guarda.",
+		Flavor = "Hold to charge and release: the longer the charge, the stronger it is. A full charge breaks guards.",
 	}),
-	node("PunhosRajadaLonga", "Punhos", 3, 1, "Rajada longa", "乱", 4, { "PunhosRajada" }, { RajadaHits = 3 }, {
+	node("PunhosRajadaLonga", "Punhos", 3, 1, "Long Barrage", "乱", 4, { "PunhosRajada" }, { RajadaHits = 3 }, {
 		Mastery = { Style = "Punhos", Level = 15 },
 	}),
-	node("PunhosTreinados", "Punhos", 3, -1, "Punhos treinados", "闘", 3, { "PunhosUppercut" }, { Damage_Punhos = 0.1 }, {
+	node("PunhosTreinados", "Punhos", 3, -1, "Trained Fists", "闘", 3, { "PunhosUppercut" }, { Damage_Punhos = 0.1 }, {
 		Mastery = { Style = "Punhos", Level = 8 },
 	}),
-	node("PunhosCargaRapida", "Punhos", 4, 0, "Carga rápida", "瞬", 4, { "PunhosCarregado" }, { ChargeTime = 0.3 }, {
+	node("PunhosCargaRapida", "Punhos", 4, 0, "Quick Charge", "瞬", 4, { "PunhosCarregado" }, { ChargeTime = 0.3 }, {
 		Mastery = { Style = "Punhos", Level = 20 },
 	}),
-	node("PunhosMestre", "Punhos", 5, 0, "Mestre dos punhos", "王", 6, { "PunhosCargaRapida" }, { Damage_Punhos = 0.15 }, {
+	node("PunhosMestre", "Punhos", 5, 0, "Fist Master", "王", 6, { "PunhosCargaRapida" }, { Damage_Punhos = 0.15 }, {
 		Mastery = { Style = "Punhos", Level = 30 },
 	}),
 
 	-- ===== Katana (estilo ensinado pelo Mestre Espadachim, level 15): o 1º nó pede maestria 1, então só quem já tem
 	-- a katana (e cortou com ela) chega nas técnicas =====
-	node("Katana", "Katana", 1, 0, "Estilo: Katana", "刀", 0, { "Root" }, {}, {
+	node("Katana", "Katana", 1, 0, "Style: Katana", "刀", 0, { "Root" }, {}, {
 		Mastery = { Style = "Katana", Level = 1 },
-		Flavor = "Combo de 5 cortes e guarda (F). Aprenda com o Mestre Espadachim (level 15) e corte com ela para liberar.",
+		Flavor = "5-slash combo and guard (F). Learn it from the Master Swordsman (level 15) and slash with it to unlock.",
 	}),
-	node("KatanaAvanco", "Katana", 2, 0, "Avanço cortante", "閃", 2, { "Katana" }, { Technique = "KatanaAvanco" }, {
+	node("KatanaAvanco", "Katana", 2, 0, "Dashing Slash", "閃", 2, { "Katana" }, { Technique = "KatanaAvanco" }, {
 		Mastery = { Style = "Katana", Level = 3 },
-		Flavor = "Avança em linha reta cortando todo mundo no caminho. Os cortes aparecem um instante depois.",
+		Flavor = "Dash forward in a straight line, slicing everyone in your path. The cuts land a moment later.",
 	}),
-	node("KatanaUppercut", "Katana", 2, 1, "Corte ascendente", "昇", 2, { "Katana" }, { Technique = "KatanaUppercut" }, {
+	node("KatanaUppercut", "Katana", 2, 1, "Rising Slash", "昇", 2, { "Katana" }, { Technique = "KatanaUppercut" }, {
 		Mastery = { Style = "Katana", Level = 5 },
-		Flavor = "No ar, o 4º corte do combo lança o alvo para cima.",
+		Flavor = "In the air, the 4th slash of the combo launches the target upward.",
 	}),
-	node("KatanaAgarrao", "Katana", 3, 0, "Agarrão", "掴", 3, { "KatanaAvanco" }, { Technique = "KatanaAgarrao" }, {
+	node("KatanaAgarrao", "Katana", 3, 0, "Grab", "掴", 3, { "KatanaAvanco" }, { Technique = "KatanaAgarrao" }, {
 		Mastery = { Style = "Katana", Level = 8 },
-		Flavor = "Agarra quem está na sua frente (atravessa a guarda), corta segurando e arremessa.",
+		Flavor = "Grab whoever is in front of you (goes through guard), slash while holding them and throw them.",
 	}),
-	node("KatanaFio", "Katana", 3, 1, "Fio afiado", "鋭", 3, { "KatanaUppercut" }, { Damage_Katana = 0.1 }, {
+	node("KatanaFio", "Katana", 3, 1, "Sharp Edge", "鋭", 3, { "KatanaUppercut" }, { Damage_Katana = 0.1 }, {
 		Mastery = { Style = "Katana", Level = 10 },
 	}),
-	node("KatanaSaque", "Katana", 4, 0, "Saque", "居", 4, { "KatanaAgarrao" }, { Technique = "KatanaSaque" }, {
+	node("KatanaSaque", "Katana", 4, 0, "Quick Draw", "居", 4, { "KatanaAgarrao" }, { Technique = "KatanaSaque" }, {
 		Mastery = { Style = "Katana", Level = 12 },
-		Flavor = "Guarda a lâmina e saca num corte largo na sua frente. Quebra a guarda.",
+		Flavor = "Sheathe the blade and draw it in a wide slash in front of you. Breaks guards.",
 	}),
-	node("KatanaMestre", "Katana", 5, 0, "Mestre da lâmina", "剣", 6, { "KatanaSaque" }, { Damage_Katana = 0.15 }, {
+	node("KatanaMestre", "Katana", 5, 0, "Blade Master", "剣", 6, { "KatanaSaque" }, { Damage_Katana = 0.15 }, {
 		Mastery = { Style = "Katana", Level = 25 },
 	}),
 
 	-- ===== Força =====
-	node("Forca1", "Forca", 1, 0, "Punho firme I", "力", 1, { "Root" }, { Forca = 13 }),
-	node("Forca2", "Forca", 2, 0, "Punho firme II", "力", 2, { "Forca1" }, { Forca = 16 }),
-	node("ForcaGuarda", "Forca", 2, 1, "Golpe pesado", "重", 3, { "Forca1" }, { GuardDamage = 0.25 }),
-	node("Forca3", "Forca", 3, 0, "Punho firme III", "力", 3, { "Forca2" }, { Forca = 24 }),
-	node("Forca4", "Forca", 4, 0, "Punho firme IV", "力", 3, { "Forca3" }, { Forca = 32 }),
-	node("ForcaImpacto", "Forca", 4, -1, "Impacto", "衝", 3, { "Forca3" }, { Knockback = 0.3 }),
-	node("Forca5", "Forca", 5, 0, "Punho firme V", "力", 4, { "Forca4" }, { Forca = 48 }),
-	node("Forca6", "Forca", 6, 0, "Brutalidade", "血", 5, { "Forca5" }, { Forca = 64 }),
-	node("Forca7", "Forca", 7, 0, "Demolidor", "鬼", 6, { "Forca6" }, { Forca = 96 }),
+	node("Forca1", "Forca", 1, 0, "Iron Fist I", "力", 1, { "Root" }, { Forca = 13 }),
+	node("Forca2", "Forca", 2, 0, "Iron Fist II", "力", 2, { "Forca1" }, { Forca = 16 }),
+	node("ForcaGuarda", "Forca", 2, 1, "Heavy Blow", "重", 3, { "Forca1" }, { GuardDamage = 0.25 }),
+	node("Forca3", "Forca", 3, 0, "Iron Fist III", "力", 3, { "Forca2" }, { Forca = 24 }),
+	node("Forca4", "Forca", 4, 0, "Iron Fist IV", "力", 3, { "Forca3" }, { Forca = 32 }),
+	node("ForcaImpacto", "Forca", 4, -1, "Impact", "衝", 3, { "Forca3" }, { Knockback = 0.3 }),
+	node("Forca5", "Forca", 5, 0, "Iron Fist V", "力", 4, { "Forca4" }, { Forca = 48 }),
+	node("Forca6", "Forca", 6, 0, "Brutality", "血", 5, { "Forca5" }, { Forca = 64 }),
+	node("Forca7", "Forca", 7, 0, "Wrecker", "鬼", 6, { "Forca6" }, { Forca = 96 }),
 
 	-- ===== Vitalidade =====
 	node("Vida1", "Vitalidade", 1, 0, "Vigor I", "命", 1, { "Root" }, { HP = 90 }),
 	node("Vida2", "Vitalidade", 2, 0, "Vigor II", "命", 2, { "Vida1" }, { HP = 120 }),
-	node("VidaRegen", "Vitalidade", 2, -1, "Regeneração", "癒", 3, { "Vida1" }, { Regen = 0.01 }, {
-		Flavor = "Depois de 5 segundos sem levar dano.",
+	node("VidaRegen", "Vitalidade", 2, -1, "Regeneration", "癒", 3, { "Vida1" }, { Regen = 0.01 }, {
+		Flavor = "After 5 seconds without taking damage.",
 	}),
-	node("Defesa1", "Vitalidade", 3, 0, "Couro grosso I", "盾", 3, { "Vida2" }, { Defesa = 5 }),
+	node("Defesa1", "Vitalidade", 3, 0, "Thick Skin I", "盾", 3, { "Vida2" }, { Defesa = 5 }),
 	node("Vida3", "Vitalidade", 4, 0, "Vigor III", "命", 3, { "Defesa1" }, { HP = 180 }),
-	node("Defesa2", "Vitalidade", 5, 0, "Couro grosso II", "盾", 4, { "Vida3" }, { Defesa = 5 }),
+	node("Defesa2", "Vitalidade", 5, 0, "Thick Skin II", "盾", 4, { "Vida3" }, { Defesa = 5 }),
 	node("Vida4", "Vitalidade", 6, 0, "Vigor IV", "命", 4, { "Defesa2" }, { HP = 240 }),
-	node("Defesa3", "Vitalidade", 7, 0, "Couro grosso III", "盾", 5, { "Vida4" }, { Defesa = 8 }),
+	node("Defesa3", "Vitalidade", 7, 0, "Thick Skin III", "盾", 5, { "Vida4" }, { Defesa = 8 }),
 	node("Vida5", "Vitalidade", 8, 0, "Vigor V", "命", 5, { "Defesa3" }, { HP = 330 }),
-	node("VidaDemonio", "Vitalidade", 9, 0, "Pele de demônio", "魔", 6, { "Vida5" }, { HP = 450, Defesa = 7 }),
+	node("VidaDemonio", "Vitalidade", 9, 0, "Devil Hide", "魔", 6, { "Vida5" }, { HP = 450, Defesa = 7 }),
 
 	-- ===== Agilidade =====
-	node("Agil1", "Agilidade", 1, 0, "Pernas leves I", "速", 1, { "Root" }, { Velocidade = 1 }),
-	node("Folego1", "Agilidade", 2, 0, "Fôlego I", "息", 2, { "Agil1" }, { Energia = 25 }),
-	node("Agil2", "Agilidade", 3, 0, "Pernas leves II", "速", 2, { "Folego1" }, { Velocidade = 1 }),
-	node("PuloDuplo", "Agilidade", 3, 1, "Pulo duplo", "跳", 4, { "Folego1" }, { DoubleJump = true }, {
-		Flavor = "Aperte pular de novo no ar.",
+	node("Agil1", "Agilidade", 1, 0, "Light Feet I", "速", 1, { "Root" }, { Velocidade = 1 }),
+	node("Folego1", "Agilidade", 2, 0, "Stamina I", "息", 2, { "Agil1" }, { Energia = 25 }),
+	node("Agil2", "Agilidade", 3, 0, "Light Feet II", "速", 2, { "Folego1" }, { Velocidade = 1 }),
+	node("PuloDuplo", "Agilidade", 3, 1, "Double Jump", "跳", 4, { "Folego1" }, { DoubleJump = true }, {
+		Flavor = "Press jump again in the air.",
 	}),
-	node("Folego2", "Agilidade", 4, 0, "Fôlego II", "息", 3, { "Agil2" }, { Energia = 25, StaminaRegen = 0.25 }),
-	node("Agil3", "Agilidade", 5, 0, "Pernas leves III", "速", 3, { "Folego2" }, { Velocidade = 2 }),
-	node("DashEconomico", "Agilidade", 5, -1, "Dash econômico", "駆", 3, { "Folego2" }, { DashCost = 0.25 }),
-	node("Agil4", "Agilidade", 6, 0, "Pernas leves IV", "速", 4, { "Agil3" }, { Velocidade = 2 }),
-	node("Folego3", "Agilidade", 7, 0, "Segundo fôlego", "息", 5, { "Agil4" }, { Energia = 50, StaminaRegen = 0.25 }),
+	node("Folego2", "Agilidade", 4, 0, "Stamina II", "息", 3, { "Agil2" }, { Energia = 25, StaminaRegen = 0.25 }),
+	node("Agil3", "Agilidade", 5, 0, "Light Feet III", "速", 3, { "Folego2" }, { Velocidade = 2 }),
+	node("DashEconomico", "Agilidade", 5, -1, "Efficient Dash", "駆", 3, { "Folego2" }, { DashCost = 0.25 }),
+	node("Agil4", "Agilidade", 6, 0, "Light Feet IV", "速", 4, { "Agil3" }, { Velocidade = 2 }),
+	node("Folego3", "Agilidade", 7, 0, "Second Wind", "息", 5, { "Agil4" }, { Energia = 50, StaminaRegen = 0.25 }),
 
 	-- ===== Guarda =====
-	node("Guarda1", "Guarda", 1, 0, "Guarda firme I", "守", 1, { "Root" }, { GuardMax = 0.2 }),
-	node("GuardaRegen1", "Guarda", 2, 0, "Recuperação I", "再", 2, { "Guarda1" }, { GuardRegen = 0.3 }),
-	node("Guarda2", "Guarda", 3, 0, "Guarda firme II", "守", 3, { "GuardaRegen1" }, { GuardMax = 0.2 }),
-	node("Reflexo1", "Guarda", 3, 1, "Reflexo", "眼", 3, { "GuardaRegen1" }, { ParryWindow = 0.05 }),
-	node("GuardaRegen2", "Guarda", 4, 0, "Recuperação II", "再", 3, { "Guarda2" }, { GuardRegen = 0.4 }),
-	node("Muralha", "Guarda", 5, 0, "Muralha", "壁", 4, { "GuardaRegen2" }, { BlockTaken = 0.05 }),
-	node("Guarda3", "Guarda", 6, 0, "Guarda firme III", "守", 4, { "Muralha" }, { GuardMax = 0.3 }),
-	node("Reflexo2", "Guarda", 6, -1, "Reflexo II", "眼", 5, { "Muralha" }, { ParryWindow = 0.05 }),
+	node("Guarda1", "Guarda", 1, 0, "Steady Guard I", "守", 1, { "Root" }, { GuardMax = 0.2 }),
+	node("GuardaRegen1", "Guarda", 2, 0, "Recovery I", "再", 2, { "Guarda1" }, { GuardRegen = 0.3 }),
+	node("Guarda2", "Guarda", 3, 0, "Steady Guard II", "守", 3, { "GuardaRegen1" }, { GuardMax = 0.2 }),
+	node("Reflexo1", "Guarda", 3, 1, "Reflex", "眼", 3, { "GuardaRegen1" }, { ParryWindow = 0.05 }),
+	node("GuardaRegen2", "Guarda", 4, 0, "Recovery II", "再", 3, { "Guarda2" }, { GuardRegen = 0.4 }),
+	node("Muralha", "Guarda", 5, 0, "Bulwark", "壁", 4, { "GuardaRegen2" }, { BlockTaken = 0.05 }),
+	node("Guarda3", "Guarda", 6, 0, "Steady Guard III", "守", 4, { "Muralha" }, { GuardMax = 0.3 }),
+	node("Reflexo2", "Guarda", 6, -1, "Reflex II", "眼", 5, { "Muralha" }, { ParryWindow = 0.05 }),
 }
 
 SkillTreeData.ById = {}
@@ -255,7 +261,7 @@ end
 -- Por que o nó ainda não pode ser desbloqueado (nil = pode). masteryLevels = { [Estilo] = nível }
 function SkillTreeData.Blocker(entry, unlocked, masteryLevels, points)
 	if unlocked[entry.Id] then
-		return "Já desbloqueado"
+		return "Already unlocked"
 	end
 	local connected = #entry.Requires == 0
 	for _, required in entry.Requires do
@@ -265,16 +271,16 @@ function SkillTreeData.Blocker(entry, unlocked, masteryLevels, points)
 		end
 	end
 	if not connected then
-		return "Desbloqueie um nó ligado a este antes"
+		return "Unlock a node connected to this one first"
 	end
 	if entry.Mastery then
 		local have = masteryLevels[entry.Mastery.Style] or 0
 		if have < entry.Mastery.Level then
-			return `Precisa de maestria {entry.Mastery.Level} em {entry.Mastery.Style} (você tem {have})`
+			return `Needs {SkillTreeData.StyleName(entry.Mastery.Style)} mastery {entry.Mastery.Level} (you have {have})`
 		end
 	end
 	if points < entry.Cost then
-		return `Precisa de {entry.Cost} ponto(s) (você tem {points})`
+		return `Needs {entry.Cost} point(s) (you have {points})`
 	end
 	return nil
 end
@@ -304,28 +310,28 @@ end
 
 -- Texto de cada efeito (a tela da árvore mostra a lista)
 local EFFECT_TEXT = {
-	HP = function(v) return `+{v} de vida máxima` end,
-	Forca = function(v) return `+{v} de dano por golpe` end,
-	Defesa = function(v) return `+{v}% de redução de dano` end,
-	Velocidade = function(v) return `+{v} de velocidade` end,
-	Energia = function(v) return `+{v} de fôlego (stamina do dash)` end,
-	Regen = function(v) return `Regenera {percent(v)} da vida por segundo fora de combate` end,
-	GuardDamage = function(v) return `+{percent(v)} de dano na guarda de quem bloqueia` end,
-	Knockback = function(v) return `+{percent(v)} de empurrão nos golpes` end,
-	StaminaRegen = function(v) return `+{percent(v)} de recuperação de fôlego` end,
-	DashCost = function(v) return `Dash gasta {percent(v)} menos fôlego` end,
-	GuardMax = function(v) return `+{percent(v)} de guarda máxima` end,
-	GuardRegen = function(v) return `+{percent(v)} de recuperação da guarda` end,
-	ParryWindow = function(v) return `+{v} s na janela do parry` end,
-	BlockTaken = function(v) return `Passa {percent(v)} menos dano pela guarda` end,
-	Damage_Punhos = function(v) return `+{percent(v)} de dano com os Punhos` end,
-	Damage_Katana = function(v) return `+{percent(v)} de dano com a Katana` end,
-	RajadaHits = function(v) return `+{v} socos na Rajada` end,
-	ChargeTime = function(v) return `Soco carregado carrega {percent(v)} mais rápido` end,
-	DoubleJump = function() return "Pulo duplo" end,
-	DodgeChance = function(v) return `{percent(v)} de chance de desviar de um golpe` end,
-	XPBonus = function(v) return `+{percent(v)} de XP ganho` end,
-	GoldBonus = function(v) return `+{percent(v)} de Gold ganho` end,
+	HP = function(v) return `+{v} max health` end,
+	Forca = function(v) return `+{v} damage per hit` end,
+	Defesa = function(v) return `+{v}% damage reduction` end,
+	Velocidade = function(v) return `+{v} speed` end,
+	Energia = function(v) return `+{v} stamina (for dashing)` end,
+	Regen = function(v) return `Regenerates {percent(v)} health per second out of combat` end,
+	GuardDamage = function(v) return `+{percent(v)} damage to blocking guards` end,
+	Knockback = function(v) return `+{percent(v)} knockback on hits` end,
+	StaminaRegen = function(v) return `+{percent(v)} stamina recovery` end,
+	DashCost = function(v) return `Dash uses {percent(v)} less stamina` end,
+	GuardMax = function(v) return `+{percent(v)} max guard` end,
+	GuardRegen = function(v) return `+{percent(v)} guard recovery` end,
+	ParryWindow = function(v) return `+{v} s parry window` end,
+	BlockTaken = function(v) return `{percent(v)} less damage through your guard` end,
+	Damage_Punhos = function(v) return `+{percent(v)} Fists damage` end,
+	Damage_Katana = function(v) return `+{percent(v)} Katana damage` end,
+	RajadaHits = function(v) return `+{v} punches in Barrage` end,
+	ChargeTime = function(v) return `Charged Punch charges {percent(v)} faster` end,
+	DoubleJump = function() return "Double jump" end,
+	DodgeChance = function(v) return `{percent(v)} chance to dodge a hit` end,
+	XPBonus = function(v) return `+{percent(v)} XP gained` end,
+	GoldBonus = function(v) return `+{percent(v)} Gold gained` end,
 }
 
 function SkillTreeData.Describe(entry)
@@ -334,7 +340,7 @@ function SkillTreeData.Describe(entry)
 		if key == "Technique" then
 			local technique = SkillTreeData.Techniques[value]
 			if technique then
-				table.insert(lines, 1, `Desbloqueia: {technique.Name} ({technique.Key})`)
+				table.insert(lines, 1, `Unlocks: {technique.Name} ({technique.Key})`)
 			end
 		elseif EFFECT_TEXT[key] then
 			table.insert(lines, EFFECT_TEXT[key](value))
@@ -345,29 +351,29 @@ end
 
 -- Versão curta de cada efeito (pílulas de bônus da HUD e do inventário): ícone (kanji), nome e valor
 SkillTreeData.EffectInfo = {
-	Forca = { Icon = "力", Name = "Força" },
-	HP = { Icon = "命", Name = "Vida" },
-	Defesa = { Icon = "盾", Name = "Defesa" },
-	Velocidade = { Icon = "速", Name = "Velocidade" },
-	Energia = { Icon = "息", Name = "Fôlego" },
-	Damage_Punhos = { Icon = "拳", Name = "Dano dos Punhos", Percent = true },
-	Damage_Katana = { Icon = "刀", Name = "Dano da Katana", Percent = true },
-	GuardDamage = { Icon = "重", Name = "Dano na guarda", Percent = true },
-	Knockback = { Icon = "衝", Name = "Empurrão", Percent = true },
-	Regen = { Icon = "癒", Name = "Regeneração" },
-	GuardMax = { Icon = "守", Name = "Guarda máxima", Percent = true },
-	GuardRegen = { Icon = "再", Name = "Recuperação da guarda", Percent = true },
-	ParryWindow = { Icon = "眼", Name = "Janela do parry" },
-	BlockTaken = { Icon = "壁", Name = "Dano pela guarda", Percent = true, Less = true },
-	StaminaRegen = { Icon = "呼", Name = "Recuperação do fôlego", Percent = true },
-	DashCost = { Icon = "駆", Name = "Custo do dash", Percent = true, Less = true },
-	RajadaHits = { Icon = "連", Name = "Socos na Rajada" },
-	ChargeTime = { Icon = "溜", Name = "Tempo de carga", Percent = true, Less = true },
-	DoubleJump = { Icon = "跳", Name = "Pulo duplo" },
+	Forca = { Icon = "力", Name = "Strength" },
+	HP = { Icon = "命", Name = "Health" },
+	Defesa = { Icon = "盾", Name = "Defense" },
+	Velocidade = { Icon = "速", Name = "Speed" },
+	Energia = { Icon = "息", Name = "Stamina" },
+	Damage_Punhos = { Icon = "拳", Name = "Fists Damage", Percent = true },
+	Damage_Katana = { Icon = "刀", Name = "Katana Damage", Percent = true },
+	GuardDamage = { Icon = "重", Name = "Guard Damage", Percent = true },
+	Knockback = { Icon = "衝", Name = "Knockback", Percent = true },
+	Regen = { Icon = "癒", Name = "Regeneration" },
+	GuardMax = { Icon = "守", Name = "Max Guard", Percent = true },
+	GuardRegen = { Icon = "再", Name = "Guard Recovery", Percent = true },
+	ParryWindow = { Icon = "眼", Name = "Parry Window" },
+	BlockTaken = { Icon = "壁", Name = "Damage Through Guard", Percent = true, Less = true },
+	StaminaRegen = { Icon = "呼", Name = "Stamina Recovery", Percent = true },
+	DashCost = { Icon = "駆", Name = "Dash Cost", Percent = true, Less = true },
+	RajadaHits = { Icon = "連", Name = "Barrage Punches" },
+	ChargeTime = { Icon = "溜", Name = "Charge Time", Percent = true, Less = true },
+	DoubleJump = { Icon = "跳", Name = "Double Jump" },
 	-- Só dos clãs (ClanData)
-	DodgeChance = { Icon = "避", Name = "Esquiva", Percent = true },
-	XPBonus = { Icon = "学", Name = "Bônus de XP", Percent = true },
-	GoldBonus = { Icon = "金", Name = "Bônus de Gold", Percent = true },
+	DodgeChance = { Icon = "避", Name = "Dodge", Percent = true },
+	XPBonus = { Icon = "学", Name = "XP Bonus", Percent = true },
+	GoldBonus = { Icon = "金", Name = "Gold Bonus", Percent = true },
 }
 -- Ordem das pílulas
 SkillTreeData.EffectOrder = {

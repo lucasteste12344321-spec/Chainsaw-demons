@@ -11,7 +11,7 @@
 local ContractData = {}
 
 ContractData.FormOrder = { "V1", "V2", "Ultimate" }
-ContractData.FormNames = { V1 = "Pacto", V2 = "Fusão", Ultimate = "Ultimate" }
+ContractData.FormNames = { V1 = "Pact", V2 = "Fusion", Ultimate = "Ultimate" }
 ContractData.FormGlyphs = { V1 = "壱", V2 = "弐", Ultimate = "極" }
 
 -- Maestria do contrato: mesma curva dos estilos (SkillTreeData.Mastery, até 300). XP por:
@@ -27,11 +27,11 @@ ContractData.EvolutionNPC = "Evolucao" -- QuestData.NPCs
 
 local MORDIDA = {
 	Id = "MordidaRaposa",
-	Name = "Mordida da Raposa",
+	Name = "Fox Bite",
 	Icon = "🦊",
 	Glyph = "狐",
-	Description = "Segure para mirar e solte: a cabeça da raposa sai de um portal e morde o ponto mirado, arremessando "
-		.. "tudo em volta. Inimigos comuns com pouca vida são devorados.",
+	Description = "Hold to aim and release: the fox head bursts out of a portal and bites the targeted spot, throwing "
+		.. "everything around it. Common enemies with low health are devoured.",
 	Kind = "Cone",
 	FoxBite = true,
 	Cooldown = 10,
@@ -50,11 +50,11 @@ local MORDIDA = {
 
 local BOTE = {
 	Id = "BoteRaposa",
-	Name = "Bote da Raposa",
+	Name = "Fox Lunge",
 	Icon = "🦊",
 	Glyph = "突",
-	Description = "A cabeça da raposa sai de um portal atrás de você e avança em linha reta de boca aberta, arrastando "
-		.. "quem estiver no caminho e fechando a mordida no fim.",
+	Description = "The fox head bursts out of a portal behind you and charges in a straight line with its jaws open, "
+		.. "dragging whoever is in the way and snapping shut at the end.",
 	Kind = "FoxLunge",
 	Cooldown = 12,
 	Damage = 55,
@@ -81,19 +81,19 @@ ContractData.Contracts = {
 		FusionStyle = "Punhos",
 		Forms = {
 			V1 = {
-				Description = "O Kon atende ao seu chamado: mordida mirada (V) e bote em linha reta (B).",
+				Description = "Kon answers your call: aimed bite (V) and straight lunge (B).",
 				Passive = { SpeedBonus = 2 },
 				Skills = { Z = MORDIDA, X = BOTE },
 			},
 			V2 = {
-				Description = "Punhos e raposa viram uma coisa só: os socos rasgam como garras, as técnicas mudam e o Kon "
-					.. "morde mais forte e mais longe.",
+				Description = "Fists and fox become one: your punches tear like claws, your techniques change and Kon "
+					.. "bites harder and farther.",
 				Requires = { Mastery = 120, StyleMastery = 120 },
 				Passive = { SpeedBonus = 3, LifeSteal = 0.05 },
 				Skills = {
 					Z = stronger(MORDIDA, {
 						Id = "MordidaRaposa2",
-						Name = "Mordida Voraz",
+						Name = "Ravenous Bite",
 						Cooldown = 9,
 						Damage = 95,
 						Radius = 16,
@@ -102,7 +102,7 @@ ContractData.Contracts = {
 					}),
 					X = stronger(BOTE, {
 						Id = "BoteRaposa2",
-						Name = "Bote Voraz",
+						Name = "Ravenous Lunge",
 						Cooldown = 10,
 						Damage = 75,
 						Range = 40,
@@ -114,7 +114,7 @@ ContractData.Contracts = {
 				-- entram na skill do mesmo slot; slot novo entra inteiro).
 				-- Theme: o CombatFX desenha os golpes no tema (garras laranja da raposa).
 				Fusion = {
-					DisplayName = "Punhos da Raposa",
+					DisplayName = "Fox Fists",
 					Theme = "Raposa",
 					Color = Color3.fromRGB(255, 140, 30),
 					Animations = {
@@ -150,13 +150,13 @@ ContractData.Contracts = {
 					},
 					Skills = {
 						Z = {
-							Name = "Rajada de Garras",
-							Description = "Uma sequência de garradas que prende o alvo na sua frente.",
+							Name = "Claw Barrage",
+							Description = "A flurry of claw strikes that pins the target in front of you.",
 							Hits = 11,
 						},
 						X = {
-							Name = "Soco da Raposa",
-							Description = "Segure para carregar e solte: o soco rasga como uma garra. Carga máxima quebra a guarda.",
+							Name = "Fox Punch",
+							Description = "Hold to charge and release: the punch tears like a claw. A full charge breaks guards.",
 						},
 						-- "Kon!": garrada carmesim na frente (ClawAt) e, logo depois, uma cabeça menor do Kon sai de um portal,
 						-- abocanha e puxa para perto (emenda combo)
@@ -166,8 +166,8 @@ ContractData.Contracts = {
 							Name = "Kon!",
 							Icon = "🦊",
 							Glyph = "狐",
-							Description = "Uma garrada carmesim rasga quem está na frente e, logo depois, uma cabeça menor do "
-								.. "Kon abocanha e puxa o alvo para perto de você, pronto para o próximo combo.",
+							Description = "A crimson claw tears through whoever is in front and, right after, a smaller Kon head "
+								.. "snaps them up and pulls the target close to you, ready for the next combo.",
 							Cooldown = 6,
 							WhiffRecovery = 0.4, -- errou as duas partes: travado e lento esse tanto (CombatService)
 							ClawAt = 0.15, -- a garrada (primeiro acerto)
@@ -192,7 +192,7 @@ ContractData.Contracts = {
 				},
 			},
 			Ultimate = {
-				Description = "O Kon se manifesta por inteiro ao seu lado.",
+				Description = "Kon fully manifests at your side.",
 				Requires = { Mastery = 300, StyleMastery = 300, Quest = "UltimaRaposa" },
 				Passive = { SpeedBonus = 4, LifeSteal = 0.1, DodgeChance = 0.05 },
 				Skills = nil, -- mesmos da V2 até a forma Ultimate ficar pronta

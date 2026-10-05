@@ -2,17 +2,17 @@
 local Data = {}
 Data.Order = { "RiverCarp", "Perch", "Trout", "Catfish", "Koi", "GhostEel" }
 Data.Fish = {
-	RiverCarp = { Name = "Carpa do Kuro", Rarity = "Comum", Weight = 40, Price = 8, MinKg = 0.4, MaxKg = 2.8, Difficulty = 0.8, Color = Color3.fromRGB(180, 155, 100) },
-	Perch = { Name = "Perca listrada", Rarity = "Comum", Weight = 30, Price = 10, MinKg = 0.3, MaxKg = 1.9, Difficulty = 0.9, Color = Color3.fromRGB(115, 159, 109) },
-	Trout = { Name = "Truta prateada", Rarity = "Incomum", Weight = 18, Price = 16, MinKg = 0.6, MaxKg = 3.5, Difficulty = 1.0, Color = Color3.fromRGB(148, 199, 210) },
-	Catfish = { Name = "Bagre das raízes", Rarity = "Incomum", Weight = 9, Price = 22, MinKg = 1.2, MaxKg = 6.0, Difficulty = 1.1, Color = Color3.fromRGB(83, 103, 119) },
-	Koi = { Name = "Koi escarlate", Rarity = "Raro", Weight = 2.5, Price = 55, MinKg = 1.0, MaxKg = 5.0, Difficulty = 1.2, Color = Color3.fromRGB(231, 116, 74) },
-	GhostEel = { Name = "Enguia espectral", Rarity = "Épico", Weight = 0.5, Price = 100, MinKg = 1.5, MaxKg = 7.0, Difficulty = 1.35, Night = true, Color = Color3.fromRGB(167, 136, 229) },
+	RiverCarp = { Name = "Kuro Carp", Rarity = "Common", Weight = 40, Price = 8, MinKg = 0.4, MaxKg = 2.8, Difficulty = 0.8, Color = Color3.fromRGB(180, 155, 100) },
+	Perch = { Name = "Striped Perch", Rarity = "Common", Weight = 30, Price = 10, MinKg = 0.3, MaxKg = 1.9, Difficulty = 0.9, Color = Color3.fromRGB(115, 159, 109) },
+	Trout = { Name = "Silver Trout", Rarity = "Uncommon", Weight = 18, Price = 16, MinKg = 0.6, MaxKg = 3.5, Difficulty = 1.0, Color = Color3.fromRGB(148, 199, 210) },
+	Catfish = { Name = "Root Catfish", Rarity = "Uncommon", Weight = 9, Price = 22, MinKg = 1.2, MaxKg = 6.0, Difficulty = 1.1, Color = Color3.fromRGB(83, 103, 119) },
+	Koi = { Name = "Scarlet Koi", Rarity = "Rare", Weight = 2.5, Price = 55, MinKg = 1.0, MaxKg = 5.0, Difficulty = 1.2, Color = Color3.fromRGB(231, 116, 74) },
+	GhostEel = { Name = "Spectral Eel", Rarity = "Epic", Weight = 0.5, Price = 100, MinKg = 1.5, MaxKg = 7.0, Difficulty = 1.35, Night = true, Color = Color3.fromRGB(167, 136, 229) },
 }
 Data.Rods = {
-	{ Name = "Vara de bambu", Price = 0, Catches = 0, Control = 1, Luck = 1 },
-	{ Name = "Vara reforçada", Price = 750, Catches = 20, Control = 1.14, Luck = 1.25 },
-	{ Name = "Vara do rio Kuro", Price = 2200, Catches = 60, Control = 1.28, Luck = 1.6 },
+	{ Name = "Bamboo Rod", Price = 0, Catches = 0, Control = 1, Luck = 1 },
+	{ Name = "Reinforced Rod", Price = 750, Catches = 20, Control = 1.14, Luck = 1.25 },
+	{ Name = "Kuro River Rod", Price = 2200, Catches = 60, Control = 1.28, Luck = 1.6 },
 }
 Data.BagLimit = 150
 Data.SpotRange = 15
@@ -60,7 +60,7 @@ function Data.CatchWeight(id, rodTier, hour, hotspot)
 	if fish.Night and hour >= 6 and hour < 18 then return 0 end
 	local value = fish.Weight
 	if id == "Koi" or id == "GhostEel" then value *= Data.Rods[rodTier].Luck end
-	if hotspot then value *= if fish.Rarity == "Comum" then 0.8 else 1.5 end
+	if hotspot then value *= if fish.Rarity == "Common" then 0.8 else 1.5 end
 	return value
 end
 

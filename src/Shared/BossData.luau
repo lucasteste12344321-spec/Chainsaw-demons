@@ -3,7 +3,7 @@ local BossData = {}
 
 BossData.Bosses = {
 	ReiGoblin = {
-		Title = "Rei dos Goblins",
+		Title = "Goblin King",
 		Throne = {
 			Animation = 70965080373542, -- GK_ThroneIdle: sentado no trono
 			-- A animação dobra as pernas mas não abaixa o corpo (num Seat quem abaixa é o assento): sentado, o
@@ -75,7 +75,7 @@ BossData.Bosses = {
 			RoarAnimation = 108032274433784, -- GK_Roar
 			RoarMarker = "Roar", -- 0,48 s: o aviso e os reforços chegam aqui
 			Summon = { Type = "GoblinLadrao", Count = 3, Level = 18 },
-			Message = "O Rei Goblin ficou furioso e chamou reforços!",
+			Message = "The Goblin King is furious and called for reinforcements!",
 		},
 
 		-- Os itens são os acessórios de dentro do modelo "King Goblin"
@@ -96,7 +96,7 @@ BossData.Bosses = {
 		Throne = {
 			WakeRange = 35,
 			StandUpTime = 0.2,
-			WakeMessage = "Quer brigar? Então vem!",
+			WakeMessage = "Wanna fight? Come on then!",
 		},
 		-- Chefe global: aparece a cada 3 horas (00h, 03h, 06h... UTC = 21h, 00h, 03h... de Brasília), avisa 5 min antes e
 		-- vai embora em 30 min se ninguém vencer. Não renasce sozinho (/chefe Denji chama na hora, para testar).
@@ -105,10 +105,10 @@ BossData.Bosses = {
 			Offset = 0,
 			Warning = 300,
 			Duration = 30 * 60,
-			WarningMessage = "O Denji aparece em %d minutos! Junte o pessoal.",
-			SpawnMessage = "O Denji apareceu! Corra até ele antes que vá embora.",
-			LeaveMessage = "Ninguém derrotou o Lord Chainsaw. Ele foi embora...",
-			DefeatMessage = "O Lord Chainsaw foi derrotado! Volta daqui a algumas horas.",
+			WarningMessage = "Denji shows up in %d minutes! Gather your crew.",
+			SpawnMessage = "Denji has appeared! Get to him before he leaves.",
+			LeaveMessage = "Nobody defeated Lord Chainsaw. He left...",
+			DefeatMessage = "Lord Chainsaw has been defeated! He returns in a few hours.",
 		},
 		IdleGrace = 30, -- sem alvo, espera 30 s antes de voltar para o lugar e se curar
 		MinStun = 1.25,
@@ -146,7 +146,7 @@ BossData.Bosses = {
 			Into = "LordChainsaw",
 			Time = 2.5, -- parado e invulnerável, brilhando, até explodir
 			Radius = 16, -- a explosão quebra o mapa e afasta quem está perto (sem dano)
-			Message = "Denji puxou a cordinha do peito...",
+			Message = "Denji pulled the cord on his chest...",
 		},
 	},
 
@@ -223,7 +223,7 @@ BossData.Bosses = {
 				Heal = 0.15,
 				InterruptDamage = 0.05,
 				InterruptStun = 2,
-				Message = "Está bebendo sangue para se curar! Bata nele para interromper!",
+				Message = "He is drinking blood to heal! Hit him to interrupt!",
 			},
 		},
 
@@ -231,7 +231,7 @@ BossData.Bosses = {
 			At = 0.5,
 			SpeedMultiplier = 1.3,
 			CooldownMultiplier = 0.6,
-			Message = "Lord Chainsaw acelerou as motosserras!",
+			Message = "Lord Chainsaw revved up his chainsaws!",
 		},
 
 	},
