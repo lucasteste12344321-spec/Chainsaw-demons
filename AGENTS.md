@@ -117,6 +117,14 @@ Os remotes antigos na raiz do ReplicatedStorage (`NotifyEvent`, `EventNotify`, `
   ChatGPT em 2026-10-01, `assets/characters/city_demons`). Kit pode ter `Hit` (reação própria; o modelo ganha
   `OwnHitReaction` e o CombatService não toca a genérica) e `Death` (corpo sem desmontar, raiz presa, última pose segura).
   Faltam zonas deles no mapa (Part com o nome do tipo em `workspace.EnemySpawns`).
+- Guarda dos inimigos (2026-10-05, pedido do usuário: "têm que saber bloquear" e "batem enquanto você bate"):
+  `BLOCK` no topo do `EnemyModule`. Com o jogador alvo no meio de um M1 (ou carregando o soco) de frente e perto, o
+  inimigo sorteia levantar a guarda uma vez por golpe dele (15% + 0,4% por level, até 45%; +12% por golpe levado nos
+  últimos 2 s, até 80%; `EnemyData.BlockChance` muda por tipo, 0 = nunca), por 0,6 a 1,3 s, com 15% de chance de ser
+  parry; solta e contra-ataca. Guarda do NPC no `CombatState` (`NPCStartBlock`/`NPCStopBlock`, o `TryBlock` e o
+  `BlockedDamage` valem para NPC): 60 de guarda, quebra = atordoado 1,8 s, pelas costas atravessa. Animação: kit
+  `Animations.Block` ou a guarda dos Punhos. Chefes não bloqueiam. Sem trocar golpe: o inimigo não começa golpe com o
+  jogador no meio de um M1 de frente (`RESPECT_SWING` 0,35 s) nem até `HIT_RECOVERY` (0,45 s) depois de apanhar.
 - Dificuldade geral (2026-10-01, teste com amigos): `BALANCE` no topo do `EnemyModule` (dano x0,65, recarga x1,25,
   animação de golpe a 0,8 = corte mais tarde, XP x1,25), por cima do `EnemyData` e da curva de level. Prioridade de quem
   bateu primeiro: M1 do jogador começado antes do golpe do inimigo (`CombatState.MarkSwing`/`LastSwingAt`), com o inimigo
@@ -182,6 +190,7 @@ Para o mapa se ligar a esses sistemas, siga estas convenções (tudo opcional, e
   (`Remotes.Announcement`), vai embora em 30 min se ninguém vencer e não renasce sozinho. Próximo horário no atributo
   `GlobalBoss_Denji` do ReplicatedStorage. Admin: `/chefe Denji` (BindableFunction `BossService.BossControl`).
   `IdleGrace` (30 s): sem alvo, espera parado antes de voltar e se curar (antes resetava ao se afastar um pouco).
+  `LeashRange` 250 nos dois (chefe com alvo usa o LeashRange sem multiplicar; com 90 voltava para casa curado).
   Drop: `StyleDrop` (Motosserra, 10%, só para quem não tem) e `Drops`: Cabelo do Denji (Hat, 25%), Tapa-olho (Head,
   12%) e Pochita (ShoulderLeft, 3%). Itens com `Source = { Template, Accessory }` no `ItemData`: o BossService copia o
   Accessory de dentro do modelo do chefe para `VFX.Items.<Id>` ao iniciar (sem as soldas antigas). O `FaceAccessory`

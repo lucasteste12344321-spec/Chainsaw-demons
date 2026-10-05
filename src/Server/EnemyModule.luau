@@ -62,6 +62,36 @@ local BALANCE = {
 -- no alcance) cancela o golpe do inimigo, porque o do jogador vai chegar e atordoar. Vale por este tempo depois do
 -- começo do M1 (o acerto do jogador chega no marcador de impacto + ping). Chefes não entram nisso.
 local PRIORITY_WINDOW = 0.45
+-- Guarda dos inimigos (2026-10-05, pedido do usuário: "elas têm que saber bloquear" e "batem enquanto você bate").
+-- Quando o jogador alvo começa um M1 de frente e perto, o inimigo sorteia levantar a guarda (uma vez por golpe do
+-- jogador). A chance sobe com o level e com cada golpe levado nos últimos 2 s (lê o combo). Às vezes a guarda vem com
+-- parry. A guarda quebra (atordoado BreakStun s) e golpe pelas costas atravessa. Chefes não bloqueiam. EnemyData pode
+-- mudar a chance por tipo (BlockChance; 0 = nunca) e o kit, a animação (Animations.Block).
+local BLOCK = {
+	ChanceBase = 0.15,
+	ChancePerLevel = 0.004, -- level 50: 35%
+	ChanceMax = 0.45,
+	ChancePerHit = 0.12,
+	ChanceCap = 0.8,
+	Duration = { 0.6, 1.3 },
+	Cooldown = 2.5, -- depois de soltar a guarda
+	ParryChance = 0.15,
+	ReactRange = 3, -- além do alcance do M1 do jogador
+	Animation = 136027104473016, -- guarda dos Punhos (R6)
+	Guard = {
+		MaxGuard = 60,
+		GuardRegen = 15,
+		DamageTaken = 0.2,
+		BreakStun = 1.8,
+		FrontDot = -0.1,
+		ParryWindow = 0.25,
+		ParryStun = 1.1,
+	},
+}
+-- Sem trocar golpe: depois de levar um golpe, não começa golpe novo por HIT_RECOVERY s; e com o jogador no meio de um M1
+-- de frente e perto (começou há menos de RESPECT_SWING s), espera ou bloqueia em vez de bater junto
+local HIT_RECOVERY = 0.45
+local RESPECT_SWING = 0.35
 -- Por detecção (só chegando perto), no máximo esses inimigos perseguem o mesmo jogador. Quem apanha e os que ele
 -- chama (ALERT_RANGE) não têm limite: o jogador decide quantos puxa.
 local DETECTION_LIMIT = 2
@@ -689,6 +719,10 @@ end
 		humanoid.BreakJointsOnDeath = false
 	end
 	local lastHitReaction = 0
+	local blockTrack = loadKitTrack(animator, kitAnimations.Block or BLOCK.Animation, true, Enum.AnimationPriority.Action)
+	local blocking, blockUntil, nextBlockAt = false, 0, 0
+	local rolledSwing = nil -- golpe do jogador (LastSwingAt) que já teve o sorteio da guarda
+	local recentHits = {} -- os.clock de cada golpe levado (lê o combo)
 
 	-- Só as animações do kit mexem na arma (pose "Handle"): durante elas o Motor6D da arma fica neutro
 	local weaponAnimated = weaponMotor ~= nil and #attackTracks > 0
@@ -895,6 +929,70 @@ end
 		local flat = Vector3.new(offset.X, 0, offset.Z)
 		local look = playerRoot.CFrame.LookVector
 		return flat.Magnitude < 1 or Vector3.new(look.X, 0, look.Z).Unit:Dot(flat.Unit) >= 0.2
+	end
+
+	-- O jogador alvo está no meio de um M1 de frente para o inimigo e perto: devolve a hora do golpe (LastSwingAt) ou nil
+	local function playerThreat(targetHum)
+		local character = targetHum.Parent
+		local player = character and Players:GetPlayerFromCharacter(character)
+		if not player then return nil end
+		local playerRoot = character:FindFirstChild("HumanoidRootPart")
+		local _, style = CombatStyles.FromCharacter(character)
+		if not playerRoot or not style then return nil end
+		local swingAt = CombatState.LastSwingAt(player)
+		local charging = character:GetAttribute("Charging") == true
+		if not charging and (not swingAt or workspace:GetServerTimeNow() - swingAt > RESPECT_SWING) then return nil end
+		local offset = root.Position - playerRoot.Position
+		if offset.Magnitude > style.M1.Range + CombatStyles.HitTolerance + BLOCK.ReactRange then return nil end
+		local flat = Vector3.new(offset.X, 0, offset.Z)
+		local look = playerRoot.CFrame.LookVector
+		if flat.Magnitude > 1 and Vector3.new(look.X, 0, look.Z).Unit:Dot(flat.Unit) < 0.2 then return nil end
+		return swingAt or -1
+	end
+
+	local function blockChance()
+		local base = stats.BlockChance
+		if type(base) ~= "number" then
+			base = math.min(BLOCK.ChanceMax, BLOCK.ChanceBase + BLOCK.ChancePerLevel * (stats.Level or 1))
+		end
+		if base <= 0 then return 0 end
+		local clock, hits = os.clock(), 0
+		for i = #recentHits, 1, -1 do
+			if clock - recentHits[i] <= 2 then
+				hits += 1
+			else
+				table.remove(recentHits, i)
+			end
+		end
+		return math.min(BLOCK.ChanceCap, base + hits * BLOCK.ChancePerHit)
+	end
+
+	local function stopBlock(counter)
+		if not blocking then return end
+		blocking = false
+		CombatState.NPCStopBlock(npc)
+		if blockTrack and blockTrack.IsPlaying then
+			blockTrack:Stop(0.15)
+		end
+		nextBlockAt = os.clock() + BLOCK.Cooldown
+		if counter then
+			nextAttackAt = math.min(nextAttackAt, os.clock() + 0.1) -- soltou a guarda: contra-ataca logo
+		end
+	end
+
+	local function startBlock(targetHrp)
+		if not CombatState.NPCStartBlock(npc, BLOCK.Guard, rng:NextNumber() < BLOCK.ParryChance) then return false end
+		blocking = true
+		blockUntil = os.clock() + rng:NextNumber(BLOCK.Duration[1], BLOCK.Duration[2])
+		cancelAttack()
+		stopMover()
+		humanoid:MoveTo(root.Position)
+		setRunning(false)
+		snapFacing(targetHrp.Position)
+		if blockTrack then
+			blockTrack:Play(0.1)
+		end
+		return true
 	end
 
 	-- Um golpe: vira para o alvo, dá um passo se ele estiver um pouco longe, toca a animação e o dano sai no
@@ -1136,6 +1234,7 @@ end
 			cancelAttack()
 			stopMover()
 			releaseFacing()
+			stopBlock(false)
 		end
 	end)
 
@@ -1153,7 +1252,8 @@ end
 	humanoid.HealthChanged:Connect(function(health)
 		if health < lastHealth then
 			lastDamagedAt = os.clock()
-			if hitTrack and health > 0 and os.clock() - lastHitReaction >= HIT_REACTION_GAP then
+			table.insert(recentHits, os.clock())
+			if hitTrack and not blocking and health > 0 and os.clock() - lastHitReaction >= HIT_REACTION_GAP then
 				lastHitReaction = os.clock()
 				hitTrack:Play(0.05)
 			end
@@ -1191,6 +1291,19 @@ end
 				humanoid:MoveTo(root.Position)
 				setRunning(false)
 				continue
+			end
+
+			-- Guarda levantada: parado, virado para o alvo, até o tempo acabar ou o alvo sumir
+			if blocking then
+				local guardTarget = currentTargetHrp
+				if os.clock() >= blockUntil or not guardTarget or not guardTarget.Parent or controller.Paused then
+					stopBlock(true)
+				else
+					humanoid:MoveTo(root.Position)
+					setRunning(false)
+					face(guardTarget.Position)
+					continue
+				end
 			end
 
 			-- No meio do dash ou do combo: deixa terminar (o combo continua virado para o alvo)
@@ -1338,7 +1451,16 @@ end
 				stuckTime(false)
 				pathWaypoints = nil
 				face(targetHrp.Position)
-				if os.clock() >= nextAttackAt then
+				-- O jogador está batendo: sorteia a guarda (uma vez por golpe dele) e não troca golpe
+				local threat = if isBoss() then nil else playerThreat(targetHum)
+				if threat and threat ~= rolledSwing and os.clock() >= nextBlockAt then
+					rolledSwing = threat
+					if rng:NextNumber() < blockChance() and startBlock(targetHrp) then
+						continue
+					end
+				end
+				local recovering = not isBoss() and os.clock() - lastDamagedAt < HIT_RECOVERY
+				if os.clock() >= nextAttackAt and not threat and not recovering then
 					humanoid:MoveTo(root.Position)
 					setRunning(false)
 					startCombo(targetHrp, targetHum)

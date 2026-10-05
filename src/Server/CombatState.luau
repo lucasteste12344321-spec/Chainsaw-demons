@@ -241,13 +241,110 @@ local function rootOf(model)
 	return model and model:FindFirstChild("HumanoidRootPart")
 end
 
+-- ================= Guarda dos inimigos (NPC) =================
+-- O EnemyModule decide quando o inimigo levanta a guarda; aqui fica o estado (o mesmo jeito da guarda do jogador, mas
+-- guardado no modelo). cfg: MaxGuard, GuardRegen, DamageTaken, BreakStun, FrontDot, ParryWindow, ParryStun.
+-- parry = true: essa guarda faz parry nos primeiros ParryWindow s (o EnemyModule sorteia; senão seria parry sempre,
+-- porque o inimigo levanta a guarda reagindo ao golpe).
+local npcGuards = setmetatable({}, { __mode = "k" }) -- [model] = estado
+
+local function npcGuardNow(guard, t)
+	if not guard.blocking then
+		local since = t - (guard.lastGuardHit or 0)
+		guard.guard = math.min(guard.cfg.MaxGuard, guard.guard + since * (guard.cfg.GuardRegen or 15))
+		guard.lastGuardHit = t
+	end
+	return guard.guard
+end
+
+function CombatState.NPCStartBlock(model, cfg, parry)
+	local t = now()
+	local guard = npcGuards[model]
+	if not guard then
+		guard = { guard = cfg.MaxGuard, lastGuardHit = t }
+		npcGuards[model] = guard
+	end
+	guard.cfg = cfg
+	if guard.brokenUntil and t < guard.brokenUntil then return false end
+	if npcGuardNow(guard, t) < cfg.MaxGuard * 0.25 then return false end
+	guard.blocking = true
+	guard.blockStart = t
+	guard.parry = parry == true
+	model:SetAttribute("Blocking", true)
+	return true
+end
+
+function CombatState.NPCStopBlock(model)
+	local guard = npcGuards[model]
+	if not guard or not guard.blocking then return end
+	guard.blocking = false
+	guard.lastGuardHit = now()
+	if model.Parent then
+		model:SetAttribute("Blocking", nil)
+	end
+end
+
+function CombatState.NPCIsBlocking(model)
+	local guard = npcGuards[model]
+	return guard ~= nil and guard.blocking == true
+end
+
+local function npcTryBlock(victimModel, attackerModel, guardDamage, opts)
+	local guard = npcGuards[victimModel]
+	if not guard or not guard.blocking or opts.Unblockable then return "None" end
+	local cfg = guard.cfg
+	local victimRoot, attackerRoot = rootOf(victimModel), rootOf(attackerModel)
+	local from = if typeof(opts.FromPosition) == "Vector3" then opts.FromPosition elseif attackerRoot then attackerRoot.Position else nil
+	if victimRoot and from then
+		local offset = from - victimRoot.Position
+		local flat = Vector3.new(offset.X, 0, offset.Z)
+		local look = victimRoot.CFrame.LookVector
+		if flat.Magnitude > 0.01 and Vector3.new(look.X, 0, look.Z).Unit:Dot(flat.Unit) < (cfg.FrontDot or -0.1) then
+			return "None" -- pelas costas atravessa
+		end
+	end
+	local t = now()
+	if guard.parry and not opts.Unparryable and t - guard.blockStart <= (cfg.ParryWindow or 0.25) then
+		guard.parry = false
+		local attackerHumanoid = attackerModel and attackerModel:FindFirstChildOfClass("Humanoid")
+		if attackerHumanoid then
+			CombatState.Stun(attackerHumanoid, cfg.ParryStun or 1.1, true)
+			CombatState.PlayReaction(attackerHumanoid, CombatStyles.ParriedAnimation, cfg.ParryStun or 1.1)
+		end
+		local attackerPlayer = attackerModel and Players:GetPlayerFromCharacter(attackerModel)
+		if attackerPlayer and states[attackerPlayer] then
+			states[attackerPlayer].combo = 0
+		end
+		CombatState.FX("Parry", { Character = victimModel, Attacker = attackerModel })
+		return "Parried"
+	end
+	guard.lastGuardHit = t
+	guard.guard = math.max(0, guard.guard - (if opts.GuardBreak then math.huge else guardDamage or 0))
+	if guard.guard <= 0 then
+		guard.guard = cfg.MaxGuard * 0.5 -- volta pela metade depois
+		guard.brokenUntil = t + (cfg.BreakStun or 1.8)
+		CombatState.NPCStopBlock(victimModel)
+		local humanoid = victimModel:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			CombatState.Stun(humanoid, cfg.BreakStun or 1.8, true)
+		end
+		CombatState.FX("GuardBreak", { Character = victimModel })
+		return "Broken"
+	end
+	local attackerPlayer = opts.Predicted and attackerModel and Players:GetPlayerFromCharacter(attackerModel) or nil
+	CombatState.FX("Blocked", { Character = victimModel, Attacker = attackerModel }, attackerPlayer)
+	return "Blocked"
+end
+
 -- A vítima está bloqueando este golpe? Devolve "None", "Blocked", "Parried" ou "Broken".
 -- opts.GuardBreak: quebra a guarda direto (soco carregado no máximo). opts.Unparryable: parry não funciona.
 -- opts.Unblockable: atravessa a guarda (agarrão). opts.FromPosition: de onde o golpe veio, no lugar da posição atual de
 -- quem atacou (o Avanço cortante termina atrás da vítima, mas o corte veio da frente).
 function CombatState.TryBlock(victimModel, attackerModel, guardDamage, opts)
 	local victimPlayer = Players:GetPlayerFromCharacter(victimModel)
-	if not victimPlayer then return "None" end
+	if not victimPlayer then
+		return if victimModel then npcTryBlock(victimModel, attackerModel, guardDamage, opts or {}) else "None"
+	end
 	local state = states[victimPlayer]
 	if not state or not state.blocking or state.character ~= victimModel then return "None" end
 	local cfg = state.blockCfg
@@ -315,6 +412,10 @@ end
 -- Fração do dano que passa quando o golpe foi bloqueado
 function CombatState.BlockedDamage(victimModel)
 	local victimPlayer = Players:GetPlayerFromCharacter(victimModel)
+	local npcGuard = not victimPlayer and npcGuards[victimModel]
+	if npcGuard then
+		return npcGuard.cfg.DamageTaken or DEFAULT_BLOCK.DamageTaken
+	end
 	local state = victimPlayer and states[victimPlayer]
 	-- "Muralha" na árvore deixa passar menos dano
 	local taken = if state then state.blockCfg.DamageTaken else DEFAULT_BLOCK.DamageTaken
