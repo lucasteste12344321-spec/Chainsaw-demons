@@ -369,6 +369,104 @@ local function attachLooseAccessories(npc, humanoid)
 	end
 end
 
+-- Modelo importado sem as juntas do corpo (comum em modelo pego pronto): ao tirar o Anchored, ele desmontava. Aqui,
+-- antes de soltar: as juntas R6 que faltam viram Motor6D na pose em que o modelo está (as animações precisam dos nomes
+-- padrão), e qualquer peça que ainda não esteja presa ao HumanoidRootPart é soldada na peça presa mais perto.
+-- Avisa uma vez por modelo o que foi consertado (o certo é arrumar o modelo no Studio).
+local R6_JOINTS = {
+	-- nome, onde fica, Part0, Part1, ponto da junta na Part0 (em metades do tamanho dela), virada da junta
+	{ "RootJoint", "HumanoidRootPart", "HumanoidRootPart", "Torso", Vector3.zero, CFrame.Angles(math.rad(90), math.pi, 0) },
+	{ "Neck", "Torso", "Torso", "Head", Vector3.new(0, 1, 0), CFrame.Angles(math.rad(90), math.pi, 0) },
+	{ "Right Shoulder", "Torso", "Torso", "Right Arm", Vector3.new(1, 0.5, 0), CFrame.Angles(0, math.rad(90), 0) },
+	{ "Left Shoulder", "Torso", "Torso", "Left Arm", Vector3.new(-1, 0.5, 0), CFrame.Angles(0, math.rad(-90), 0) },
+	{ "Right Hip", "Torso", "Torso", "Right Leg", Vector3.new(1, -1, 0), CFrame.Angles(0, math.rad(90), 0) },
+	{ "Left Hip", "Torso", "Torso", "Left Leg", Vector3.new(-1, -1, 0), CFrame.Angles(0, math.rad(-90), 0) },
+}
+
+local function jointBetween(a, b)
+	for _, part in { a, b } do
+		for _, child in part:GetChildren() do
+			if child:IsA("JointInstance") and ((child.Part0 == a and child.Part1 == b) or (child.Part0 == b and child.Part1 == a)) then
+				return child
+			end
+			if child:IsA("WeldConstraint") and ((child.Part0 == a and child.Part1 == b) or (child.Part0 == b and child.Part1 == a)) then
+				return child
+			end
+		end
+	end
+	return nil
+end
+
+local repairedTemplates = {}
+
+local function repairRig(npc, humanoid, root, templateName)
+	local fixed = {}
+	for _, joint in R6_JOINTS do
+		local name, holderName, name0, name1, point, turn = table.unpack(joint)
+		local part0, part1 = npc:FindFirstChild(name0), npc:FindFirstChild(name1)
+		local holder = npc:FindFirstChild(holderName)
+		if part0 and part1 and holder and part0:IsA("BasePart") and part1:IsA("BasePart") and not jointBetween(part0, part1) then
+			-- Junta com o nome certo mas solta (Part0/Part1 vazios): some e entra a nova
+			local broken = holder:FindFirstChild(name)
+			if broken and broken:IsA("JointInstance") then
+				broken:Destroy()
+			end
+			local half = part0.Size / 2
+			local jointWorld = part0.CFrame * CFrame.new(point * half) * turn
+			local motor = Instance.new("Motor6D")
+			motor.Name = name
+			motor.Part0 = part0
+			motor.Part1 = part1
+			motor.C0 = part0.CFrame:ToObjectSpace(jointWorld)
+			motor.C1 = part1.CFrame:ToObjectSpace(jointWorld)
+			motor.Parent = holder
+			table.insert(fixed, name)
+		end
+	end
+	if not npc:FindFirstChild("Head") then
+		humanoid.RequiresNeck = false -- sem cabeça, o Humanoid morreria (e desmontaria) na hora
+	end
+
+	local connected = {}
+	for _, part in root:GetConnectedParts(true) do
+		connected[part] = true
+	end
+	connected[root] = true
+	local anchors = {}
+	for part in connected do
+		table.insert(anchors, part)
+	end
+	local welded = 0
+	for _, part in npc:GetDescendants() do
+		if part:IsA("BasePart") and not connected[part] then
+			local best, bestDistance = root, math.huge
+			for _, anchor in anchors do
+				local distance = (anchor.Position - part.Position).Magnitude
+				if distance < bestDistance then
+					best, bestDistance = anchor, distance
+				end
+			end
+			local weld = Instance.new("WeldConstraint")
+			weld.Name = "RepairWeld"
+			weld.Part0 = best
+			weld.Part1 = part
+			weld.Parent = part
+			part.Massless = true
+			connected[part] = true
+			welded += 1
+		end
+	end
+
+	if (#fixed > 0 or welded > 0) and not repairedTemplates[templateName] then
+		repairedTemplates[templateName] = true
+		warn(`[EnemyModule] O modelo {templateName} veio sem juntas e foi consertado na hora: `
+			.. (if #fixed > 0 then `juntas criadas ({table.concat(fixed, ", ")})` else "")
+			.. (if #fixed > 0 and welded > 0 then " e " else "")
+			.. (if welded > 0 then `{welded} peças soltas soldadas` else "")
+			.. ". Para não depender disso, arrume o modelo no Studio (rig R6 com Motor6D).")
+	end
+end
+
 -- Peça dentro do ReplicatedStorage por caminho (ex.: { "VFX", "EnemyModels", "Knife" })
 local function findByPath(root, path)
 	local current = root
@@ -526,6 +624,7 @@ function EnemyModule.SpawnEnemy(template, cframe, options)
 
 	npc.Parent = getEnemiesFolder()
 	attachLooseAccessories(npc, humanoid)
+	repairRig(npc, humanoid, root, template.Name)
 	humanoid.MaxHealth = stats.Health
 	humanoid.Health = stats.Health
 	humanoid.WalkSpeed = stats.Speed

@@ -177,6 +177,9 @@ Para o mapa se ligar a esses sistemas, siga estas convenções (tudo opcional, e
   **Beber sangue** (BloodDrink: abaixo de 25% cura 15% em 3 s, até 2 vezes; levar 5% da vida nesse tempo interrompe e
   atordoa 2 s). Recompensa na morte do Lord Chainsaw; todos fugiram = ele some e o Denji volta a esperar. Os dois com
   as animações dos Punhos até ter as próprias. Sem drops por enquanto.
+- Modelo sem juntas (o Denji do usuário desmontava): o `EnemyModule.repairRig` cria na hora as juntas R6 que faltam
+  (Motor6D com os nomes padrão, na pose do modelo), solda as peças soltas na peça presa mais perto e avisa no Output
+  uma vez por modelo. Sem cabeça, `RequiresNeck = false`.
 
 ### NPCs de missão
 - Um Model com Humanoid (ou qualquer Model com uma Part) com a **tag** `QuestGiver` (CollectionService / `AddTag`)
