@@ -6,8 +6,9 @@
 --     tela: aparecem no balão do level e no inventário.
 --   embaixo no centro, numa linha só: estilos de combate (1 a 5, só as casas com estilo), as habilidades (F guarda,
 --     Z/X/C do estilo, Q dash) e os poderes do caminho (V/B). A tecla fica no canto de cada casa.
---   menus em botões redondos pequenos (árvore M, inventário G, pescaria, passes e configurações) num grupo em cima do
---     minimapa, fora da linha de combate. A pescaria e os passes não têm mais botão solto na tela.
+--   menus em botões redondos pequenos (árvore M, inventário G, pescaria, passes e configurações) numa coluna colada no
+--     lado esquerdo do minimapa, fora da linha de combate (em cima do minimapa fica o cartão de navegação dele). A
+--     pescaria e os passes não têm mais botão solto na tela.
 --   animações de ganho (XP, gold, LEVEL UP) e a borda de sangue com a vida baixa
 --   no celular (sem teclado): as habilidades viram botões redondos grandes no canto de baixo à direita, em volta de um
 --     botão de ataque (M1), ao lado do pulo do Roblox; a hotbar fica maior e os menus vão para a linha de baixo. Para
@@ -1030,20 +1031,24 @@ if touchOnly then
 end
 
 -- ================= Menus: árvore (M), inventário (G), pescaria, passes e configurações =================
--- Botões redondos pequenos. No PC ficam num grupo em cima do minimapa (fora da linha de combate); no celular, no fim da
--- linha de baixo.
+-- Botões redondos pequenos. No PC ficam numa coluna colada no lado esquerdo do minimapa (fora da linha de combate; em
+-- cima do minimapa fica o cartão de navegação dele); no celular, no fim da linha de baixo.
 
 local menuHolder = new("Frame", {
 	Name = "Menu",
 	AnchorPoint = Vector2.new(1, 1),
-	Position = UDim2.new(1, -18, 1, -220),
-	Size = UDim2.fromOffset(0, MENU_SIZE),
-	AutomaticSize = Enum.AutomaticSize.X,
+	Position = UDim2.new(1, -218, 1, -18),
+	Size = if touchOnly then UDim2.fromOffset(0, MENU_SIZE) else UDim2.fromOffset(MENU_SIZE, 0),
+	AutomaticSize = if touchOnly then Enum.AutomaticSize.X else Enum.AutomaticSize.Y,
 	BackgroundTransparency = 1,
 	LayoutOrder = 5,
 	Parent = if touchOnly then actions else screen,
 })
-UITheme.list(menuHolder, 6, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
+if touchOnly then
+	UITheme.list(menuHolder, 6, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
+else
+	UITheme.list(menuHolder, 6, Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Bottom)
+end
 if touchOnly then
 	divider(actions, 4)
 else
@@ -1133,15 +1138,15 @@ local pointsDotText = text({
 	Parent = pointsDot,
 })
 
--- PC: o grupo fica logo em cima do minimapa, alinhado à direita dele (as duas telas têm a mesma origem)
+-- PC: a coluna fica colada no lado esquerdo do minimapa, alinhada com o pé dele (as duas telas têm a mesma origem)
 if not touchOnly then
 	task.spawn(function()
 		local map = playerGui:WaitForChild("Minimap", 30)
 		local holder = map and map:WaitForChild("Holder", 10)
 		if not holder then return end
 		local function placeMenu()
-			local right = holder.AbsolutePosition.X + holder.AbsoluteSize.X
-			menuHolder.Position = UDim2.fromOffset(right, holder.AbsolutePosition.Y - 10)
+			local bottom = holder.AbsolutePosition.Y + holder.AbsoluteSize.Y
+			menuHolder.Position = UDim2.fromOffset(holder.AbsolutePosition.X - 10, bottom)
 		end
 		holder:GetPropertyChangedSignal("AbsolutePosition"):Connect(placeMenu)
 		holder:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeMenu)
@@ -1269,9 +1274,15 @@ local settingsScale = UITheme.autoScale(settingsPanel, 1100, 700)
 
 local function placeSettings()
 	local anchor = menuHolder.AbsolutePosition
-	local right = anchor.X + menuHolder.AbsoluteSize.X
+	local size = menuHolder.AbsoluteSize
 	local width = settingsPanel.Size.X.Offset * settingsScale.Scale
-	settingsPanel.Position = UDim2.fromOffset(math.max(width + 8, right), anchor.Y - 8)
+	if touchOnly then
+		-- Em cima da linha de baixo, alinhado à direita do grupo
+		settingsPanel.Position = UDim2.fromOffset(math.max(width + 8, anchor.X + size.X), anchor.Y - 8)
+	else
+		-- À esquerda da coluna, com o pé alinhado
+		settingsPanel.Position = UDim2.fromOffset(math.max(width + 8, anchor.X - 8), anchor.Y + size.Y)
+	end
 end
 
 text({

@@ -496,8 +496,10 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 - Embaixo à esquerda: selo do level + nome/clã/caminho + gold numa linha; vida com o número dentro; fôlego, tempo de
   vida (Caçador) e XP em linhas finas. Os bônus em pílulas saíram da tela: estão no balão do level (e no inventário).
 - Linha de baixo única: estilos (só as casas com estilo) | F Z X C Q | V B. A tecla fica no canto de cada casa.
-- Menus em botões redondos (M, G, pescaria 釣, passes ★, configurações) num grupo em cima do minimapa (PC; a posição
-  vem do `Minimap.Holder`); no celular ficam no fim da linha de baixo. O painel de configurações abre em cima do grupo.
+- Menus em botões redondos (M, G, pescaria 釣, passes ★, configurações) numa coluna colada no lado esquerdo do minimapa
+  (PC; a posição vem do `Minimap.Holder`; em cima do minimapa fica o `NavigationCard` dele, que se sobrepunha ao grupo
+  no print do usuário); no celular ficam no fim da linha de baixo. O painel de configurações abre ao lado da coluna.
+- Lista de missões (PC) cresce para baixo a partir de 20% da altura da tela.
   A pescaria manda `FishingAction` "Bag"; os passes disparam o BindableEvent `GamepassShop.Toggle`.
 - Botões soltos que saíram (2026-10-05): "PESCARIA" (Fishing.client) e "PASSES" (GamepassShop.client, agora no repo).
   O painel de pesca ficou compacto (em cima da linha de habilidades; a cesta abre no centro), o cartão do evento

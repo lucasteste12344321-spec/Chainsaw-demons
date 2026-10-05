@@ -1,4 +1,4 @@
--- Missões: tracker das missões ativas (direita, no meio da tela, sem moldura) e diálogo dos NPCs de missão.
+-- Missões: tracker das missões ativas (direita, de 20% da altura para baixo, sem moldura) e diálogo dos NPCs de missão.
 -- O servidor manda o estado via Remotes.QuestEvent e os diálogos via Remotes.QuestDialog.
 -- Se o NPC for de um caminho (Fase 4), o diálogo traz data.PathOffer e mostra um cartão com "VER CAMINHO".
 local Players = game:GetService("Players")
@@ -37,9 +37,10 @@ local FONT_MEDIUM = Enum.Font.BuilderSansMedium
 
 local trackerGui = UITheme.screen("QuestTracker", 1, playerGui)
 
+-- PC: cresce para baixo a partir de 20% da altura (centralizada, encostava no cartão de navegação do minimapa)
 local tracker = UITheme.new("Frame", {
-	AnchorPoint = Vector2.new(1, 0.5),
-	Position = UDim2.new(1, -16, 0.45, 0),
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -16, 0.2, 0),
 	Size = UDim2.fromOffset(260, 0),
 	AutomaticSize = Enum.AutomaticSize.Y,
 	BackgroundColor3 = Colors.Black,
