@@ -765,17 +765,7 @@ Remotes.CombatFX.OnClientEvent:Connect(function(kind, data)
 		end
 	end
 	if cfg then
-		local track = CombatAnimations.PlaySkill(style, cfg.SuccessAnimation)
-		-- No Studio: mostra no Output em que tempo o marcador "HitGrab" passa (para acertar o HitAt da skill)
-		if track and RunService:IsStudio() then
-			local started = os.clock()
-			local connection
-			connection = track:GetMarkerReachedSignal("HitGrab"):Connect(function()
-				connection:Disconnect()
-				print(string.format("[Contra-agarrão] marcador HitGrab em %.2f s (HitAt no CombatStyles: %.2f)",
-					os.clock() - started, cfg.HitAt))
-			end)
-		end
+		CombatAnimations.PlaySkill(style, cfg.SuccessAnimation)
 	end
 end)
 
