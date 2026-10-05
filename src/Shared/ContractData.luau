@@ -169,6 +169,7 @@ ContractData.Contracts = {
 							Description = "Uma garrada carmesim rasga quem está na frente e, logo depois, uma cabeça menor do "
 								.. "Kon abocanha e puxa o alvo para perto de você, pronto para o próximo combo.",
 							Cooldown = 6,
+							WhiffRecovery = 0.4, -- errou as duas partes: travado e lento esse tanto (CombatService)
 							ClawAt = 0.15, -- a garrada (primeiro acerto)
 							ClawDamage = 16,
 							ClawRange = 8,

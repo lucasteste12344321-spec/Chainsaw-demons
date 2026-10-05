@@ -551,6 +551,8 @@ local function startCharge(player, slot)
 	end)
 end
 
+local whiffPenalty -- definida com as skills da Katana (usa o slowFor)
+
 local function releaseCharge(player, seq)
 	local state = CombatState.Get(player)
 	local charging = state.charging
@@ -567,8 +569,15 @@ local function releaseCharge(player, seq)
 	local power = math.clamp((now() - charging.Start) / (charging.MaxCharge or cfg.MaxCharge), 0, 1)
 	CombatState.SetCooldown(player, charging.Slot, cfg.Cooldown)
 	CombatState.SetBusy(player, now() + cfg.Windup + 0.45)
-	addPending(player, seq, { Kind = "ChargedPunch", Power = power, Ctx = ctx, Slot = charging.Slot })
+	local record = { Kind = "ChargedPunch", Power = power, Ctx = ctx, Slot = charging.Slot }
+	addPending(player, seq, record)
 	CombatState.FX("ChargedPunch", { Character = ctx.Character, Style = ctx.StyleName, Power = power }, player)
+	-- O cliente só manda o acerto quando pega alguém: sem acerto até o fim do golpe (+ folga do ping), errou
+	task.delay(cfg.Windup + 0.45 + 0.2, function()
+		if not record.Landed and stillValid(ctx) then
+			whiffPenalty(ctx, cfg)
+		end
+	end)
 end
 
 local function resolveChargedPunch(ctx, record, targets)
@@ -576,7 +585,9 @@ local function resolveChargedPunch(ctx, record, targets)
 	local power = record.Power
 	local look = flatLook(ctx.Root)
 	local range = lerp(cfg.RangeMin, cfg.RangeMax, power)
-	for _, target in validateTargets(ctx, targets, range, cfg.MinDot, record) do
+	local valid = validateTargets(ctx, targets, range, cfg.MinDot, record)
+	record.Landed = record.Landed or #valid > 0
+	for _, target in valid do
 		local opts = {
 			ScaleWithForca = true,
 			ForcaScale = cfg.ForcaScale,
@@ -614,6 +625,16 @@ local function slowFor(player, source, multiplier, duration)
 			CombatState.SetSpeed(player, source, nil)
 		end
 	end)
+end
+
+-- Errou o golpe (ninguém no alcance): WhiffRecovery segundos travado (sem M1, skill, guarda nem dash) e lento.
+-- É a janela para o outro revidar; acertando ou na guarda não tem castigo (a guarda já pune do jeito dela).
+local WHIFF_SPEED = 0.5
+function whiffPenalty(ctx, cfg)
+	local duration = cfg.WhiffRecovery
+	if type(duration) ~= "number" or duration <= 0 or ctx.Player.Character ~= ctx.Character then return end
+	CombatState.SetBusy(ctx.Player, now() + duration)
+	slowFor(ctx.Player, "Whiff", WHIFF_SPEED, duration)
 end
 
 local function skillContext(player, slot)
@@ -686,7 +707,10 @@ local function doDashSlash(player, slot)
 		local direction = if flat.Magnitude > 0.05 then flat.Unit else flatLook(ctx.Root)
 		CombatState.FX("DashSlashPath", { Character = ctx.Character, Style = ctx.StyleName, From = start, To = finish }, player)
 		local targets = corridorTargets(ctx, start, finish, cfg.Width)
-		if #targets == 0 then return end
+		if #targets == 0 then
+			whiffPenalty(ctx, cfg)
+			return
+		end
 
 		-- Pegou: quem ficou no caminho trava (quem estava de guarda não; ele decide no corte, pela guarda)
 		local hitAt = cfg.FinishHitAt or 0.2
@@ -899,7 +923,11 @@ local function doDrawSlash(player, slot)
 		end
 		if state.actionToken ~= token or not stillValid(ctx) then return end
 		local look = flatLook(ctx.Root)
-		for _, target in findTargets(ctx, cfg.Range, math.cos(math.rad(cfg.Arc / 2))) do
+		local targets = findTargets(ctx, cfg.Range, math.cos(math.rad(cfg.Arc / 2)))
+		if #targets == 0 then
+			whiffPenalty(ctx, cfg)
+		end
+		for _, target in targets do
 			local opts = {
 				ScaleWithForca = true,
 				ForcaScale = cfg.ForcaScale,
@@ -932,10 +960,12 @@ local function doFoxSnap(player, slot)
 		Character = ctx.Character, Style = ctx.StyleName, Slot = slot, Look = look, StartTime = t,
 	}, player)
 
+	local clawFound = false
 	if cfg.ClawAt then
 		task.delay(cfg.ClawAt, function()
 			if state.actionToken ~= token or not stillValid(ctx) then return end
 			for _, target in findTargets(ctx, cfg.ClawRange or cfg.Range, math.cos(math.rad((cfg.ClawArc or cfg.Arc) / 2))) do
+				clawFound = true
 				local opts = { ScaleWithForca = true, ForcaScale = cfg.ForcaScale * 0.5, GuardDamage = cfg.GuardDamage * 0.5 }
 				if strike(ctx, target, cfg.ClawDamage or 0, opts, false, false) == "Hit" then
 					CombatState.Stun(target.Humanoid, cfg.SnapAt - cfg.ClawAt + 0.2) -- segura até a mordida
@@ -946,7 +976,11 @@ local function doFoxSnap(player, slot)
 
 	task.delay(cfg.SnapAt, function()
 		if state.actionToken ~= token or not stillValid(ctx) then return end
-		for _, target in findTargets(ctx, cfg.Range, math.cos(math.rad(cfg.Arc / 2))) do
+		local targets = findTargets(ctx, cfg.Range, math.cos(math.rad(cfg.Arc / 2)))
+		if #targets == 0 and not clawFound then
+			whiffPenalty(ctx, cfg)
+		end
+		for _, target in targets do
 			local opts = { ScaleWithForca = true, ForcaScale = cfg.ForcaScale, GuardDamage = cfg.GuardDamage }
 			if strike(ctx, target, cfg.Damage, opts, true, false) == "Hit" then
 				CombatState.Stun(target.Humanoid, cfg.Stun)

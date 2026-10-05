@@ -531,6 +531,12 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   `ComboBreakerReadyAt`, escrito pelo `CombatState.BreakCombo`).
 - Testado pelo usuário com vários jogadores (2026-10-05).
 
+## Castigo por errar (Claude, 2026-10-05)
+- Campo `WhiffRecovery` nas skills (Soco carregado 0,5, Avanço cortante 0,6, Saque 0,6, Kon! 0,4): errou (ninguém no
+  alcance; acertar a guarda não conta como erro) = esse tanto travado (`SetBusy`: sem M1, skill, guarda nem dash) e a
+  50% da velocidade (`whiffPenalty` no CombatService). O Soco carregado conta como erro se nenhum acerto chegar até
+  `Windup` + 0,65 s depois de soltar (o cliente só manda o acerto quando pega alguém). O Agarrão já tinha `WhiffCooldown`.
+
 ## Recompensa do grupo (Claude, 2026-10-05)
 - `src/Server/GroupReward.server.luau`: quem está no grupo dono do jogo (`game.CreatorId`; o jogo é do grupo 126221487)
   ganha uma vez `REWARD` (300 Gold e 1 giro de clã). Marca "@GRUPO" em `profile.Codes` (o campo de códigos não aceita
