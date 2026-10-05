@@ -243,8 +243,10 @@ end
 
 -- Avisa os inimigos perto de position que player atacou alguém do grupo
 local function alertNearby(source, player, position)
+	-- Só avisa quem é do mesmo grupo (atributo AlertGroup: civis só chamam civis; inimigos, inimigos)
+	local group = source:GetAttribute("AlertGroup")
 	for npc, handler in alertHandlers do
-		if npc ~= source then
+		if npc ~= source and npc:GetAttribute("AlertGroup") == group then
 			local root = npc:FindFirstChild("HumanoidRootPart")
 			if root and (root.Position - position).Magnitude <= ALERT_RANGE then
 				handler(player)
@@ -619,6 +621,9 @@ end
 --   OnlyTarget: Player: só persegue e ataca esse jogador (cópia do Treinador, TrainerService)
 --   OnStrike: function(targetHumanoid, result): cada golpe que chegou no alvo (resultado do CombatRules). Com ele, os
 --     golpes não contam no objetivo TakeHits das missões
+--   Passive: não persegue ninguém por chegar perto; só reage a quem bater nele (civis, CivilianService)
+--   Flee: com alvo (quem bateu), foge dele em vez de lutar
+--   AlertGroup: string; apanhar só chama os NPCs do mesmo grupo (padrão: nenhum grupo = os inimigos)
 -- (também aceita só a função OnDied, como a versão antiga)
 function EnemyModule.SpawnEnemy(template, cframe, options)
 	if type(options) == "function" then
@@ -652,6 +657,9 @@ function EnemyModule.SpawnEnemy(template, cframe, options)
 	npc:SetAttribute("Enemy", true)
 	npc:SetAttribute("EnemyType", enemyType)
 	npc:SetAttribute("Level", stats.Level)
+	if type(options.AlertGroup) == "string" then
+		npc:SetAttribute("AlertGroup", options.AlertGroup)
+	end
 
 	-- A arma entra antes do Scale (cresce junto) e fica fora do Tint (KeepColor)
 	local weaponMotor, weaponHandle
@@ -1360,7 +1368,7 @@ end
 					end
 				end
 			end
-			if not targetHrp and not options.OnlyTarget then
+			if not targetHrp and not options.OnlyTarget and not options.Passive then
 				aggroPlayer = nil
 				local limitFor = if options.IgnoreAggroLimit then nil else npc
 				targetHrp, targetHum, dist, targetPlayer = findClosestPlayer(root.Position, stats.AggroRange, limitFor)
@@ -1381,6 +1389,24 @@ end
 			end
 			currentTargetHrp, currentTargetHum = targetHrp, targetHum
 			setChasing(npc, targetPlayer)
+
+			-- Medroso (civil): corre para longe de quem bateu
+			if options.Flee and targetHrp and not attacking then
+				releaseFacing()
+				pathWaypoints = nil
+				local away = root.Position - targetHrp.Position
+				away = Vector3.new(away.X, 0, away.Z)
+				if away.Magnitude < 0.1 then
+					away = root.CFrame.LookVector
+				end
+				humanoid.WalkSpeed = speed()
+				humanoid:MoveTo(root.Position + away.Unit * 24)
+				setRunning(true)
+				if stuckTime(true) > STUCK_TIME then
+					humanoid.Jump = true
+				end
+				continue
+			end
 
 			if attacking then
 				-- Combo em andamento: parado, virado para o alvo

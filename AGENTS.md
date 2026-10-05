@@ -707,6 +707,18 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   texto; sem ID, continua o kanji). Em uso: botões redondos da HUD (inventário, pesca, passes, grupo, configurações,
   tablet, árvore), Gold, chips de bônus, título do tablet e trilhas dos Milestones.
 
+## Civis (Claude, 2026-10-05, pedido do usuário: civis andando, falando e dando para brigar/matar)
+- `src/Server/CivilianService.server.luau`: cópias do `StarterCharacter` com aparência sorteada (`AppearanceData.Random`)
+  na IA do `EnemyModule` (kit `EnemyKits.Civilian`: andar/correr dos jogadores e os socos 1-2 dos Punhos). Tipos no
+  `EnemyData`: `Civilian` (medroso, foge de quem bate) e `CivilianTough` ("Street Tough", briga de volta). Passeiam pela
+  zona, param um pouco, cumprimentam quem chega perto (14 studs) e gritam/provocam ao apanhar (balão de fala no servidor).
+  Recompensa pequena (XP e Gold), **sem** missão, diária nem marco. Atributo `Civilian` (o minimapa ignora).
+- Opções novas do `SpawnEnemy`: `Passive` (sem perseguir por detecção, só quem bate), `Flee` (foge do alvo) e
+  `AlertGroup` (apanhar só chama NPCs do mesmo grupo: civis chamam civis, inimigos chamam inimigos).
+- Mapa: Parts em `workspace.CivilianZones` (área X/Z onde nascem e passeiam; atributos opcionais `MaxCivilians` 4,
+  `BrawlerChance` 0.25, `RespawnTime` 20). Sem a pasta: 6 civis num raio de 80 do primeiro SpawnLocation.
+  `workspace:SetAttribute("CiviliansDisabled", true)` desliga.
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.

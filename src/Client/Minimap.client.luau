@@ -445,7 +445,7 @@ local function refreshEntities()
 		for _, npc in folder:GetChildren() do
 			local root = npc:FindFirstChild("HumanoidRootPart")
 			local humanoid = npc:FindFirstChildOfClass("Humanoid")
-			if root and humanoid and humanoid.Health > 0 then
+			if root and humanoid and humanoid.Health > 0 and npc:GetAttribute("Civilian") ~= true then
 				table.insert(enemies, { Root = root, Type = npc:GetAttribute("EnemyType"), Boss = npc:GetAttribute("Boss") == true })
 			end
 		end

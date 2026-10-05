@@ -252,4 +252,19 @@ EnemyKits.TreinadorTreino = {
 	},
 }
 
+-- Civis (CivilianService): StarterCharacter com aparência sorteada. Andam com a animação de andar dos jogadores e
+-- brigam com os socos dos Punhos.
+EnemyKits.Civilian = {
+	Animations = {
+		Walk = 81266166601298, -- CharacterAnimations.Walk
+		Run = 80849474243778, -- CharacterAnimations.Sprint
+		Attack = { 83586198824517, 107945896681556 }, -- M1 1 e 2 dos Punhos
+	},
+	AttackHitTime = { 0.25, 0.25 },
+	HitMarker = { "Hitframe1", "Hitframe", "Hit" },
+	Combo = 2,
+	ComboInterval = 0.5,
+	HitStun = 0.2,
+}
+
 return EnemyKits
