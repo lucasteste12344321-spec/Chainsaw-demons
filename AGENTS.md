@@ -182,7 +182,10 @@ Para o mapa se ligar a esses sistemas, siga estas convenções (tudo opcional, e
   (`Remotes.Announcement`), vai embora em 30 min se ninguém vencer e não renasce sozinho. Próximo horário no atributo
   `GlobalBoss_Denji` do ReplicatedStorage. Admin: `/chefe Denji` (BindableFunction `BossService.BossControl`).
   `IdleGrace` (30 s): sem alvo, espera parado antes de voltar e se curar (antes resetava ao se afastar um pouco).
-  Drop: `StyleDrop` (Motosserra, 10%, só para quem não tem) e `Drops` (itens; os acessórios do Denji ainda por definir).
+  Drop: `StyleDrop` (Motosserra, 10%, só para quem não tem) e `Drops`: Cabelo do Denji (Hat, 25%), Tapa-olho (Head,
+  12%) e Pochita (ShoulderLeft, 3%). Itens com `Source = { Template, Accessory }` no `ItemData`: o BossService copia o
+  Accessory de dentro do modelo do chefe para `VFX.Items.<Id>` ao iniciar (sem as soldas antigas). O `FaceAccessory`
+  do Denji ficou de fora.
 - Estilo **Motosserra** (`CombatStyles.Motosserra`, glifo 鋸): por enquanto com as animações e as mecânicas da Katana
   (Z Investida da serra = DashSlash, X Serra no peito = Grab, C Giro da serra = DrawSlash de 360°, quebra o mapa), sem
   técnica na árvore. Arma `Weapon.Kind = "Held"` no `StyleWeapons`: nas costas guardada, na mão direita equipada; modelo

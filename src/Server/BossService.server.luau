@@ -1010,6 +1010,44 @@ if not templates then
 	warn("[BossService] Nenhuma pasta EnemyTemplates: nenhum chefe vai nascer.")
 	return
 end
+
+-- Itens com Source (ItemData): copia o Accessory de dentro do modelo do chefe para VFX.Items.<Id>, sem a solda antiga
+do
+	local vfx = ReplicatedStorage:FindFirstChild("VFX")
+	if not vfx then
+		vfx = Instance.new("Folder")
+		vfx.Name = "VFX"
+		vfx.Parent = ReplicatedStorage
+	end
+	local itemsFolder = vfx:FindFirstChild("Items")
+	if not itemsFolder then
+		itemsFolder = Instance.new("Folder")
+		itemsFolder.Name = "Items"
+		itemsFolder.Parent = vfx
+	end
+	for id, item in ItemData.Items do
+		local source = item.Source
+		if type(source) ~= "table" or ItemData.FindModel(id) then continue end
+		local template = templates:FindFirstChild(source.Template)
+		local accessory = template and template:FindFirstChild(source.Accessory, true)
+		if accessory and accessory:IsA("Accessory") then
+			local copy = accessory:Clone()
+			for _, descendant in copy:GetDescendants() do
+				if descendant:IsA("JointInstance") or descendant:IsA("WeldConstraint") then
+					descendant:Destroy()
+				elseif descendant:IsA("BasePart") then
+					descendant.Anchored = false
+					descendant.CanCollide = false
+					descendant.Massless = true
+				end
+			end
+			copy.Name = ItemData.ModelName(id)
+			copy.Parent = itemsFolder
+		else
+			warn(`[BossService] Item {id}: não achei o acessório "{source.Accessory}" em EnemyTemplates.{source.Template}`)
+		end
+	end
+end
 -- ================= Chefe global =================
 
 -- Aparece agora (horário ou /chefe). Fica até Duration segundos; derrotado antes, só volta no próximo horário.

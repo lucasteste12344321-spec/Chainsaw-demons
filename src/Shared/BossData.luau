@@ -158,6 +158,12 @@ BossData.Bosses = {
 		IdleGrace = 30,
 		-- Motosserra (estilo de combate, CombatStyles.Motosserra): sorteada para cada um que ajudou e ainda não tem
 		StyleDrop = { Style = "Motosserra", Chance = 0.1 },
+		-- Os acessórios do modelo do Denji (ItemData, Source)
+		Drops = {
+			{ Item = "DenjiHair", Chance = 0.25 },
+			{ Item = "DenjiEyepatch", Chance = 0.12 },
+			{ Item = "Pochita", Chance = 0.03 },
+		},
 		MinContribution = 0.03,
 		MinStun = 1.25,
 		KnockbackImmune = true,
@@ -229,7 +235,6 @@ BossData.Bosses = {
 			Message = "Lord Chainsaw acelerou as motosserras!",
 		},
 
-		Drops = {},
 	},
 }
 

@@ -51,6 +51,33 @@ ItemData.Items = {
 		Description = "A cabeça do próprio Rei Goblin. Quem veste herda um pouco da força dele.",
 		Accessory = "Ogro Head",
 	},
+
+	-- Drops do chefe global Denji / Lord Chainsaw. Source: o Accessory vem de dentro do modelo do chefe (o BossService
+	-- copia para VFX.Items.<Id> ao iniciar, se ainda não existir lá); o Denji é do tamanho de jogador.
+	DenjiHair = {
+		Name = "Cabelo do Denji",
+		Rarity = "Raro",
+		Slot = "Hat",
+		Effects = { Forca = 10, Velocidade = 2 },
+		Description = "Bagunçado de propósito. Dizem que deixa qualquer um mais rápido para fugir de dívida.",
+		Source = { Template = "Denji", Accessory = "MessyAnimeHairstyleAccessory" },
+	},
+	DenjiEyepatch = {
+		Name = "Tapa-olho do Denji",
+		Rarity = "Épico",
+		Slot = "Head",
+		Effects = { Forca = 14, DodgeChance = 0.03 },
+		Description = "Um olho só, mas enxerga o golpe chegando.",
+		Source = { Template = "Denji", Accessory = "Accessory (Meshes/denji eyepatch (2)Accessory)" },
+	},
+	Pochita = {
+		Name = "Pochita",
+		Rarity = "Lendário",
+		Slot = "ShoulderLeft",
+		Effects = { HP = 250, Forca = 10, Regen = 0.008 },
+		Description = "O melhor amigo do Denji. Fica do seu lado e não deixa você cair.",
+		Source = { Template = "Denji", Accessory = "SawBestFriend" },
+	},
 }
 
 ItemData.RarityColors = {
