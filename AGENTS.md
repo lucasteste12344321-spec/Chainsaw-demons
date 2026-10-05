@@ -630,6 +630,13 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   `UpdateAsync` (`VIPRewardRules.Merge`), servidor reservado só do dono (`CheckArrival` manda quem não é dono para o
   público; amigos não entram). Revisão: a loja usava só `GetProductInfoAsync` (não existe nos apps antigos de celular;
   agora cai no `GetProductInfo`) e a tela de chances não mostrava a Motosserra nem o nome do chefe (`GamepassOdds`).
+- Servidor VIP com amigos e painel do dono (2026-10-05, pedido do usuário): `VIPServers` (refeito) + `VIPPanel.server` +
+  `VIPPanel.client` (abre pelo botão SERVIDOR VIP da loja; remotes `VIPPanel`/`VIPPanelState`). Entra no servidor de um
+  dono: ele, os liberados (`Whitelist`) e quem ele convidou agora no público (2 min); banidos voltam para o público.
+  Configurações por dono no DataStore `VIPServers_v1` (`Settings_<dono>`: PvP, Mods, Whitelist, Banned; lista inversa
+  `Allowed_<jogador>` para a aba ENTRAR). No servidor VIP: dono/mod liga o PvP (`workspace.PvPDisabled`, lido no
+  `CombatRules.CanDamage` e no `canHit` do CombatInput) e expulsa; só o dono bane e dá mod. Atributo `VIPRole` no player.
+  Teste no Studio: `ReplicatedStorage:SetAttribute("TestVIPServer", true)` antes do Play (o teleporte só no publicado).
 
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada

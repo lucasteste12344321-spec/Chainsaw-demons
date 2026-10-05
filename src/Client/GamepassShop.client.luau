@@ -72,9 +72,10 @@ refresh = function()
 	daily.Text = if state.DailyClaimed then "RECEBIDO HOJE" elseif state.Restricted then "5 CRÉDITOS DIÁRIOS" else "5 GIROS DIÁRIOS"
 	daily.Active = state.Owned.VIP == true and not state.DailyClaimed
 	daily.BackgroundColor3 = if daily.Active then C.Accent else C.PanelLight
-	server.Text = if state.Reserved then "VOLTAR AO PÚBLICO" else "MEU SERVIDOR VIP"
-	server.Active = state.Reserved or state.Owned.VIP == true
-	server.BackgroundColor3 = if server.Active then C.Accent else C.PanelLight
+	-- Abre o painel do servidor VIP (VIPPanel.client): ir/voltar, convites, listas e controles do dono
+	server.Text = "SERVIDOR VIP"
+	server.Active = true
+	server.BackgroundColor3 = C.Accent
 	status.Text = if state.Owned.VIP then "Giros renovam à meia-noite de Brasília. Dias ausentes não acumulam." else "Adquira VIP para liberar o servidor e o benefício diário."
 end
 local function show(visible)
@@ -87,7 +88,16 @@ shade.Activated:Connect(function() show(false) end)
 back.Activated:Connect(function() oddsPanel.Visible=false;panel.Visible=true end)
 details.Activated:Connect(function() oddsText.Text=Odds.Text(state.Restricted,state.Owned.VIP);panel.Visible=false;oddsPanel.Visible=true end)
 daily.Activated:Connect(function() if daily.Active then Remotes.GamepassAction:FireServer("Daily") end end)
-server.Activated:Connect(function() if server.Active then Remotes.GamepassAction:FireServer(if state.Reserved then "PublicServer" else "VIPServer") end end)
+server.Activated:Connect(function()
+	local vipGui = playerGui:FindFirstChild("VIPPanel")
+	local vipToggle = vipGui and vipGui:FindFirstChild("Toggle")
+	if vipToggle then
+		show(false)
+		vipToggle:Fire()
+	elseif server.Active then
+		Remotes.GamepassAction:FireServer(if state.Reserved then "PublicServer" else "VIPServer")
+	end
+end)
 recheck.Activated:Connect(function() Remotes.GamepassAction:FireServer("Refresh") end)
 Remotes.GamepassState.OnClientEvent:Connect(function(data) if type(data)=="table" and type(data.Owned)=="table" then state=data;refresh();if oddsPanel.Visible then oddsText.Text=Odds.Text(state.Restricted,state.Owned.VIP) end end end)
 Marketplace.PromptGamePassPurchaseFinished:Connect(function() prompting=false;refresh() end) -- UI only; the server grants ownership.

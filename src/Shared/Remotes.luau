@@ -7,6 +7,8 @@ local RunService = game:GetService("RunService")
 local NAMES = {
 	"GamepassAction", -- C->S: State, Refresh, Daily, VIPServer, PublicServer
 	"GamepassState", -- S->C: verified ownership and daily claim status
+	"VIPPanel", -- C->S (action, value) painel do servidor VIP: convites, listas, PvP, expulsar/banir (VIPPanel.server)
+	"VIPPanelState", -- S->C (data) estado do painel VIP
 	-- Dados do jogador / progressão
 	"StatusUpgrade", -- C->S (statName) sistema antigo de pontos de status (não usado; a árvore substituiu)
 	"StatusReset", -- C->S () reseta a árvore de habilidades: devolve os pontos gastos, custa Gold

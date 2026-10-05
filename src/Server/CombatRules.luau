@@ -53,6 +53,8 @@ function CombatRules.CanDamage(attacker, victimModel)
 	local victimPlayer = Players:GetPlayerFromCharacter(victimModel)
 	if victimPlayer then
 		if victimPlayer == attacker then return false end
+		-- Servidor VIP com o PvP desligado pelo dono (VIPServers)
+		if workspace:GetAttribute("PvPDisabled") == true then return false end
 		-- PvP livre, menos entre membros do mesmo time quando um dos dois ligou a proteção
 		if attacker.Team ~= nil and victimPlayer.Team == attacker.Team
 			and (hasAllyProtection(attacker) or hasAllyProtection(victimPlayer)) then

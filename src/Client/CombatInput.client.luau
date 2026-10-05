@@ -139,6 +139,7 @@ local function canHit(model)
 	if not humanoid or humanoid.Health <= 0 or not model:FindFirstChild("HumanoidRootPart") then return false end
 	local other = Players:GetPlayerFromCharacter(model)
 	if other then
+		if workspace:GetAttribute("PvPDisabled") == true then return false end -- servidor VIP sem PvP
 		if player.Team ~= nil and other.Team == player.Team
 			and (player:GetAttribute("AllyProtection") ~= false or other:GetAttribute("AllyProtection") ~= false) then
 			return false
