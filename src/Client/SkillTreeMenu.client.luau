@@ -158,10 +158,10 @@ UITheme.list(nav, 4)
 UITheme.autoScale(nav, 1100, 700)
 
 local NAV_ITEMS = {
-	{ Id = "Tree", Text = "Árvore de habilidades", Icon = "⛓" },
-	{ Id = "Path", Text = "Caminho", Icon = "◎" },
-	{ Id = "Inventory", Text = "Inventário", Icon = "▦" },
-	{ Id = "Close", Text = "Fechar", Icon = "×" },
+	{ Id = "Tree", Text = "Skill tree", Icon = "⛓" },
+	{ Id = "Path", Text = "Path", Icon = "◎" },
+	{ Id = "Inventory", Text = "Inventory", Icon = "▦" },
+	{ Id = "Close", Text = "Close", Icon = "×" },
 }
 local navButtons = {}
 for index, item in NAV_ITEMS do
@@ -214,7 +214,7 @@ text({
 	Font = Fonts.Title,
 	TextSize = 11,
 	TextColor3 = STEEL,
-	Text = "MAESTRIA",
+	Text = "MASTERY",
 	LayoutOrder = 0,
 	Parent = masteryPanel,
 })
@@ -231,7 +231,7 @@ for style in CombatStyles.Styles do
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Font = Fonts.Title,
 		TextSize = 14,
-		Text = style,
+		Text = SkillTreeData.StyleName(style),
 		Parent = row,
 	})
 	local lvl = text({
@@ -373,7 +373,7 @@ text({
 	TextXAlignment = Enum.TextXAlignment.Center,
 	Font = Fonts.Title,
 	TextSize = 11,
-	Text = "※ PONTOS DE HABILIDADE",
+	Text = "※ SKILL POINTS",
 	Parent = pointsHolder,
 })
 
@@ -852,16 +852,16 @@ end
 local function paintInfo()
 	local entry = selected
 	if not entry then
-		infoTitle.Text = "Árvore de habilidades"
-		infoBranch.Text = "Escolha um nó"
-		infoBody.Text = "Clique num nó para ver o que ele faz. Arraste para mover e use a roda do mouse para o zoom."
+		infoTitle.Text = "Skill tree"
+		infoBranch.Text = "Pick a node"
+		infoBody.Text = "Click a node to see what it does. Drag to move and use the mouse wheel to zoom."
 		infoNeeds.Text = ""
 		buttonRow.Visible = false
 		return
 	end
 	local branch = entry.Branch and SkillTreeData.Branches[entry.Branch]
 	infoTitle.Text = entry.Name
-	infoBranch.Text = if branch then `{branch.Icon}  {branch.Name}` else "鎖  CENTRO"
+	infoBranch.Text = if branch then `{branch.Icon}  {branch.Name}` else "鎖  CENTER"
 	local lines = {}
 	for _, line in SkillTreeData.Describe(entry) do
 		table.insert(lines, "· " .. line)
@@ -875,29 +875,29 @@ local function paintInfo()
 	local needs = {}
 	if not entry.Default then
 		local enough = unlocked[entry.Id] or points.Value >= entry.Cost
-		table.insert(needs, `<font color="{hex(if enough then SILVER else BLOOD)}">{entry.Cost} ponto(s)</font>`)
+		table.insert(needs, `<font color="{hex(if enough then SILVER else BLOOD)}">{entry.Cost} point(s)</font>`)
 	end
 	if entry.Mastery then
 		local have = levels[entry.Mastery.Style] or 0
 		local ok = have >= entry.Mastery.Level
-		table.insert(needs, `<font color="{hex(if ok then SILVER else BLOOD)}">Maestria {entry.Mastery.Style} {entry.Mastery.Level} (você: {have})</font>`)
+		table.insert(needs, `<font color="{hex(if ok then SILVER else BLOOD)}">{SkillTreeData.StyleName(entry.Mastery.Style)} mastery {entry.Mastery.Level} (you: {have})</font>`)
 	end
 	infoNeeds.Text = table.concat(needs, "   ·   ")
 
 	local state = stateOf(entry)
 	buttonRow.Visible = not entry.Default
 	if state == "Unlocked" then
-		unlockButton.Text = "✓  DESBLOQUEADO"
+		unlockButton.Text = "✓  UNLOCKED"
 		unlockButton.BackgroundColor3 = Color3.fromRGB(58, 58, 64)
 		unlockButton.TextColor3 = SILVER
 		unlockStroke.Color = STEEL
 	elseif state == "Available" then
-		unlockButton.Text = "DESBLOQUEAR"
+		unlockButton.Text = "UNLOCK"
 		unlockButton.BackgroundColor3 = BLOOD
 		unlockButton.TextColor3 = WHITE
 		unlockStroke.Color = Color3.fromRGB(255, 120, 120)
 	else
-		unlockButton.Text = "BLOQUEADO"
+		unlockButton.Text = "LOCKED"
 		unlockButton.BackgroundColor3 = Color3.fromRGB(34, 34, 38)
 		unlockButton.TextColor3 = STEEL
 		unlockStroke.Color = DARK_STEEL
@@ -909,19 +909,19 @@ local function paintMastery()
 		local value = masteryFolder:FindFirstChild(style)
 		local lvl, into, need = SkillTreeData.MasteryLevel(if value then value.Value else 0)
 		local maxed = lvl >= SkillTreeData.Mastery.MaxLevel
-		row.Level.Text = `Nv. {lvl}`
+		row.Level.Text = `Lv. {lvl}`
 		row.Fill.Size = UDim2.fromScale(if maxed then 1 else math.clamp(into / math.max(1, need), 0, 1), 1)
-		row.XP.Text = if maxed then "máximo" else `{into} / {need}`
+		row.XP.Text = if maxed then "max" else `{into} / {need}`
 	end
 end
 
 local resetArmedUntil = 0
 local function paintReset()
 	if os.clock() < resetArmedUntil then
-		resetButton.Text = "Clique de novo para confirmar o reset"
+		resetButton.Text = "Click again to confirm the reset"
 		resetButton.TextColor3 = BLOOD
 	else
-		resetButton.Text = `Resetar árvore  ·  {UITheme.formatNumber(StatConfig.ResetCost(level.Value))} Gold`
+		resetButton.Text = `Reset tree  ·  {UITheme.formatNumber(StatConfig.ResetCost(level.Value))} Gold`
 		resetButton.TextColor3 = STEEL
 	end
 end

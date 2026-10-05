@@ -84,7 +84,7 @@ UITheme.label({
 	Font = FONT_HEAVY,
 	TextSize = 12,
 	TextColor3 = Colors.TextDim,
-	Text = "MISSÕES",
+	Text = "QUESTS",
 	Parent = header,
 })
 local toggleHint = UITheme.label({
@@ -372,8 +372,8 @@ local function questCard(quest, order, npcId, canAccept)
 	local r = quest.Rewards or {}
 	if r.XP then rewardChip(rewards, `⭐ {r.XP} XP`, Color3.fromRGB(200, 160, 255), 1) end
 	if r.Gold then rewardChip(rewards, `💰 {r.Gold}`, Colors.Gold, 2) end
-	if r.StatusPoints then rewardChip(rewards, `✚ {r.StatusPoints} ponto(s)`, Colors.Green, 3) end
-	if r.DodgeLevel then rewardChip(rewards, `避 Esquiva {r.DodgeLevel}`, Color3.fromRGB(170, 220, 255), 4) end
+	if r.StatusPoints then rewardChip(rewards, `✚ {r.StatusPoints} point(s)`, Colors.Green, 3) end
+	if r.DodgeLevel then rewardChip(rewards, `避 Dodge {r.DodgeLevel}`, Color3.fromRGB(170, 220, 255), 4) end
 
 	-- Recompensa de contrato (Caçador) numa linha própria, porque o nome é comprido
 	local contract = type(r.Contract) == "string" and PathData.Contracts[r.Contract]
@@ -393,7 +393,7 @@ local function questCard(quest, order, npcId, canAccept)
 			Size = UDim2.fromOffset(140, 36),
 			LayoutOrder = 60,
 			Font = Fonts.Display,
-			Text = "ACEITAR",
+			Text = "ACCEPT",
 			TextSize = 16,
 			Parent = card,
 		}, Colors.Green)
@@ -408,7 +408,7 @@ local function questCard(quest, order, npcId, canAccept)
 			task.delay(2, function()
 				if accept.Parent then
 					waiting = false
-					accept.Text = "ACEITAR"
+					accept.Text = "ACCEPT"
 				end
 			end)
 		end)
@@ -417,7 +417,7 @@ local function questCard(quest, order, npcId, canAccept)
 			Font = Fonts.Title,
 			TextSize = 13,
 			TextColor3 = Colors.Blue,
-			Text = "EM ANDAMENTO",
+			Text = "IN PROGRESS",
 			LayoutOrder = 60,
 			Parent = card,
 		})
@@ -433,7 +433,7 @@ local function questCard(quest, order, npcId, canAccept)
 				Size = UDim2.fromOffset(160, 36),
 				LayoutOrder = 61,
 				Font = Fonts.Display,
-				Text = if training == "Duel" then "DUELAR" else "TREINAR",
+				Text = if training == "Duel" then "DUEL" else "TRAIN",
 				TextSize = 16,
 				Parent = card,
 			})
@@ -469,7 +469,7 @@ local function pathCard(offer, npcId, order)
 		Font = Fonts.Display,
 		TextSize = 18,
 		TextColor3 = color,
-		Text = `{UITheme.PathIcons[offer.Path] or "🧭"} CAMINHO DO {UITheme.upper(info.DisplayName)}`,
+		Text = `{UITheme.PathIcons[offer.Path] or "🧭"} PATH OF THE {UITheme.upper(info.DisplayName)}`,
 		LayoutOrder = 1,
 		Parent = card,
 	})
@@ -484,13 +484,13 @@ local function pathCard(offer, npcId, order)
 
 	local modeText, modeColor
 	if offer.Mode == "Choose" then
-		modeText, modeColor = "✔ Você já pode escolher este caminho. A escolha é permanente.", Colors.Green
+		modeText, modeColor = "✔ You can now choose this path. The choice is permanent.", Colors.Green
 	elseif offer.Mode == "Reset" then
-		modeText, modeColor = "★ Você segue este caminho. Aqui também dá para renunciar a ele.", Colors.Gold
+		modeText, modeColor = "★ You follow this path. You can also renounce it here.", Colors.Gold
 	else
 		local reason = if type(offer.Reason) == "string" and offer.Reason ~= ""
 			then offer.Reason
-			else "Você ainda não pode seguir este caminho."
+			else "You cannot follow this path yet."
 		modeText, modeColor = `🔒 {reason}`, Colors.Accent
 	end
 	autoLabel({
@@ -506,7 +506,7 @@ local function pathCard(offer, npcId, order)
 		Size = UDim2.fromOffset(170, 36),
 		LayoutOrder = 4,
 		Font = Fonts.Display,
-		Text = "VER CAMINHO",
+		Text = "VIEW PATH",
 		TextSize = 16,
 		Parent = card,
 	}, color)
@@ -536,7 +536,7 @@ local function evolutionCard(offer, npcId, order)
 	UITheme.list(card, 6)
 
 	if offer.Mode == "Locked" then
-		autoLabel({ Font = Fonts.Display, TextSize = 18, TextColor3 = FORM_COLOR, Text = "EVOLUÇÃO DO PACTO", LayoutOrder = 1, Parent = card })
+		autoLabel({ Font = Fonts.Display, TextSize = 18, TextColor3 = FORM_COLOR, Text = "PACT EVOLUTION", LayoutOrder = 1, Parent = card })
 		autoLabel({ Font = Fonts.Title, TextSize = 14, TextColor3 = Colors.Accent, Text = `🔒 {offer.Reason or ""}`, LayoutOrder = 2, Parent = card })
 		return
 	end
@@ -551,11 +551,11 @@ local function evolutionCard(offer, npcId, order)
 		Parent = card,
 	})
 	if offer.Mode == "Max" then
-		autoLabel({ Font = Fonts.Title, TextSize = 14, TextColor3 = Colors.Gold, Text = "★ Seu pacto já está na forma máxima.", LayoutOrder = 2, Parent = card })
+		autoLabel({ Font = Fonts.Title, TextSize = 14, TextColor3 = Colors.Gold, Text = "★ Your pact is already at its max form.", LayoutOrder = 2, Parent = card })
 		return
 	end
 
-	local nextTitle = if offer.FusionName then `PRÓXIMA FORMA: {UITheme.upper(offer.NextName or "")} ({offer.FusionName})` else `PRÓXIMA FORMA: {UITheme.upper(offer.NextName or "")}`
+	local nextTitle = if offer.FusionName then `NEXT FORM: {UITheme.upper(offer.NextName or "")} ({offer.FusionName})` else `NEXT FORM: {UITheme.upper(offer.NextName or "")}`
 	autoLabel({ Font = Fonts.Title, TextSize = 15, Text = nextTitle, LayoutOrder = 2, Parent = card })
 	if offer.Description then
 		autoLabel({ Font = Fonts.Light, TextSize = 14, TextColor3 = Colors.TextDim, Text = offer.Description, LayoutOrder = 3, Parent = card })
@@ -586,7 +586,7 @@ local function evolutionCard(offer, npcId, order)
 			TextSize = 13,
 			TextColor3 = color,
 			TextXAlignment = Enum.TextXAlignment.Right,
-			Text = if requirement.Need == 1 then (if requirement.Done then "feita" else "pendente") else `{requirement.Have}/{requirement.Need}`,
+			Text = if requirement.Need == 1 then (if requirement.Done then "done" else "pending") else `{requirement.Have}/{requirement.Need}`,
 			Parent = row,
 		})
 		local bar = UITheme.bar({
@@ -604,7 +604,7 @@ local function evolutionCard(offer, npcId, order)
 			Size = UDim2.fromOffset(200, 38),
 			LayoutOrder = order2,
 			Font = Fonts.Display,
-			Text = if offer.Ready then "UNIR ESTILO E CONTRATO" else "AINDA NÃO",
+			Text = if offer.Ready then "FUSE STYLE AND CONTRACT" else "NOT YET",
 			TextSize = 16,
 			AutoButtonColor = false,
 			Parent = card,
@@ -619,7 +619,7 @@ local function evolutionCard(offer, npcId, order)
 			Font = Fonts.Light,
 			TextSize = 13,
 			TextColor3 = Colors.TextDim,
-			Text = "Essa forma vem da provação final: as missões aparecem aqui quando você estiver pronto.",
+			Text = "This form comes from the final trial: the quests show up here when you are ready.",
 			LayoutOrder = order2,
 			Parent = card,
 		})
