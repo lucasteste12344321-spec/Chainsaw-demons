@@ -177,6 +177,17 @@ Para o mapa se ligar a esses sistemas, siga estas convenções (tudo opcional, e
   **Beber sangue** (BloodDrink: abaixo de 25% cura 15% em 3 s, até 2 vezes; levar 5% da vida nesse tempo interrompe e
   atordoa 2 s). Recompensa na morte do Lord Chainsaw; todos fugiram = ele some e o Denji volta a esperar. Os dois com
   as animações dos Punhos até ter as próprias. Sem drops por enquanto.
+- Denji é **chefe global** (2026-10-05, pedido do usuário): `BossData.Denji.Global` = aparece a cada 3 h em horários fixos
+  UTC (iguais em todo servidor; `os.time` múltiplo de `Interval` + `Offset`), aviso para todos 5 min antes
+  (`Remotes.Announcement`), vai embora em 30 min se ninguém vencer e não renasce sozinho. Próximo horário no atributo
+  `GlobalBoss_Denji` do ReplicatedStorage. Admin: `/chefe Denji` (BindableFunction `BossService.BossControl`).
+  `IdleGrace` (30 s): sem alvo, espera parado antes de voltar e se curar (antes resetava ao se afastar um pouco).
+  Drop: `StyleDrop` (Motosserra, 10%, só para quem não tem) e `Drops` (itens; os acessórios do Denji ainda por definir).
+- Estilo **Motosserra** (`CombatStyles.Motosserra`, glifo 鋸): por enquanto com as animações e as mecânicas da Katana
+  (Z Investida da serra = DashSlash, X Serra no peito = Grab, C Giro da serra = DrawSlash de 360°, quebra o mapa), sem
+  técnica na árvore. Arma `Weapon.Kind = "Held"` no `StyleWeapons`: nas costas guardada, na mão direita equipada; modelo
+  `ReplicatedStorage.VFX.Weapons.Motosserra` (pivô no cabo, lâmina no +Y; `ModelOffset` gira) ou uma de peças. O
+  `CombatFX` só usa as malhas do KatanaVFX na Katana; os outros estilos desenham os arcos na `SlashColor` deles.
 - Modelo sem juntas (o Denji do usuário desmontava): o `EnemyModule.repairRig` cria na hora as juntas R6 que faltam
   (Motor6D com os nomes padrão, na pose do modelo), solda as peças soltas na peça presa mais perto e avisa no Output
   uma vez por modelo. Sem cabeça, `RequiresNeck = false`.

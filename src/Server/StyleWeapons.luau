@@ -15,6 +15,8 @@
 -- da lâmina na bainha saem das malhas. Sem o modelo, uma katana simples feita de peças.
 -- Rastro: Trail "SwingTrail" desligado na lâmina (Handle) e na bainha (SheathRoot); o CombatFX liga no golpe.
 -- Tudo no servidor (as juntas replicam para todos). Só R6 (Torso, Right Arm, Left Arm).
+-- Weapon.Kind = "Held" (a Motosserra): sem bainha. Guardado = nas costas ("<Estilo>Back", Weld no Torso); equipado =
+-- na mão direita ("<Estilo>Hand", Motor6D). Modelo VFX.Weapons.<Model> (pivô no cabo, lâmina no +Y) ou um de peças.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
@@ -325,12 +327,100 @@ local function newJoint(className, name, part0, part1, c0, c1, parent)
 	return joint
 end
 
+-- ================= Arma de segurar (Kind "Held") =================
+
+-- Motosserra simples de peças: cabo na origem do "Handle", motor laranja, lâmina e corrente subindo no +Y
+local function buildChainsaw()
+	local model = Instance.new("Model")
+	local handle = rootPart("Handle", model)
+	local ORANGE = Color3.fromRGB(230, 110, 30)
+	local DARK = Color3.fromRGB(30, 28, 30)
+	local BAR = Color3.fromRGB(170, 172, 178)
+	attachTo(handle, piece(model, "Grip", "Part", Vector3.new(0.35, 0.5, 0.35), DARK), CFrame.new(0, 0, 0))
+	attachTo(handle, piece(model, "Engine", "Part", Vector3.new(0.75, 1.1, 1.1), ORANGE), CFrame.new(0, 0.75, 0.2))
+	attachTo(handle, piece(model, "Pull", "Part", Vector3.new(0.2, 0.25, 0.35), DARK), CFrame.new(0.45, 0.85, 0.3))
+	attachTo(handle, piece(model, "Bar", "Part", Vector3.new(0.12, 3.2, 0.55), BAR, Enum.Material.Metal), CFrame.new(0, 2.85, -0.05))
+	attachTo(handle, piece(model, "Chain", "Part", Vector3.new(0.16, 3.3, 0.62), DARK, Enum.Material.DiamondPlate),
+		CFrame.new(0, 2.85, -0.05))
+	handle:SetAttribute("TrailTip", Vector3.new(0, 4.4, 0))
+	return model, handle
+end
+
+-- Modelo importado: um "Handle" invisível no pivô (com ModelOffset), todas as peças soldadas nele
+local function importedHeld(template, cfg)
+	local copy = template:Clone()
+	local model = Instance.new("Model")
+	local pivot = copy:GetPivot() * (cfg.ModelOffset or CFrame.identity)
+	local handle = rootPart("Handle", model)
+	handle.CFrame = pivot
+	local parts = {}
+	if copy:IsA("BasePart") then
+		table.insert(parts, copy)
+	end
+	for _, descendant in copy:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			table.insert(parts, descendant)
+		end
+	end
+	if #parts == 0 then
+		copy:Destroy()
+		return nil
+	end
+	local tipY = 0
+	for _, part in parts do
+		local offset = pivot:ToObjectSpace(part.CFrame)
+		attachTo(handle, part, offset)
+		part.Parent = model
+		tipY = math.max(tipY, offset.Y + part.Size.Y / 2)
+	end
+	copy:Destroy()
+	handle:SetAttribute("TrailTip", Vector3.new(0, tipY, 0))
+	return model, handle
+end
+
+local function ensureHeld(character, styleName, cfg)
+	local torso = character:FindFirstChild("Torso")
+	local right = character:FindFirstChild("Right Arm")
+	if not (torso and right) then return nil end
+	local vfx = ReplicatedStorage:FindFirstChild("VFX")
+	local folder = vfx and vfx:FindFirstChild("Weapons")
+	local template = folder and folder:FindFirstChild(cfg.Model or styleName)
+	local model, handle
+	if template then
+		model, handle = importedHeld(template, cfg)
+	end
+	if not model then
+		model, handle = buildChainsaw()
+	end
+	model.Name = styleName .. "Weapon"
+	addTrail(handle)
+	local hand = cfg.Hand or CFrame.new(0, -1, 0) * CFrame.Angles(-math.pi / 2, 0, 0)
+	local grip = CFrame.new(cfg.Grip or Vector3.zero):Inverse()
+	local back = cfg.Back or CFrame.new(0, 0, 0.75)
+	handle.CFrame = torso.CFrame * back
+	local joints = {
+		Hand = newJoint("Motor6D", styleName .. "Hand", right, handle, hand, grip, right),
+		Back = newJoint("Weld", styleName .. "Back", torso, handle, back, nil, torso),
+	}
+	model.Parent = character
+	return { Model = model, Joints = joints, State = nil, Held = true }
+end
+
 -- Cria (uma vez por personagem) a arma e as juntas. Devolve a tabela de juntas ou nil.
 local rigs = setmetatable({}, { __mode = "k" }) -- [character] = { [estilo] = { Model, Joints } }
 local function ensureWeapon(character, styleName, cfg)
 	local list = rigs[character]
 	local rig = list and list[styleName]
 	if rig and rig.Model.Parent == character then return rig end
+
+	if cfg.Kind == "Held" then
+		rig = ensureHeld(character, styleName, cfg)
+		if rig then
+			rigs[character] = list or {}
+			rigs[character][styleName] = rig
+		end
+		return rig
+	end
 
 	local torso = character:FindFirstChild("Torso")
 	local right = character:FindFirstChild("Right Arm")
@@ -392,6 +482,8 @@ local STATE_JOINTS = {
 	Fight = { "SwordHand", "SheathFight" },
 	Sheathing = { "SwordInSheath", "SheathFight" }, -- Saque: lâmina na bainha, bainha na mão esquerda
 }
+-- Arma de segurar: nas costas guardada, na mão equipada
+local HELD_JOINTS = { Hip = { "Back" }, Carry = { "Hand" }, Fight = { "Hand" }, Sheathing = { "Hand" } }
 
 local function refreshStyle(player, character, styleName, cfg)
 	if not ownsStyle(player, styleName) then
@@ -416,7 +508,7 @@ local function refreshStyle(player, character, styleName, cfg)
 	for _, joint in rig.Joints do
 		joint.Enabled = false
 	end
-	for _, name in STATE_JOINTS[state] do
+	for _, name in (if rig.Held then HELD_JOINTS else STATE_JOINTS)[state] do
 		rig.Joints[name].Enabled = true
 	end
 end

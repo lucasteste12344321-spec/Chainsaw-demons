@@ -98,7 +98,19 @@ BossData.Bosses = {
 			StandUpTime = 0.2,
 			WakeMessage = "Quer brigar? Então vem!",
 		},
-		RespawnTime = 420, -- conta a partir da morte do Lord Chainsaw
+		-- Chefe global: aparece a cada 3 horas (00h, 03h, 06h... UTC = 21h, 00h, 03h... de Brasília), avisa 5 min antes e
+		-- vai embora em 30 min se ninguém vencer. Não renasce sozinho (/chefe Denji chama na hora, para testar).
+		Global = {
+			Interval = 3 * 3600,
+			Offset = 0,
+			Warning = 300,
+			Duration = 30 * 60,
+			WarningMessage = "O Denji aparece em %d minutos! Junte o pessoal.",
+			SpawnMessage = "O Denji apareceu! Corra até ele antes que vá embora.",
+			LeaveMessage = "Ninguém derrotou o Lord Chainsaw. Ele foi embora...",
+			DefeatMessage = "O Lord Chainsaw foi derrotado! Volta daqui a algumas horas.",
+		},
+		IdleGrace = 30, -- sem alvo, espera 30 s antes de voltar para o lugar e se curar
 		MinStun = 1.25,
 		KnockbackImmune = true,
 
@@ -143,6 +155,9 @@ BossData.Bosses = {
 	LordChainsaw = {
 		Title = "Lord Chainsaw",
 		FormOf = "Denji",
+		IdleGrace = 30,
+		-- Motosserra (estilo de combate, CombatStyles.Motosserra): sorteada para cada um que ajudou e ainda não tem
+		StyleDrop = { Style = "Motosserra", Chance = 0.1 },
 		MinContribution = 0.03,
 		MinStun = 1.25,
 		KnockbackImmune = true,

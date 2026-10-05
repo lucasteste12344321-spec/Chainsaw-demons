@@ -11,6 +11,11 @@
 -- Transformação (campo Transform): com a vida em Transform.At o chefe para, fica invulnerável, e no fim vira outro chefe
 -- (Transform.Into, uma entrada do BossData com FormOf) no mesmo lugar, com vida cheia e o mesmo placar de dano. Ex.: o
 -- Denji vira o Lord Chainsaw. A forma não nasce sozinha; se todos fugirem, ela some e o chefe de base volta a esperar.
+-- Chefe global (campo Global): em vez de renascer, aparece a cada Global.Interval segundos em horários fixos (os mesmos
+-- em todos os servidores), com aviso para todo mundo antes, e vai embora depois de Global.Duration se ninguém vencer.
+-- O próximo horário fica no atributo GlobalBoss_<Tipo> do ReplicatedStorage (os.time). Admin: /chefe <Tipo>.
+-- IdleGrace: sem alvo, espera esse tanto parado antes de voltar para casa (quem se afasta um pouco não reseta a luta).
+-- StyleDrop: { Style, Chance }: ensina um estilo de combate (sorteado para cada um que ajudou e ainda não tem).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -47,6 +52,12 @@ warnings.Parent = workspace
 
 local templates
 local spawnBoss -- (enemyType, config, carry?) definida no fim
+local active = {} -- [chefe de base] = modelo atual (qualquer forma)
+local globalToken = {} -- [chefe de base] = número da aparição global em andamento (nil = fora do horário)
+
+local function announceAll(title, text, duration)
+	Remotes.Announcement:FireAllClients(title, text, duration or 8)
+end
 
 local function flat(vector)
 	return Vector3.new(vector.X, 0, vector.Z)
@@ -204,6 +215,12 @@ local function giveRewards(state, humanoid, enemyType, stats, config)
 		local awardedGold = PlayerData.AddGold(player, stats.Gold) or 0
 		QuestModule.OnEnemyKilled(player, enemyType, stats.Level)
 		local won = {}
+		local styleDrop = config.StyleDrop
+		if styleDrop and not PlayerData.HasStyle(player, styleDrop.Style)
+			and rng:NextNumber() < Passes.DropChance(player, styleDrop.Chance) and PlayerData.UnlockStyle(player, styleDrop.Style) then
+			local style = CombatStyles.Styles[styleDrop.Style]
+			table.insert(won, `estilo {style and style.DisplayName or styleDrop.Style}`)
+		end
 		for _, drop in config.Drops or {} do
 			local item = ItemData.Get(drop.Item)
 			if item and rng:NextNumber() < Passes.DropChance(player, drop.Chance) and PlayerData.AddItem(player, drop.Item, 1) then
@@ -430,9 +447,24 @@ local function runBoss(enemyType, config, npc, controller, state, carry)
 		end)
 	end
 
+	-- Sem alvo há menos de IdleGrace segundos: fica parado esperando (quem se afastou um pouco volta para a luta)
+	local idleSince, lastIdleCall = nil, 0
+	local function waitingIdle()
+		local clock = os.clock()
+		if not idleSince or clock - lastIdleCall > 1.5 then
+			idleSince = clock -- teve alvo no meio: recomeça a contar
+		end
+		lastIdleCall = clock
+		if clock - idleSince >= (config.IdleGrace or 0) then return false end
+		humanoid:MoveTo(root.Position)
+		controller.SetRunning(false)
+		return true
+	end
+
 	-- Sem ninguém por perto: volta para o trono e senta
 	controller.OnIdle = function(distFromHome)
 		if not throne then return false end
+		if not sleeping and waitingIdle() then return true end
 		if distFromHome <= 12 then
 			sleep()
 		else
@@ -455,6 +487,7 @@ local function runBoss(enemyType, config, npc, controller, state, carry)
 			spawnBoss(carry.BaseType, BossData.Get(carry.BaseType))
 		end
 		controller.OnIdle = function(distFromHome)
+			if waitingIdle() then return true end
 			if distFromHome <= 12 then
 				revert()
 			else
@@ -952,10 +985,20 @@ spawnBoss = function(enemyType, config, carry)
 			giveRewards(state, humanoid, enemyType, stats, config)
 		end,
 		OnDied = function()
+			if baseConfig.Global then
+				-- Chefe global: não renasce; volta no próximo horário
+				active[baseType] = nil
+				globalToken[baseType] = nil
+				announceAll(config.Title or enemyType, baseConfig.Global.DefeatMessage or "Foi derrotado!", 8)
+				return
+			end
 			task.wait(baseConfig.RespawnTime or 300)
 			spawnBoss(baseType, baseConfig)
 		end,
 	})
+	if npc then
+		active[baseType] = npc
+	end
 	if npc and controller then
 		runBoss(enemyType, config, npc, controller, state, { BaseType = baseType, HomeCFrame = homeCFrame })
 	end
@@ -967,8 +1010,82 @@ if not templates then
 	warn("[BossService] Nenhuma pasta EnemyTemplates: nenhum chefe vai nascer.")
 	return
 end
+-- ================= Chefe global =================
+
+-- Aparece agora (horário ou /chefe). Fica até Duration segundos; derrotado antes, só volta no próximo horário.
+local function startGlobal(baseType, config)
+	local current = active[baseType]
+	if current and current.Parent then return false end
+	local g = config.Global
+	local token = (globalToken[baseType] or 0) + 1
+	globalToken[baseType] = token
+	announceAll(config.Title or baseType, g.SpawnMessage or "Apareceu!", 10)
+	task.spawn(spawnBoss, baseType, config)
+	task.delay(g.Duration or 1800, function()
+		if globalToken[baseType] ~= token then return end
+		globalToken[baseType] = nil
+		local npc = active[baseType]
+		active[baseType] = nil
+		if npc and npc.Parent then
+			npc:Destroy() -- sem morrer: sem recompensa nem OnDied
+			announceAll(config.Title or baseType, g.LeaveMessage or "Foi embora.", 8)
+		end
+	end)
+	return true
+end
+
+-- Horários fixos: múltiplos de Interval desde 1970 (+ Offset), em UTC, os mesmos em todo servidor
+local function runSchedule(baseType, config)
+	local g = config.Global
+	local interval = g.Interval or 10800
+	local offset = g.Offset or 0
+	while true do
+		local now = os.time()
+		local nextAt = (math.floor((now - offset) / interval) + 1) * interval + offset
+		ReplicatedStorage:SetAttribute("GlobalBoss_" .. baseType, nextAt)
+		local warnAt = nextAt - (g.Warning or 300)
+		if warnAt > now then
+			task.wait(warnAt - now)
+			local minutes = math.max(1, math.floor((nextAt - os.time()) / 60 + 0.5))
+			announceAll(config.Title or baseType, string.format(g.WarningMessage or "Aparece em %d minutos!", minutes), 8)
+		end
+		task.wait(math.max(0, nextAt - os.time()))
+		startGlobal(baseType, config)
+		task.wait(2)
+	end
+end
+
+-- Admin (/chefe, ItemCommands): faz o chefe aparecer agora
+local control = Instance.new("BindableFunction")
+control.Name = "BossControl"
+control.OnInvoke = function(action, name)
+	if action ~= "Spawn" or type(name) ~= "string" then return false, "Ação inválida" end
+	local wanted = string.lower(name)
+	for enemyType, config in BossData.Bosses do
+		if string.lower(enemyType) == wanted or string.lower(config.Title or "") == wanted then
+			if config.FormOf then
+				return false, `{enemyType} é uma forma de {config.FormOf}: chame {config.FormOf}`
+			end
+			local current = active[enemyType]
+			if current and current.Parent then return false, `{enemyType} já está no mapa` end
+			if config.Global then
+				startGlobal(enemyType, config)
+			else
+				task.spawn(spawnBoss, enemyType, config)
+			end
+			return true, `{config.Title or enemyType} apareceu`
+		end
+	end
+	return false, `Chefe não encontrado: {name}`
+end
+control.Parent = script
+
 for enemyType, config in BossData.Bosses do
 	if not config.FormOf then -- as formas (Lord Chainsaw) só aparecem pela transformação
-		task.spawn(spawnBoss, enemyType, config)
+		if config.Global then
+			task.spawn(runSchedule, enemyType, config)
+		else
+			task.spawn(spawnBoss, enemyType, config)
+		end
 	end
 end

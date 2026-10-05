@@ -13,6 +13,7 @@
 --   /restricao <on|off>        simula conta com sorteio pago restrito (menor no Brasil): o clã vira escolha direta
 --                              (até sair do jogo; o normal vem do PolicyService no CharacterService)
 --   /treinador <treino|duelo>  chama a cópia do Treinador para testar (sem contar em missão; perto do NPC Treinador)
+--   /chefe <Nome>              faz um chefe aparecer agora (ex.: /chefe Denji; o global não espera o horário)
 --   /hibrido [Infernal] [Contrato]  modo híbrido: contrato no V/B e poderes do Infernal no H/J, seja qual for o caminho
 --                              (padrão Sangue e Raposa; /hibrido off desliga; vale até sair do jogo)
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -284,4 +285,20 @@ Admins.BindCommand("/pontos", function(player, argument)
 	end
 	PlayerData.AddStatusPoints(player, amount)
 	PlayerData.Notify(player, "Pontos", `+{amount} pontos na árvore de habilidades (M).`)
+end)
+
+Admins.BindCommand("/chefe", function(player, argument)
+	local name = string.match(argument or "", "^%s*(.-)%s*$")
+	if name == "" then
+		PlayerData.Notify(player, "Chefe", "Use /chefe <Nome> (ex.: /chefe Denji).", 5)
+		return
+	end
+	local service = ServerScriptService:FindFirstChild("BossService")
+	local control = service and service:FindFirstChild("BossControl")
+	if not control then
+		PlayerData.Notify(player, "Chefe", "O BossService não está rodando.", 5)
+		return
+	end
+	local _, message = control:Invoke("Spawn", name)
+	PlayerData.Notify(player, "Chefe", tostring(message), 5)
 end)

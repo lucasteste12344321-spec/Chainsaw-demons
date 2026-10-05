@@ -1136,29 +1136,40 @@ local function playingTrack(character, animationId)
 	return nil
 end
 
+-- As malhas do KatanaVFX são só da Katana: outro estilo com as mesmas mecânicas (Motosserra) desenha os arcos na cor
+-- dele (SlashColor do estilo)
+local function usesKatanaMeshes(styleName)
+	return styleName == "Katana" and katanaMeshes()
+end
+
 local function katanaPhase(character, styleName, skill, slot, phase)
-	katanaVFX:Play(slot, phase, { Character = character })
+	if styleName == "Katana" then
+		katanaVFX:Play(slot, phase, { Character = character })
+	end
 	local root = rootOf(character)
 	if not root then return end
 	local soundData = { Style = styleName }
+	local styleData = CombatStyles.Styles[styleName]
+	local glow = styleData and styleData.SlashColor or BLADE_GLOW
 	if phase == "Dash" then
 		playSound(soundData, "Dash", root)
 		swingTrail(character, styleName, "Right", (skill.SlashAt or 0.35) - (skill.DashAt or 0.15) + 0.15)
 	elseif phase == "Slash" and skill.Kind == "DrawSlash" then
 		playSound(soundData, "Draw", root)
 		swingTrail(character, styleName, "Right", 0.28)
-		if not katanaMeshes() then
+		if not usesKatanaMeshes(styleName) then
 			local frame = root.CFrame * CFrame.new(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(-6))
-			slashArc(frame, skill.Range * 0.75, -skill.Arc / 2, skill.Arc / 2, BLADE_GLOW, 1.5, 0.4)
+			local arc = math.min(skill.Arc, 359)
+			slashArc(frame, skill.Range * 0.75, -arc / 2, arc / 2, glow, 1.5, 0.4)
 		end
 		if character == player.Character then
 			shake(0.35)
 		end
 	elseif phase == "Slash" and skill.Kind == "DashSlash" then
 		playSound(soundData, "HeavyHit", root)
-		if not katanaMeshes() then
+		if not usesKatanaMeshes(styleName) then
 			local frame = root.CFrame * CFrame.new(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(-38))
-			slashArc(frame, 4, 70, -70, BLADE_GLOW, 1.1, 0.3)
+			slashArc(frame, 4, 70, -70, glow, 1.1, 0.3)
 		end
 	end
 end
@@ -1645,7 +1656,9 @@ end
 
 -- Agarrão (fases que dependem de quem foi pego, mandadas pelo servidor)
 function handlers.KatanaGrab(data)
-	katanaVFX:Play("X", "Grab", { Character = data.Character, Target = data.Target })
+	if data.Style == "Katana" then
+		katanaVFX:Play("X", "Grab", { Character = data.Character, Target = data.Target })
+	end
 	if typeof(data.Target) == "Instance" then
 		flash(data.Target, WHITE, 0.2)
 	end
@@ -1655,12 +1668,16 @@ function handlers.KatanaGrab(data)
 end
 
 function handlers.KatanaGrabStrike(data)
-	katanaVFX:Play("X", "Strike", { Character = data.Character, Target = data.Target })
+	if data.Style == "Katana" then
+		katanaVFX:Play("X", "Strike", { Character = data.Character, Target = data.Target })
+	end
 	swingTrail(data.Character, data.Style, "Right", 0.22)
 end
 
 function handlers.KatanaGrabRelease(data)
-	katanaVFX:Play("X", "Release", { Character = data.Character, Target = data.Target })
+	if data.Style == "Katana" then
+		katanaVFX:Play("X", "Release", { Character = data.Character, Target = data.Target })
+	end
 	swingTrail(data.Character, data.Style, "Right", 0.25)
 end
 
