@@ -529,6 +529,18 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   dá a imunidade e recarrega em `BreakerCooldown` (25 s). Efeito `CombatFX` "ComboBreaker". Falta indicador na HUD.
 - Sem teste em Play ainda.
 
+## Repositório em dia com o Studio (Claude, 2026-10-05)
+- O GitHub estava atrás do Studio (o usuário sobe arquivos à mão). A partir de um dump de todos os scripts do Studio
+  (Output da Command Bar), entraram os que faltavam: `UITheme`, `TutorialData`, `GamepassConfig`, `GamepassOdds`,
+  `WorldPropAssets` (Shared), `ExperimentManager` e `Gamepasses` (scripts), `GamepassEntitlements`, `VIPRewardRules`,
+  `VIPServers` (Server) e `Compass.client` (usa a GUI `StarterGui.Compass`, que fica fora do Argon). Foram atualizados
+  para a versão do Studio: `Remotes`, `BossService`, `FishingService`, `PlayerData`, `WorldActivities` (servidor),
+  `FishingVisuals`, `Minimap` e o `Version of the game`. Scripts de ServerStorage, Workspace e StarterGui não entram (o
+  `default.project.json` só mapeia ReplicatedFirst, ReplicatedStorage, ServerScriptService e StarterPlayerScripts).
+- Para levar scripts do GitHub ao Studio sem colar à mão: Command Bar com `HttpService:GetAsync` no endereço raw com o
+  hash do commit (o endereço com o nome da branch fica alguns minutos com a versão velha em cache). Precisa de
+  Game Settings > Security > Allow HTTP Requests.
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.

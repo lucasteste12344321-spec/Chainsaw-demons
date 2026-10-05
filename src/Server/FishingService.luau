@@ -11,6 +11,7 @@ local Quests = require(script.Parent.QuestModule)
 local Service = {}
 local sessions, readySpots, limits, cooldowns = {}, {}, {}, {}
 local spots, fisherman, initialized
+local Passes = require(script.Parent.GamepassEntitlements)
 local rng = Random.new()
 local recentDamage, mealCooldowns, healing, characterConnections = {}, {}, {}, {}
 local cook
@@ -53,7 +54,7 @@ end
 local function sendMenu(player)
 	local data = save(player)
 	if not data then return end
-	Remotes.FishingState:FireClient(player, { Phase = "Menu", Data = data, Value = Data.SaleValue(data), CanTrade = nearNPC(player) == true, CanCook = nearCook(player) == true })
+	Remotes.FishingState:FireClient(player, { Phase = "Menu", Data = data, Value = Data.SaleValue(data) * Passes.Multiplier(player, "DoubleGold"), CanTrade = nearNPC(player) == true, CanCook = nearCook(player) == true })
 end
 
 local function fx(kind, player, session, extra)
@@ -214,7 +215,7 @@ local function action(player, kind, id, value)
 			local amount = Data.SaleValue(data)
 			if amount > 0 then
 				for _, fishId in Data.Order do data.Counts[fishId] = 0 end
-				PlayerData.AddGold(player, amount, true)
+				amount = PlayerData.AddGold(player, amount, true, true) or amount
 				PlayerData.Notify(player, "Peixes vendidos", `Você recebeu {amount} Gold.`, 4)
 			end
 		elseif kind == "Upgrade" then

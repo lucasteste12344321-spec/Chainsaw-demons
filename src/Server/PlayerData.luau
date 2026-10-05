@@ -22,6 +22,9 @@ local QuestData = require(script.Parent:WaitForChild("QuestData"))
 local FishingData = require(ReplicatedStorage:WaitForChild("FishingData"))
 local WorldQuestData = require(script.Parent:WaitForChild("WorldQuestData"))
 
+local Passes = require(script.Parent:WaitForChild("GamepassEntitlements"))
+local PassConfig = require(ReplicatedStorage:WaitForChild("GamepassConfig"))
+local VIPRules = require(script.Parent:WaitForChild("VIPRewardRules"))
 local PlayerData = {}
 
 -- Mantidos aqui para quem já usava PlayerData.BaseStats etc.
@@ -75,6 +78,7 @@ end
 local profiles = {}
 local loading = {}
 local activeSaves = 0
+local saving = {}
 
 local loadedEvent = Instance.new("BindableEvent")
 PlayerData.ProfileLoaded = loadedEvent.Event -- (player)
@@ -143,6 +147,7 @@ local function defaultData()
 		Quests = { Active = {}, Completed = {} },
 		Fishing = FishingData.Reconcile(nil),
 		WorldActivities = WorldQuestData.Reconcile(nil),
+		VIPRewards = VIPRules.Reconcile(nil),
 		Path = defaultPath(),
 		Settings = defaultSettings(),
 		Items = {},
@@ -374,6 +379,7 @@ local function reconcile(saved)
 
 	data.Fishing = FishingData.Reconcile(saved.Fishing)
 	data.WorldActivities = WorldQuestData.Reconcile(saved.WorldActivities)
+	data.VIPRewards = VIPRules.Reconcile(saved.VIPRewards)
 	data.Path = reconcilePath(saved.Path)
 	data.Settings = reconcileSettings(saved.Settings)
 	data.Items = reconcileItems(saved.Items)
@@ -464,6 +470,7 @@ local function serialize(player)
 		Quests = profile.Quests,
 		Fishing = profile.Fishing,
 		WorldActivities = profile.WorldActivities,
+		VIPRewards = VIPRules.Reconcile(profile.VIPRewards),
 		Path = profile.Path,
 		Settings = profile.Settings,
 		Items = profile.Items,
@@ -486,25 +493,51 @@ local function serialize(player)
 	}
 end
 
-local function savePlayer(player)
+-- Serialize autosave, leaving and daily claims through the same per-player writer.
+local function persist(player, claimDay)
 	local profile = profiles[player]
-	if not profile or not profile.CanSave or not store then return end
-
-	local data = serialize(player)
-	if not data then return end
-
+	if not profile or not profile.CanSave or not store then return false end
 	activeSaves += 1
-	for attempt = 1, MAX_RETRIES do
-		local ok, err = pcall(function()
-			store:UpdateAsync(dataKey(player), function()
-				return data
+	while saving[player] do task.wait(.05) end
+	saving[player] = true
+	local data = profiles[player] == profile and serialize(player)
+	local success, result = false, nil
+	if data then
+		for attempt = 1, MAX_RETRIES do
+			local ok, value = pcall(function()
+				return store:UpdateAsync(dataKey(player), function(old)
+					return VIPRules.Merge(data, old, claimDay)
+				end)
 			end)
-		end)
-		if ok then break end
-		warn(`[PlayerData] Falha ao salvar {player.Name} (tentativa {attempt}): {err}`)
-		task.wait(attempt)
+			if ok then success = true; result = value; break end
+			warn(`[PlayerData] Falha ao salvar {player.Name} (tentativa {attempt}): {value}`)
+			task.wait(attempt)
+		end
 	end
-	activeSaves -= 1
+	local granted = 0
+	if success and type(result) == "table" then
+		local vip = VIPRules.Reconcile(result.VIPRewards)
+		granted = math.max(0, vip.Total - profile.VIPRewards.Total)
+		-- Preserve spins spent/earned while UpdateAsync yielded.
+		profile.Spins = math.clamp(profile.Spins + granted, 0, PassConfig.MaxSpins)
+		profile.VIPRewards = vip
+		if player.Parent then player:SetAttribute("ClanSpins", profile.Spins) end
+	end
+	saving[player] = nil; activeSaves -= 1
+	return success, granted
+end
+local function savePlayer(player) return persist(player) end
+
+function PlayerData.ClaimVIPDaily(player)
+	if not Passes.Owns(player, "VIP") then return false, "O passe VIP é necessário." end
+	local profile = profiles[player]
+	if not profile or not profile.CanSave then return false, "Aguarde o carregamento seguro dos dados e tente novamente." end
+	local day = PassConfig.Day(os.time())
+	if profile.VIPRewards.Day >= day then return false, "Você já recebeu os giros de hoje. Renova à meia-noite de Brasília." end
+	if profile.Spins > PassConfig.MaxSpins - PassConfig.DailySpins then return false, "Use alguns giros antes de receber os 5 diários." end
+	local ok, granted = persist(player, day)
+	if not ok then return false, "Não foi possível salvar o benefício. Tente novamente; o dia não foi consumido." end
+	return granted > 0, if granted > 0 then nil else "O benefício de hoje já foi recebido."
 end
 
 local function newInt(name, value, parent)
@@ -584,14 +617,16 @@ function PlayerData.GetLevel(player)
 end
 
 -- Dá Gold. Ganhos (amount > 0) somam o bônus de Gold do clã, a não ser com noBonus (códigos, devoluções).
-function PlayerData.AddGold(player, amount, noBonus)
+function PlayerData.AddGold(player, amount, noBonus, passBonus)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local gold = leaderstats and leaderstats:FindFirstChild("Gold")
 	if gold then
 		if amount > 0 and not noBonus then
 			amount = math.floor(amount * (1 + PlayerData.GetTreeEffect(player, "GoldBonus")) + 0.5)
 		end
+		if amount > 0 and (not noBonus or passBonus) then amount = math.floor(amount * Passes.Multiplier(player, "DoubleGold") + .5) end
 		gold.Value += amount
+		return amount
 	end
 end
 
@@ -1015,7 +1050,7 @@ function PlayerData.AddXP(player, amount, noBonus)
 	local progress = player:FindFirstChild("Progress")
 	if not leaderstats or not progress then return end
 	if amount > 0 and not noBonus then
-		amount = math.floor(amount * (1 + PlayerData.GetTreeEffect(player, "XPBonus")) + 0.5)
+		amount = math.floor(amount * (1 + PlayerData.GetTreeEffect(player, "XPBonus")) * Passes.Multiplier(player, "DoubleXP") + 0.5)
 	end
 
 	local level = leaderstats.Level
@@ -1025,7 +1060,7 @@ function PlayerData.AddXP(player, amount, noBonus)
 	-- No level máximo o XP não conta mais
 	if level.Value >= StatConfig.MaxLevel then
 		xp.Value = 0
-		return
+		return 0
 	end
 	xp.Value += amount
 
@@ -1046,6 +1081,7 @@ function PlayerData.AddXP(player, amount, noBonus)
 		levelUpEffect(player)
 		PlayerData.Notify(player, "Level up!", "Você chegou ao level " .. level.Value .. ". Aperte M para abrir a árvore de habilidades.", 4)
 	end
+	return amount
 end
 
 local function setupPlayer(player)
@@ -1097,6 +1133,7 @@ local function setupPlayer(player)
 		Quests = data.Quests,
 		Fishing = data.Fishing,
 		WorldActivities = data.WorldActivities,
+		VIPRewards = data.VIPRewards,
 		Path = data.Path,
 		Settings = data.Settings,
 		Items = data.Items,

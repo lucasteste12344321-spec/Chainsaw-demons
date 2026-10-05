@@ -6,7 +6,7 @@
 --   círculo vermelho com "×": zona dos inimigos que a missão pede
 -- O que a missão pede e está fora do círculo vira um ícone na borda, com uma seta e a distância. Clique no
 -- minimapa para trocar o zoom. No PC fica embaixo à direita; no celular, em cima à direita (longe do pulo).
--- Fundo: quatro imagens 2D pre-calculadas da cidade. Nenhuma geometria e copiada no cliente.
+-- Fundo: imagens 2D pre-calculadas da cidade. Nenhuma geometria e copiada no cliente.
 -- Dados: Remotes.QuestEvent ("State": Quests[].Objectives { Type, Target, TargetList, Progress, Amount } e Givers),
 -- tag QuestGiver + atributo NPCId (NPCs), atributo ZoneType nas zonas de workspace.EnemySpawns (escrito pelo
 -- Spawner) e workspace.Enemies (atributos EnemyType e Boss).
@@ -28,7 +28,7 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local SIZE = 190 -- diâmetro em pixels (antes da escala da tela)
-local ZOOMS = { 120, 240, 480 } -- raio visível em studs em cada nível de zoom (clique troca)
+local ZOOMS = { 120, 240, 480, 960 } -- raio visível em studs em cada nível de zoom (clique troca)
 local QUEST_TAG = "QuestGiver"
 local EDGE_MARGIN = 12 -- ícone de fora do círculo: a quantos pixels da borda ele fica
 local LIST_REFRESH = 0.25 -- intervalo para atualizar as listas (inimigos, jogadores, NPCs, zonas)
@@ -90,7 +90,7 @@ for index, tile in Atlas.Tiles do
 	})
 	table.insert(mapTiles, { Image = image, Center = tile.Center })
 end
--- Carrega as quatro imagens em segundo plano antes de cruzar uma divisao do atlas.
+-- Carrega as imagens em segundo plano antes de cruzar uma divisao do atlas.
 task.spawn(function()
 	local images = {}
 	for _, tile in mapTiles do table.insert(images, tile.Image) end
@@ -128,6 +128,43 @@ local northLabel = UITheme.label({
 	ZIndex = 5,
 	Parent = outer,
 })
+
+-- The compass stays inside the existing HUD footprint; touch puts its card below the map.
+local cardinals = {{Label = northLabel, Direction = Vector3.new(0, 0, -1)}}
+northLabel.Name = "CardinalN"
+for _, info in {{"L", Vector3.xAxis}, {"S", Vector3.zAxis}, {"O", -Vector3.xAxis}} do
+	local label = northLabel:Clone()
+	label.Name = "Cardinal" .. info[1]; label.Text = info[1]
+	label.TextSize = 12; label.TextColor3 = PAPER; label.Parent = outer
+	table.insert(cardinals, {Label = label, Direction = info[2]})
+end
+local navigationCard = new("TextButton", {
+	Name = "NavigationCard", Position = UDim2.fromOffset(-5, if touchOnly then SIZE + 8 else -78),
+	Size = UDim2.fromOffset(SIZE + 10, 68), BackgroundColor3 = Colors.Panel,
+	BackgroundTransparency = .12, AutoButtonColor = false, Text = "", ZIndex = 9, Parent = holder,
+})
+UITheme.corner(navigationCard, UDim.new(0, 6)); UITheme.stroke(navigationCard, Colors.Stroke, 1)
+local bearingLabel = UITheme.label({Name = "Bearing", Parent = navigationCard, Position = UDim2.fromOffset(9, 5),
+	Size = UDim2.new(1, -18, 0, 14), Font = Fonts.Number, TextSize = 11, TextColor3 = PAPER, ZIndex = 10})
+local targetArrow = UITheme.label({Name = "TargetArrow", Parent = navigationCard, Position = UDim2.fromOffset(5, 25),
+	Size = UDim2.fromOffset(24, 28), Text = "▲", Font = Fonts.Title, TextSize = 18, TextColor3 = GOLD,
+	TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 10})
+local targetTitle = UITheme.label({Name = "TargetTitle", Parent = navigationCard, Position = UDim2.fromOffset(32, 23),
+	Size = UDim2.new(1, -40, 0, 17), Font = Fonts.Title, TextSize = 11, TextColor3 = GOLD,
+	TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 10})
+local targetDetail = UITheme.label({Name = "TargetDetail", Parent = navigationCard, Position = UDim2.fromOffset(32, 42),
+	Size = UDim2.new(1, -40, 0, 15), TextSize = 10, TextColor3 = Colors.TextDim,
+	TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 10})
+local navigationTargets, selectedTargetId = {}, nil
+local manualTarget = false
+local selectedTarget
+local navigationConnection = navigationCard.Activated:Connect(function()
+	if #navigationTargets < 2 then return end
+	local index = 0
+	for i, target in navigationTargets do if target.Id == selectedTargetId then index = i; break end end
+	selectedTargetId = navigationTargets[index % #navigationTargets + 1].Id
+	manualTarget = true
+end)
 
 -- Você: seta no centro
 local arrow = UITheme.label({
@@ -318,11 +355,20 @@ end)
 pool("Giver", function() return objectiveMarker(GOLD, "!", Colors.Black) end)
 pool("TalkTo", function() return objectiveMarker(GOLD, "?", Colors.Black) end)
 pool("Kill", function() return objectiveMarker(RED, "×", PAPER) end)
+pool("Navigation", function() return objectiveMarker(GOLD, "◆", Colors.Black) end)
 
 -- ================= Estado das missões =================
 
 local giverIds = {} -- [NPCId] = true: tem missão para pegar
 local talkTargets = {} -- [NPCId] = true: objetivo "falar com"
+local activityObjectives = {}
+local regionalState
+local activityPoints = {}
+local fishingPoints = {}
+local eventPoints = {}
+local regionalConnection = Remotes.WorldActivityState.OnClientEvent:Connect(function(data)
+	if type(data) == "table" and data.Id then regionalState = data end
+end)
 local killTargets = {} -- [EnemyType] = true: objetivo "derrotar" (com alvo definido)
 
 local function addTargets(set, objective)
@@ -342,16 +388,23 @@ local questConnection = Remotes.QuestEvent.OnClientEvent:Connect(function(data)
 	table.clear(giverIds)
 	table.clear(talkTargets)
 	table.clear(killTargets)
+	table.clear(activityObjectives)
 	for _, id in data.Givers or {} do
 		giverIds[id] = true
 	end
 	for _, quest in data.Quests or {} do
+		local readyToReturn = true
+		for _, objective in quest.Objectives or {} do
+			if objective.Type ~= "TalkTo" and (objective.Progress or 0) < (objective.Amount or 1) then readyToReturn = false end
+		end
 		for _, objective in quest.Objectives or {} do
 			if (objective.Progress or 0) < (objective.Amount or 1) then
-				if objective.Type == "TalkTo" then
+				if objective.Type == "TalkTo" and readyToReturn then
 					addTargets(talkTargets, objective)
 				elseif objective.Type == "Kill" then
 					addTargets(killTargets, objective)
+				elseif objective.Type == "Collect" or objective.Type == "Explore" or objective.Type == "Fish" then
+					table.insert(activityObjectives, objective)
 				end
 			end
 		end
@@ -380,7 +433,9 @@ local function refreshEntities()
 	for _, model in CollectionService:GetTagged(QUEST_TAG) do
 		if model:IsDescendantOf(workspace) then
 			local id = model:GetAttribute("NPCId")
-			table.insert(npcs, { Id = if type(id) == "string" and id ~= "" then id else model.Name, Position = modelPosition(model) })
+			local humanoid = model:FindFirstChildOfClass("Humanoid")
+			local displayName = humanoid and humanoid.DisplayName
+			table.insert(npcs, { Id = if type(id) == "string" and id ~= "" then id else model.Name, Position = modelPosition(model), Name = if displayName and displayName ~= "" then displayName else model.Name })
 		end
 	end
 
@@ -406,6 +461,16 @@ local function refreshEntities()
 end
 
 local function refreshZones()
+	table.clear(activityPoints); table.clear(fishingPoints); table.clear(eventPoints)
+	local world = workspace:FindFirstChild("WorldActivities")
+	if world then
+		for _, spec in {{"ActivityNodes", activityPoints}, {"FishingSpots", fishingPoints}, {"EventNodes", eventPoints}} do
+			local folder = world:FindFirstChild(spec[1])
+			if folder then for _, node in folder:GetChildren() do
+				if node:IsA("BasePart") then table.insert(spec[2], node) end
+			end end
+		end
+	end
 	table.clear(zones)
 	local spawns = workspace:FindFirstChild("EnemySpawns")
 	if spawns then
@@ -424,7 +489,7 @@ local zoomIndex = 1
 local nextListRefresh = 0
 
 local function showZoom()
-	zoomLabel.Text = `ZOOM {zoomIndex}x`
+	zoomLabel.Text = `{ZOOMS[zoomIndex]} studs`
 	zoomLabel.TextTransparency = 0
 	zoomLabel.TextStrokeTransparency = 0.3
 	UITheme.tween(zoomLabel, 1.2, { TextTransparency = 1, TextStrokeTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
@@ -436,6 +501,7 @@ local zoomConnection = zoomButton.Activated:Connect(function()
 end)
 
 -- Frente da câmera no plano (vira o "para cima" do minimapa)
+local lastHeading = Vector3.new(0, 0, -1)
 local function heading()
 	local camera = workspace.CurrentCamera
 	if not camera then return Vector3.new(0, 0, -1) end
@@ -445,7 +511,8 @@ local function heading()
 		local up = camera.CFrame.UpVector
 		flat = Vector3.new(up.X, 0, up.Z)
 	end
-	return if flat.Magnitude > 0.001 then flat.Unit else Vector3.new(0, 0, -1)
+	if flat.Magnitude > 0.001 then lastHeading = flat.Unit end
+	return lastHeading
 end
 
 local center, forward, right, scale = Vector3.zero, Vector3.new(0, 0, -1), Vector3.new(1, 0, 0), 1
@@ -481,7 +548,7 @@ local function placeObjective(item, position, showDistance, pulse)
 		item.Pointer.Rotation = math.deg(math.atan2(direction.Y, direction.X)) + 90
 		if showDistance then
 			local studs = Vector3.new(position.X - center.X, 0, position.Z - center.Z).Magnitude
-			item.Distance.Text = `{math.floor(studs + 0.5)}m`
+			item.Distance.Text = `{math.floor(studs + 0.5)} st`
 			place(item.Distance, direction * (RADIUS - EDGE_MARGIN - 17))
 		else
 			item.Distance.Visible = false
@@ -494,6 +561,89 @@ local function placeObjective(item, position, showDistance, pulse)
 		item.Pulse.Size = UDim2.fromScale(1 + wave * 1.1, 1 + wave * 1.1)
 		item.PulseStroke.Transparency = wave
 	end
+end
+
+local compassNames = {"N", "NE", "L", "SE", "S", "SO", "O", "NO"}
+local function updateNavigation()
+	table.clear(navigationTargets)
+	local function add(id, name, position, priority, area)
+		table.insert(navigationTargets, {Id = id, Name = name, Position = position, Priority = priority,
+			Distance = Vector3.new(position.X - center.X, 0, position.Z - center.Z).Magnitude, Area = area})
+	end
+	for _, npc in npcs do
+		if talkTargets[npc.Id] then add("Talk:" .. npc.Id, npc.Name, npc.Position, 1)
+		elseif giverIds[npc.Id] then add("Giver:" .. npc.Id, npc.Name, npc.Position, 4) end
+	end
+	for kind, target in nearestByType do add("Kill:" .. kind, kind, target.Position, 1) end
+	local hasFishObjective = false
+	local added = {}
+	for _, objective in activityObjectives do
+		if objective.Type == "Fish" then hasFishObjective = true; continue end
+		local id = objective.Type .. ":" .. tostring(objective.Target or "*")
+		if added[id] then continue end; added[id] = true
+		local sum, count, closest, bestDistance = Vector3.zero, 0, nil, math.huge
+		for _, node in activityPoints do
+			local target = node:GetAttribute("Target")
+			local matches = objective.Target == target or (objective.Target == nil and (not objective.TargetList or table.find(objective.TargetList, target)))
+			if node.Parent and node:GetAttribute("ObjectiveType") == objective.Type and matches then
+				sum += node.Position; count += 1
+				local distance = (node.Position - center).Magnitude
+				if distance < bestDistance then closest = node; bestDistance = distance end
+			end
+		end
+		if count > 0 then
+			-- Collection markers guide to the search area, not to an already consumed individual item.
+			local area = objective.Type == "Collect"
+			add(id, objective.Text or tostring(objective.Target), if area then sum / count else closest.Position, 1, area)
+		end
+	end
+	local pier, pierDistance = nil, math.huge
+	for _, node in fishingPoints do if node.Parent then
+		local distance = (node.Position - center).Magnitude
+		if distance < pierDistance then pier = node; pierDistance = distance end
+	end end
+	if pier then add("Fish", "Pesca · " .. (pier:GetAttribute("Label") or pier.Name), pier.Position, if hasFishObjective then 1 else 5) end
+	if regionalState and regionalState.Status == "Active" and regionalState.EndsAt > workspace:GetServerTimeNow() then
+		local best, distance = nil, math.huge
+		for _, node in eventPoints do
+			local role = node:GetAttribute("EventRole")
+			local prompt = node:FindFirstChildOfClass("ProximityPrompt")
+			if node.Parent and node:GetAttribute("EventId") == regionalState.Id and prompt and prompt.Enabled
+				and (if regionalState.Carrying then role == "Delivery" else role ~= "Delivery") then
+				local d = (node.Position - center).Magnitude
+				if d < distance then best = node; distance = d end
+			end
+		end
+		if best then add("Event:" .. regionalState.Id, if regionalState.Carrying then "Entregar provisões" else regionalState.Name, best.Position, if regionalState.Carrying then 0 else 3) end
+	end
+	table.sort(navigationTargets, function(a, b)
+		if a.Priority ~= b.Priority then return a.Priority < b.Priority end
+		if math.abs(a.Distance - b.Distance) > .01 then return a.Distance < b.Distance end
+		return a.Id < b.Id
+	end)
+	selectedTarget = nil
+	for _, target in navigationTargets do if target.Id == selectedTargetId then selectedTarget = target; break end end
+	if not selectedTarget then
+		manualTarget = false; selectedTarget = navigationTargets[1]
+	elseif not manualTarget and navigationTargets[1] and navigationTargets[1].Priority < selectedTarget.Priority then
+		selectedTarget = navigationTargets[1]
+	end
+	selectedTargetId = selectedTarget and selectedTarget.Id
+	screen:SetAttribute("NavigationPosition", selectedTarget and selectedTarget.Position)
+	screen:SetAttribute("NavigationName", selectedTarget and selectedTarget.Name)
+	local bearing = math.deg(math.atan2(forward.X, -forward.Z)) % 360
+	bearingLabel.Text = string.format("%s  %03d°  ·  %d st", compassNames[math.floor((bearing + 22.5) / 45) % 8 + 1], math.floor(bearing + .5) % 360, ZOOMS[zoomIndex])
+	targetArrow.Visible = selectedTarget ~= nil
+	if selectedTarget then
+		local point = project(selectedTarget.Position)
+		targetArrow.Rotation = math.deg(math.atan2(point.Y, point.X)) + 90
+		targetTitle.Text = selectedTarget.Name
+		local height = selectedTarget.Position.Y - center.Y
+		local elevation = if height > 14 then " ↑" elseif height < -14 then " ↓" else ""
+		local detail = if selectedTarget.Area then "Área de coleta" elseif selectedTarget.Distance < 14 and math.abs(height) < 14 then "Você chegou" else `{math.floor(selectedTarget.Distance + .5)} studs{elevation}`
+		if selectedTarget.Area then detail ..= ` · {math.floor(selectedTarget.Distance + .5)} st` end
+		targetDetail.Text = detail .. (if #navigationTargets > 1 then " · toque p/ trocar" else "")
+	else targetTitle.Text = "Explore a região"; targetDetail.Text = "Toque no mapa para ampliar" end
 end
 
 local function draw()
@@ -519,19 +669,6 @@ local function draw()
 		end
 	end
 
-	-- NPCs: "?" se a missão manda falar com ele, "!" se tem missão para pegar, losango se não
-	for _, npc in npcs do
-		if talkTargets[npc.Id] then
-			placeObjective(take("TalkTo"), npc.Position, true, true)
-		elseif giverIds[npc.Id] then
-			placeObjective(take("Giver"), npc.Position, false, false)
-		else
-			local point = project(npc.Position)
-			if inside(point, 4) then
-				place(take("Npc"), point)
-			end
-		end
-	end
 
 	-- Zonas dos inimigos que a missão pede: o círculo da zona quando aparece e um ícone na mais perto
 	table.clear(nearestByType)
@@ -561,14 +698,23 @@ local function draw()
 			end
 		end
 	end
-	for _, target in nearestByType do
-		placeObjective(take("Kill"), target.Position, true, true)
+	updateNavigation()
+	for _, npc in npcs do
+		local point = project(npc.Position)
+		if inside(point, 18) then
+			if talkTargets[npc.Id] then placeObjective(take("TalkTo"), npc.Position, false, false)
+			elseif giverIds[npc.Id] then placeObjective(take("Giver"), npc.Position, false, false)
+			else place(take("Npc"), point) end
+		end
 	end
+	if selectedTarget then placeObjective(take("Navigation"), selectedTarget.Position, false, true) end
 
 	hideUnused()
 
 	-- Norte na borda: a direção (0, 0, -1) do mundo vista no minimapa
-	place(northLabel, Vector2.new(-forward.X, forward.Z).Unit * (RADIUS - 9))
+	for _, cardinal in cardinals do
+		place(cardinal.Label, Vector2.new(cardinal.Direction:Dot(right), -cardinal.Direction:Dot(forward)) * (RADIUS - 8))
+	end
 end
 
 -- Some junto com a HUD (árvore de habilidades aberta, tela de título...)
@@ -579,7 +725,8 @@ end
 
 local accumulated = 0
 local nextZoneRefresh = 0
-local drawConnection = RunService.Heartbeat:Connect(function(dt)
+local renderBinding = "ChainsawMinimapCompass"
+RunService:BindToRenderStep(renderBinding, Enum.RenderPriority.Camera.Value + 1, function(dt)
 	accumulated += dt
 	local interval = 1 / (if FastMode.IsEnabled() then FAST_MAP_RATE else MAP_RATE)
 	if accumulated < interval then return end
@@ -634,7 +781,9 @@ local drawConnection = RunService.Heartbeat:Connect(function(dt)
 end)
 
 script.Destroying:Connect(function()
-	drawConnection:Disconnect()
+	RunService:UnbindFromRenderStep(renderBinding)
+	navigationConnection:Disconnect()
+	regionalConnection:Disconnect()
 	questConnection:Disconnect()
 	zoomConnection:Disconnect()
 	screen:Destroy()

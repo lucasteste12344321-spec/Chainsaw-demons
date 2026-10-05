@@ -5,6 +5,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local NAMES = {
+	"GamepassAction", -- C->S: State, Refresh, Daily, VIPServer, PublicServer
+	"GamepassState", -- S->C: verified ownership and daily claim status
 	-- Dados do jogador / progressão
 	"StatusUpgrade", -- C->S (statName) sistema antigo de pontos de status (não usado; a árvore substituiu)
 	"StatusReset", -- C->S () reseta a árvore de habilidades: devolve os pontos gastos, custa Gold

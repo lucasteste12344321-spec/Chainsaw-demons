@@ -32,6 +32,7 @@ local HIT_HEIGHT = 10 -- diferença de altura aceita nos ataques em área
 local ROAR_FALLBACK = 0.6 -- sem o marcador do grito, os reforços chegam nesse tempo
 local WARNING_COLOR = Color3.fromRGB(255, 40, 40)
 
+local Passes = require(script.Parent.GamepassEntitlements)
 local rng = Random.new()
 
 local warnings = Instance.new("Folder")
@@ -190,17 +191,17 @@ local function giveRewards(state, humanoid, enemyType, stats, config)
 				`Você precisava causar pelo menos {math.ceil(needed)} de dano para ganhar a recompensa.`, 6)
 			continue
 		end
-		PlayerData.AddXP(player, stats.XP)
-		PlayerData.AddGold(player, stats.Gold)
+		local awardedXP = PlayerData.AddXP(player, stats.XP) or 0
+		local awardedGold = PlayerData.AddGold(player, stats.Gold) or 0
 		QuestModule.OnEnemyKilled(player, enemyType, stats.Level)
 		local won = {}
 		for _, drop in config.Drops or {} do
 			local item = ItemData.Get(drop.Item)
-			if item and rng:NextNumber() < drop.Chance and PlayerData.AddItem(player, drop.Item, 1) then
+			if item and rng:NextNumber() < Passes.DropChance(player, drop.Chance) and PlayerData.AddItem(player, drop.Item, 1) then
 				table.insert(won, item.Name)
 			end
 		end
-		local text = `+{stats.XP} XP e +{stats.Gold} Gold.`
+		local text = `+{awardedXP} XP e +{awardedGold} Gold.`
 			.. (if #won > 0 then ` Drop: {table.concat(won, ", ")}!` else " Nenhum item desta vez.")
 		PlayerData.Notify(player, `{stats.DisplayName} derrotado!`, text, 7)
 	end

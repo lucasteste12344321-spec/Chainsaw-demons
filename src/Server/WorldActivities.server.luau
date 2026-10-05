@@ -5,6 +5,7 @@ local Data = require(script.Parent.WorldQuestData)
 local Quests = require(script.Parent.QuestModule)
 local PlayerData = require(script.Parent.PlayerData)
 local Fishing = require(script.Parent.FishingService)
+local WorldPropAssets = require(ReplicatedStorage:WaitForChild("WorldPropAssets"))
 local world = workspace:WaitForChild("WorldActivities", 30)
 if not world then warn("[WorldActivities] Install the authored WorldActivities model in Edit first."); return end
 
@@ -70,6 +71,15 @@ local function setEventVisuals()
 		if marker then marker.Enabled = active == true and not used end
 		local glow = node:FindFirstChild("Glow")
 		if glow and glow:IsA("BasePart") then glow.Material = if used then Enum.Material.Neon else Enum.Material.Glass end
+		local visual = node:FindFirstChild("ItemVisual")
+		if visual then
+			for _, part in visual:GetDescendants() do
+				if part:IsA("BasePart") and part:GetAttribute("LampGlow") then
+					part.Material = if used then Enum.Material.Neon else Enum.Material.Glass
+					part.Transparency = if used then .1 else .55
+				end
+			end
+		end
 	end
 end
 
@@ -133,11 +143,9 @@ for _, node in eventNodes do
 			if os.clock() < (times[node.Name] or 0) then return end
 			times[node.Name] = os.clock() + 8
 			local root = rootOf(player)
-			local crate = Instance.new("Part"); crate.Name = "RegionalSupplyCrate"; crate.Size = Vector3.new(1.7, 1.4, 1.3)
-			crate.Material = Enum.Material.WoodPlanks; crate.Color = Color3.fromRGB(116, 88, 59)
-			crate.CanCollide = false; crate.CanTouch = false; crate.CanQuery = false; crate.Massless = true
-			crate.CFrame = root.CFrame * CFrame.new(0, 0, -1.5); crate.Parent = player.Character
-			local weld = Instance.new("WeldConstraint"); weld.Part0 = root; weld.Part1 = crate; weld.Parent = crate
+			local crate = WorldPropAssets.Attach(node:GetAttribute("CarryAsset") or "CarryCrate", root, CFrame.new(0, -.1, -1.7))
+			if not crate then return end
+			crate.Name = "RegionalSupplyCrate"
 			carrying[player] = { Cycle = current.Cycle, At = os.clock(), Source = node.Position, Visual = crate }
 			snapshot(player)
 		elseif role == "Delivery" then
@@ -179,7 +187,10 @@ task.spawn(function()
 		end
 		for _, player in Players:GetPlayers() do
 			local root = rootOf(player)
-			if not root then clearCarry(player); continue end
+			if not root then
+				if carrying[player] then clearCarry(player); snapshot(player) end
+				continue
+			end
 			for _, node in nodes do
 				if node:GetAttribute("ObjectiveType") == "Explore" and (root.Position - node.Position).Magnitude <= (node:GetAttribute("Radius") or 14) then
 					local target = node:GetAttribute("Target")
