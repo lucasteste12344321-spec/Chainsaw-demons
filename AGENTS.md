@@ -168,6 +168,12 @@ Para o mapa se ligar a esses sistemas, siga estas convenções (tudo opcional, e
   `PlayerData.AddItem(player, id, n)`.
 - Sem `workspace.EnemySpawns`, nascem 5 Goblins em volta da origem, como hoje.
 - Templates de inimigos em `ServerStorage.EnemyTemplates` (Model com Humanoid + HumanoidRootPart).
+- **Lord Chainsaw** (2026-10-05, pedido do usuário; modelo `Lord Chainsaw` posicionado por ele no mapa): `EnemyData.LordChainsaw`
+  (level 40, 16000 de vida), kit com as animações dos Punhos até ter as próprias, `BossData.LordChainsaw`: espera em pé
+  (Throne sem animação, `WakeRange` 35), Giro (Slam) e Avanço (Rush) quebrando o mapa (`Destroy = true`), Serra contínua
+  (Fury), **Corrente** (Chain: linha até o alvo, puxa o primeiro jogador e corta) e, na fase 2, **Beber sangue**
+  (BloodDrink: abaixo de 25% cura 15% em 3 s, até 2 vezes; levar 5% da vida nesse tempo interrompe e atordoa 2 s).
+  Sem drops por enquanto (`Drops = {}`).
 
 ### NPCs de missão
 - Um Model com Humanoid (ou qualquer Model com uma Part) com a **tag** `QuestGiver` (CollectionService / `AddTag`)

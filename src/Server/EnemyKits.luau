@@ -170,6 +170,34 @@ EnemyKits["King Goblin"] = {
 	},
 }
 
+-- Chefe Lord Chainsaw (EnemyData.LordChainsaw): por enquanto com as animações dos Punhos (R6), até ele ganhar as
+-- próprias. Especiais, fase 2 e a cura ficam no BossData.
+EnemyKits["Lord Chainsaw"] = {
+	Animations = {
+		Idle = 80129783780208, -- pose de luta dos Punhos
+		Run = 80849474243778, -- corrida (CharacterAnimations.Sprint)
+		Walk = 136976781107133, -- andando em guarda (Punhos)
+		Attack = { 83586198824517, 107945896681556, 98990181706005, 89779080311699 }, -- M1 1 a 4 dos Punhos
+	},
+	AttackHitTime = { 0.25, 0.25, 0.3, 0.25 },
+	HitMarker = { "Hitframe1", "Hitframe", "Hit" },
+	Combo = 4,
+	ComboInterval = 0.4,
+	HitStun = 0.3,
+	FinisherStun = 0.6,
+	FinisherDamage = 1.35,
+	FinisherKnockback = 55,
+	Lunge = 32,
+	Strafe = true,
+	Dash = {
+		MinRange = 10,
+		MaxRange = 30,
+		Cooldown = 4,
+		Speed = 85,
+		Duration = 0.35,
+	},
+}
+
 -- Cópia do Treinador (TrainerService): luta com as animações dos Punhos (R6; a cópia é sempre R6)
 EnemyKits.TreinadorTreino = {
 	Animations = {

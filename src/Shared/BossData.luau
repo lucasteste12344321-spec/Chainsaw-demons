@@ -87,6 +87,91 @@ BossData.Bosses = {
 			{ Item = "OgreHead", Chance = 0.03 },
 		},
 	},
+
+	-- Lord Chainsaw (modelo "Lord Chainsaw" em EnemyTemplates, no lugar do mapa onde o usuário colocou). Fica parado
+	-- até alguém chegar perto (Throne sem animação = em pé esperando) e volta para lá, curado, se todos fugirem.
+	-- Ainda sem animações próprias: os especiais usam só os avisos no chão (Animation = nil).
+	LordChainsaw = {
+		Title = "Lord Chainsaw",
+		Throne = {
+			WakeRange = 35,
+			StandUpTime = 0.2,
+			WakeMessage = "Ligou as motosserras!",
+		},
+		RespawnTime = 420,
+		MinContribution = 0.03,
+		MinStun = 1.25,
+		KnockbackImmune = true,
+
+		Specials = {
+			Cooldown = 5,
+			FirstDelay = 2,
+			-- Giro: as serras abertas em volta dele; quebra o mapa em volta (Destroy)
+			Slam = {
+				Radius = 15,
+				Telegraph = 1,
+				Damage = 1.5,
+				Knockback = 65,
+				Stun = 0.8,
+				Destroy = true,
+			},
+			-- Avanço da motosserra: atravessa a faixa cortando tudo, inclusive o mapa no caminho
+			Rush = {
+				MinRange = 12,
+				Distance = 55,
+				Width = 8,
+				Telegraph = 0.75,
+				Speed = 100,
+				Damage = 1.4,
+				Knockback = 75,
+				Stun = 0.7,
+				Destroy = true,
+			},
+			-- Serra contínua: retângulo na frente, cortes rápidos, o último arremessa
+			Fury = {
+				Range = 10,
+				Width = 9,
+				Telegraph = 0.5,
+				Hits = 10,
+				Interval = 0.12,
+				Damage = 0.3,
+				Stun = 0.2,
+				Knockback = 50,
+			},
+			-- Corrente: linha até o alvo; o primeiro jogador na linha é puxado até ele e leva um corte
+			Chain = {
+				MinRange = 10,
+				Range = 38,
+				Width = 4,
+				Telegraph = 0.7,
+				PullSpeed = 90,
+				Damage = 0.4, -- ao pegar
+				SlashDamage = 1.2, -- no corte, quando chega
+				SlashKnockback = 55,
+				Stun = 0.5,
+			},
+			-- Beber sangue: abaixo de At da vida (na fase 2), para e cura Heal da vida máxima em Duration s.
+			-- Levar InterruptDamage da vida máxima nesse tempo interrompe (fica atordoado InterruptStun s).
+			BloodDrink = {
+				At = 0.25,
+				Uses = 2,
+				Duration = 3,
+				Heal = 0.15,
+				InterruptDamage = 0.05,
+				InterruptStun = 2,
+				Message = "Está bebendo sangue para se curar! Bata nele para interromper!",
+			},
+		},
+
+		Phase2 = {
+			At = 0.5,
+			SpeedMultiplier = 1.3,
+			CooldownMultiplier = 0.6,
+			Message = "Lord Chainsaw acelerou as motosserras!",
+		},
+
+		Drops = {},
+	},
 }
 
 function BossData.Get(enemyType)

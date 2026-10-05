@@ -49,6 +49,23 @@ return {
 		XP = 3230,
 		Gold = 650,
 	},
+	LordChainsaw = {
+		-- Chefe do Lord Chainsaw (modelo "Lord Chainsaw", colocado no mapa pelo usuário). Mesma conta do Rei Goblin
+		-- num level 40: vida x6,5, dano x1,6, XP e Gold x10. Especiais, fase 2 e cura no BossData; golpes no kit.
+		DisplayName = "Lord Chainsaw",
+		Template = "Lord Chainsaw",
+		Level = 40,
+		Health = 16000,
+		Damage = 220,
+		Speed = 19,
+		AggroRange = 55,
+		AttackRange = 6,
+		AttackCooldown = 0.9,
+		Combo = 4,
+		LeashRange = 90,
+		XP = 6230,
+		Gold = 1250,
+	},
 
 	-- ===== Demônios da cidade (level 20 a 100) =====
 	Ratazana = {

@@ -6,6 +6,8 @@
 --   lido pela barra do chefe no cliente), recompensa, missão e drops para todo mundo que ajudou (MinContribution)
 --   e renascer depois de RespawnTime.
 -- Atributos no modelo do chefe: Boss, BossAwake, BossPhase, BossDamage, OwnHitReaction (+ os de inimigo).
+-- Especiais (campo Specials do BossData): Slam, Rush, Fury, Chain (corrente que puxa) e BloodDrink (cura que dá para
+-- interromper). Slam e Rush com Destroy = true quebram o mapa (Destruction).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -24,6 +26,7 @@ local CombatRules = require(ServerScriptService:WaitForChild("CombatRules"))
 local CombatState = require(ServerScriptService:WaitForChild("CombatState"))
 local PlayerData = require(ServerScriptService:WaitForChild("PlayerData"))
 local QuestModule = require(ServerScriptService:WaitForChild("QuestModule"))
+local Destruction = require(ServerScriptService:WaitForChild("Destruction"))
 
 local TICK = 0.1
 local PUBLISH_INTERVAL = 0.25 -- placar de dano para os clientes
@@ -157,19 +160,21 @@ end
 
 -- ================= Dano, avisos e recompensa =================
 
--- Golpe especial num jogador: dano (guarda e parry valem), efeito, reação, atordoamento e empurrão
-local function hitPlayer(npc, entry, damage, velocity, stun, strong)
+-- Golpe especial num jogador: dano (guarda e parry valem), efeito, reação, atordoamento e empurrão (impulseTime
+-- segundos, padrão 0,25). Devolve true se o golpe entrou.
+local function hitPlayer(npc, entry, damage, velocity, stun, strong, impulseTime)
 	local _, result = CombatRules.DamageFromNPC(entry.Humanoid, damage, npc)
-	if result ~= "Hit" then return end
+	if result ~= "Hit" then return false end
 	CombatState.FX("Hit", { Character = entry.Character, Attacker = npc, Strong = strong == true })
-	if entry.Humanoid.Health <= 0 then return end
+	if entry.Humanoid.Health <= 0 then return true end
 	EnemyModule.PlayReaction(entry.Humanoid)
 	if stun and stun > 0 then
 		CombatRules.Stun(entry.Humanoid, stun, "Hit")
 	end
 	if velocity then
-		Remotes.CombatImpulse:FireClient(entry.Player, velocity, 0.25)
+		Remotes.CombatImpulse:FireClient(entry.Player, velocity, impulseTime or 0.25)
 	end
+	return true
 end
 
 local function announce(position, title, text)
@@ -272,6 +277,8 @@ local function runBoss(enemyType, config, npc, controller, state)
 	local summons = {}
 	local damageDirty = false
 	local lastReaction = 0
+	local drinking = nil -- BloodDrink em andamento: { Damage = dano levado desde o começo }
+	local drinksUsed = 0
 
 	local function alive()
 		return humanoid.Health > 0 and npc.Parent ~= nil and not sleeping
@@ -382,7 +389,7 @@ local function runBoss(enemyType, config, npc, controller, state)
 		if not sleeping or humanoid.Health <= 0 then return end
 		sleeping = false
 		npc:SetAttribute("BossAwake", true)
-		announce(root.Position, stats.DisplayName, "Levantou do trono!")
+		announce(root.Position, stats.DisplayName, throne.WakeMessage or "Levantou do trono!")
 		if throneTrack then
 			throneTrack:Stop(0.25)
 		end
@@ -496,6 +503,9 @@ local function runBoss(enemyType, config, npc, controller, state)
 			state.Damage[attackerId] = (state.Damage[attackerId] or 0) + lost
 			damageDirty = true
 		end
+		if drinking then
+			drinking.Damage += lost
+		end
 		if sleeping then
 			wake()
 		elseif health > 0 then
@@ -535,6 +545,9 @@ local function runBoss(enemyType, config, npc, controller, state)
 		task.wait(cfg.Telegraph)
 		if not alive() or stunnedHard() then return end
 		shockwave(center, cfg.Radius)
+		if cfg.Destroy then
+			Destruction.Blast(center + Vector3.new(0, 2, 0), cfg.Radius * 0.7, { Power = 60 })
+		end
 		for _, entry in playersInCircle(center, cfg.Radius) do
 			local away = flat(entry.Root.Position - center)
 			away = if away.Magnitude > 0.1 then away.Unit else flat(root.CFrame.LookVector).Unit
@@ -562,7 +575,12 @@ local function runBoss(enemyType, config, npc, controller, state)
 		controller.StartMover(direction * cfg.Speed, duration)
 		local hit = {}
 		local startTime = os.clock()
+		local brokenAt = nil -- quebra o mapa no caminho a cada 5 studs
 		while os.clock() - startTime < duration and alive() and not stunnedHard() do
+			if cfg.Destroy and (not brokenAt or (root.Position - brokenAt).Magnitude >= 5) then
+				brokenAt = root.Position
+				Destruction.Blast(root.Position + direction * 3, cfg.Width / 2 + 1, { Power = 60 })
+			end
 			for _, entry in playersInCircle(root.Position, cfg.Width / 2 + 2) do
 				if not hit[entry.Player] then
 					hit[entry.Player] = true
@@ -606,7 +624,115 @@ local function runBoss(enemyType, config, npc, controller, state)
 		task.wait(0.3)
 	end
 
-	local SPECIALS = { Slam = slam, Rush = rush, Fury = fury }
+	-- Corrente: linha até o alvo; o primeiro jogador na linha é puxado até o chefe e leva um corte ao chegar
+	local function chain(cfg, targetHrp)
+		local toTarget = flat(targetHrp.Position - root.Position)
+		if toTarget.Magnitude < 1 then return end
+		local direction = toTarget.Unit
+		local length = math.min(cfg.Range, toTarget.Magnitude + 3)
+		controller.SnapFacing(root.Position + direction)
+		warnBox(groundBelow(root.Position), direction, length, cfg.Width, cfg.Telegraph)
+		task.wait(cfg.Telegraph)
+		if not alive() or stunnedHard() then return end
+
+		-- O mais perto dele dentro da faixa
+		local caught, nearest = nil, math.huge
+		for _, entry in playersInBox(root.Position, direction, length, cfg.Width) do
+			local along = flat(entry.Root.Position - root.Position):Dot(direction)
+			if along < nearest then
+				caught, nearest = entry, along
+			end
+		end
+
+		-- A corrente: estica até onde pegou (ou até o fim da linha, se errou) e volta
+		local tip = if caught then caught.Root else nil
+		local missPoint = root.Position + direction * length
+		local link = Instance.new("Part")
+		link.Name = "BossChain"
+		link.Anchored = true
+		link.CanCollide = false
+		link.CanQuery = false
+		link.CanTouch = false
+		link.CastShadow = false
+		link.Material = Enum.Material.DiamondPlate
+		link.Color = Color3.fromRGB(120, 120, 128)
+		link.Parent = warnings
+		local function drawChain()
+			local from = root.Position + Vector3.new(0, 0.5, 0)
+			local to = if tip and tip.Parent then tip.Position else missPoint
+			local gap = (to - from).Magnitude
+			link.Size = Vector3.new(0.35, 0.35, math.max(gap, 0.1))
+			link.CFrame = CFrame.lookAt(from:Lerp(to, 0.5), to)
+		end
+		drawChain()
+
+		if not caught then
+			task.wait(0.3)
+			link:Destroy()
+			task.wait(0.3)
+			return
+		end
+		local pullTime = math.clamp((nearest - 3.5) / cfg.PullSpeed, 0.08, 0.6)
+		local pull = -direction * cfg.PullSpeed + Vector3.new(0, 4, 0)
+		local held = hitPlayer(npc, caught, stats.Damage * cfg.Damage, pull, pullTime + cfg.Stun, false, pullTime)
+		if not held then
+			link:Destroy()
+			task.wait(0.4)
+			return
+		end
+		local startTime = os.clock()
+		while os.clock() - startTime < pullTime and alive() do
+			drawChain()
+			RunService.Heartbeat:Wait()
+		end
+		link:Destroy()
+		if not alive() or stunnedHard() then return end
+		local push = direction * cfg.SlashKnockback + Vector3.new(0, cfg.SlashKnockback * 0.3, 0)
+		hitPlayer(npc, caught, stats.Damage * cfg.SlashDamage, push, cfg.Stun, true)
+		task.wait(0.4)
+	end
+
+	-- Beber sangue: para, fica vermelho e se cura aos poucos; apanhar demais nesse tempo interrompe (fica tonto)
+	local function bloodDrink(cfg)
+		drinksUsed += 1
+		if cfg.Message then
+			announce(root.Position, stats.DisplayName, cfg.Message)
+		end
+		local glow = Instance.new("Highlight")
+		glow.Name = "BloodDrink"
+		glow.FillColor = Color3.fromRGB(200, 0, 20)
+		glow.OutlineColor = Color3.fromRGB(255, 60, 60)
+		glow.FillTransparency = 0.55
+		glow.Parent = npc
+		local track = cfg.Animation and trackFor(cfg.Animation)
+		if track then
+			track:Play(0.1)
+		end
+		drinking = { Damage = 0 }
+		local steps = math.max(1, math.floor(cfg.Duration / 0.25))
+		local perStep = humanoid.MaxHealth * cfg.Heal / steps
+		local interrupted = false
+		for _ = 1, steps do
+			task.wait(0.25)
+			if not alive() or stunnedHard() then break end
+			if drinking.Damage >= humanoid.MaxHealth * cfg.InterruptDamage then
+				interrupted = true
+				break
+			end
+			humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + perStep)
+		end
+		drinking = nil
+		glow:Destroy()
+		if track and track.IsPlaying then
+			track:Stop(0.2)
+		end
+		if interrupted and alive() then
+			announce(root.Position, stats.DisplayName, "Interrompido!")
+			CombatState.Stun(humanoid, cfg.InterruptStun, true)
+		end
+	end
+
+	local SPECIALS = { Slam = slam, Rush = rush, Fury = fury, Chain = chain }
 
 	-- Longe: investida. Perto: pisão (sempre, se tiver 2+ jogadores em volta) ou fúria.
 	local function chooseSpecial(targetHrp)
@@ -624,6 +750,10 @@ local function runBoss(enemyType, config, npc, controller, state)
 		end
 		if furyCfg and dist <= furyCfg.Range then
 			table.insert(choices, "Fury")
+		end
+		local chainCfg = specials.Chain
+		if chainCfg and dist >= chainCfg.MinRange and dist <= chainCfg.Range then
+			table.insert(choices, "Chain")
 		end
 		if #choices == 0 then return nil end
 		return choices[rng:NextInteger(1, #choices)]
@@ -678,6 +808,15 @@ local function runBoss(enemyType, config, npc, controller, state)
 
 			if pendingRoar then
 				perform("Grito", roar)
+				continue
+			end
+
+			-- Vida baixa na fase 2: bebe sangue (fora da recarga dos especiais)
+			local drink = specials.BloodDrink
+			if drink and phase == 2 and drinksUsed < (drink.Uses or 1)
+				and humanoid.Health <= humanoid.MaxHealth * drink.At then
+				perform("Beber sangue", bloodDrink, drink)
+				nextSpecialAt = os.clock() + 1.5
 				continue
 			end
 
