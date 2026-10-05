@@ -30,6 +30,8 @@ Icons.Ids = {
 	guard = 80923888386725, -- escudo grande (guarda)
 	guardRegen = 75053545325504,
 	wall = 79724601418936, -- tijolos
+	crown = 101339961586863, -- coroa (chefes)
+	-- skillTree = 0, -- árvore com nós: falta o ID
 }
 
 -- Efeito (chaves do SkillTreeData.EffectInfo) -> ícone

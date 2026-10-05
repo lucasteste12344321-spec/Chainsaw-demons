@@ -32,7 +32,7 @@ MilestoneData.Tracks = {
 	},
 	{
 		Id = "Bosses",
-		Icon = "milestones", -- Icons (imagem; sem ela fica o Glyph)
+		Icon = "crown", -- Icons (imagem; sem ela fica o Glyph)
 		Name = "Boss Slayer",
 		Glyph = "王",
 		Text = "Help defeat %d bosses",
