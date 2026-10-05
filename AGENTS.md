@@ -340,9 +340,11 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 - Configuração nova: `Music` (liga/desliga o volume do `SoundService.LobbyMusic`, que é do usuário).
 - Menu e carregamento mais compactos (2026-10-05, pedido do usuário): fundo grafite com brilho laranja (círculos quase
   transparentes) e sombra atrás da coluna, sem listras nem dentes de serra; botões da coluna compactos (290 x 38, JOGAR
-  48) com o kanji num quadradinho; páginas em painel escuro de cantos redondos a 92% (`PAGE_SCALE`) no meio da altura;
+  48) com o kanji num quadradinho; páginas em painel escuro de cantos redondos a 92% (UIScale) no meio da altura;
   Builder Sans nos textos e botões (o nome do jogo continua Creepster). A tela de carregamento segue o mesmo visual
   (barra fina, anel girando, dicas atualizadas).
+- `MainMenu` está no limite de 200 registradores do Luau no escopo de cima ("Out of local registers" no Play com 195
+  locais). Hoje tem 185: variável nova vai numa tabela (`ClanChoice`, `MenuFont`) ou num bloco `do ... end`.
 - Tema do menu principal (2026-09-30, pedido do usuário): laranja e branco sobre cinza (`ACCENT`, `ACCENT_DARK`, `LIGHT`,
   `BACKDROP` no topo do `MainMenu`). O resto da interface continua com o vermelho do `UITheme`; `UITheme.panel` e
   `UITheme.button` aceitam a cor de destaque como parâmetro opcional.

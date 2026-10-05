@@ -38,23 +38,14 @@ local WHITE = Colors.Text
 local DIM = Colors.TextDim
 -- Tema do menu (2026-09-30, pedido do usuário): laranja e branco sobre cinza. O resto da interface segue o UITheme.
 local ACCENT = Color3.fromRGB(255, 122, 26) -- laranja
-local ACCENT_DARK = Color3.fromRGB(128, 52, 8)
 local LIGHT = Color3.fromRGB(255, 255, 255) -- no lugar do creme do tema (Colors.Gold)
-local BACKDROP = Color3.fromRGB(62, 62, 68) -- cinza do fundo
 -- Visual compacto (2026-10-05, pedido do usuário: "mais compacto e bonito"): Builder Sans nos textos e botões; o nome
 -- do jogo continua com a fonte de terror
-local FONT_HEAVY = Enum.Font.BuilderSansExtraBold
-local FONT_BOLD = Enum.Font.BuilderSansBold
-local FONT_MEDIUM = Enum.Font.BuilderSansMedium
+-- (numa tabela só: o script está perto do limite de 200 variáveis locais do Luau)
+local MenuFont = { Heavy = Enum.Font.BuilderSansExtraBold, Bold = Enum.Font.BuilderSansBold, Medium = Enum.Font.BuilderSansMedium }
 local BLACK = Colors.Black
-local GREEN = Colors.Green
-local PREVIEW_SPIN = 0.3 -- radianos por segundo da prévia girando sozinha na tela inicial
 local ROLL_FAST = 0.055 -- intervalo da roleta enquanto espera o servidor
-local ROLL_SLOWDOWN = 1.7 -- segundos freando até parar no clã sorteado
 local ROLL_TIMEOUT = 6
-local SAVED_FEEDBACK = 1.4
-
--- Câmeras da prévia (o boneco fica na origem, de frente para +Z)
 local CAMERA_FULL = CFrame.lookAt(Vector3.new(0, 0.3, 13.5), Vector3.new(0, -0.3, 0))
 local CAMERA_HEAD = CFrame.lookAt(Vector3.new(0, 1.8, 5.6), Vector3.new(0, 1.5, 0))
 
@@ -143,7 +134,7 @@ local curtain = new("Frame", {
 -- para o mapa nunca aparecer depois do carregamento.
 local background = new("Frame", {
 	Size = UDim2.fromScale(1, 1),
-	BackgroundColor3 = BACKDROP,
+	BackgroundColor3 = Color3.fromRGB(62, 62, 68),
 	BorderSizePixel = 0,
 	Active = true, -- segura os cliques (a ferramenta equipada não recebe)
 	Parent = screen,
@@ -166,20 +157,22 @@ for index = 1, 6 do
 	})
 end
 -- Sombra à esquerda (os botões leem melhor)
-local leftShade = new("Frame", {
-	Size = UDim2.fromScale(0.55, 1),
-	BackgroundColor3 = BLACK,
-	BorderSizePixel = 0,
-	Parent = background,
-})
-new("UIGradient", {
-	Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.35),
-		NumberSequenceKeypoint.new(0.7, 0.8),
-		NumberSequenceKeypoint.new(1, 1),
-	}),
-	Parent = leftShade,
-})
+do
+	local leftShade = new("Frame", {
+		Size = UDim2.fromScale(0.55, 1),
+		BackgroundColor3 = BLACK,
+		BorderSizePixel = 0,
+		Parent = background,
+	})
+	new("UIGradient", {
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.35),
+			NumberSequenceKeypoint.new(0.7, 0.8),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Parent = leftShade,
+	})
+end
 -- Kanji gigante de fundo (悪魔 = demônio), bem apagado atrás da prévia
 label({
 	AnchorPoint = Vector2.new(1, 0.5),
@@ -256,7 +249,7 @@ label({
 	Position = UDim2.new(0.5, 0, 0, 584),
 	Size = UDim2.fromOffset(560, 40),
 	TextXAlignment = Enum.TextXAlignment.Center,
-	Font = FONT_HEAVY,
+	Font = MenuFont.Heavy,
 	TextSize = 28,
 	TextStrokeTransparency = 0.6,
 	Text = upper(player.DisplayName),
@@ -268,7 +261,7 @@ local clanLine = label({
 	Size = UDim2.fromOffset(560, 24),
 	TextXAlignment = Enum.TextXAlignment.Center,
 	RichText = true,
-	Font = FONT_BOLD,
+	Font = MenuFont.Bold,
 	TextSize = 16,
 	Parent = stage,
 })
@@ -388,7 +381,7 @@ end)
 RunService.RenderStepped:Connect(function(dt)
 	if not screen.Enabled or not preview or not preview.Parent then return end
 	if previewSpin and not draggingPreview then
-		previewYaw += PREVIEW_SPIN * dt
+		previewYaw += 0.3 * dt
 	end
 	preview:PivotTo(CFrame.Angles(0, previewYaw, 0))
 end)
@@ -428,7 +421,7 @@ local function slabButton(parent, order, glyph, textValue, primary)
 		Parent = parent,
 	})
 	round(button, UDim.new(0, 10))
-	local stroke = UITheme.stroke(button, if primary then ACCENT_DARK else WHITE, 1, if primary then 0.4 else 0.9)
+	local stroke = UITheme.stroke(button, if primary then Color3.fromRGB(128, 52, 8) else WHITE, 1, if primary then 0.4 else 0.9)
 	if primary then
 		UITheme.gradient(button, { Color3.fromRGB(255, 255, 255), Color3.fromRGB(215, 205, 198) })
 	end
@@ -463,7 +456,7 @@ local function slabButton(parent, order, glyph, textValue, primary)
 	local textLabel = label({
 		Position = UDim2.fromOffset(textX, 0),
 		Size = UDim2.new(1, -(textX + 40), 1, 0),
-		Font = FONT_HEAVY,
+		Font = MenuFont.Heavy,
 		TextSize = if primary then 20 else 16,
 		TextColor3 = WHITE,
 		Text = textValue,
@@ -502,7 +495,7 @@ local function badge(parent)
 	local value = label({
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
-		Font = FONT_HEAVY,
+		Font = MenuFont.Heavy,
 		TextSize = 12,
 		Parent = frame,
 	})
@@ -511,7 +504,6 @@ end
 
 -- Cabeçalho das páginas: título, subtítulo e o × de voltar. Painel escuro de cantos redondos, a 92% do tamanho do
 -- projeto (o conteúdo continua nas mesmas posições) e no meio da altura.
-local PAGE_SCALE = 0.92
 local function makePage(titleText, subtitleText)
 	local page = new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
@@ -526,11 +518,11 @@ local function makePage(titleText, subtitleText)
 	})
 	round(page, UDim.new(0, 14))
 	UITheme.stroke(page, WHITE, 1, 0.88)
-	new("UIScale", { Scale = PAGE_SCALE, Parent = page })
+	new("UIScale", { Scale = 0.92, Parent = page })
 	local title = label({
 		Position = UDim2.fromOffset(24, 18),
 		Size = UDim2.fromOffset(420, 34),
-		Font = FONT_HEAVY,
+		Font = MenuFont.Heavy,
 		TextSize = 28,
 		Text = titleText,
 		Parent = page,
@@ -538,7 +530,7 @@ local function makePage(titleText, subtitleText)
 	local subtitle = label({
 		Position = UDim2.fromOffset(25, 54),
 		Size = UDim2.fromOffset(440, 18),
-		Font = FONT_MEDIUM,
+		Font = MenuFont.Medium,
 		TextSize = 14,
 		TextColor3 = DIM,
 		Text = subtitleText,
@@ -585,7 +577,7 @@ end
 
 -- Botão comum (UITheme.button) com Builder Sans (antes era a fonte de pincel)
 local function actionButton(parent, props, color)
-	props.Font = props.Font or FONT_HEAVY
+	props.Font = props.Font or MenuFont.Heavy
 	props.TextSize = math.min(props.TextSize or 18, 18)
 	props.Parent = parent
 	return UITheme.button(props, color or ACCENT, ACCENT)
@@ -624,7 +616,7 @@ UITheme.autoScale(confirmPanel, 500, 260)
 local confirmTitle = label({
 	Position = UDim2.fromOffset(24, 18),
 	Size = UDim2.fromOffset(412, 36),
-	Font = FONT_HEAVY,
+	Font = MenuFont.Heavy,
 	TextSize = 24,
 	ZIndex = 52,
 	Parent = confirmPanel,
@@ -702,7 +694,7 @@ local statusLabel = label({
 	Position = UDim2.fromOffset(2, 248),
 	Size = UDim2.fromOffset(440, 20),
 	RichText = true,
-	Font = FONT_BOLD,
+	Font = MenuFont.Bold,
 	TextSize = 16,
 	TextColor3 = LIGHT,
 	Text = "Carregando seus dados...",
@@ -733,7 +725,7 @@ UITheme.tooltip(passesButton, UITheme.tipText("Passes e VIP", "Benefícios perma
 label({
 	Position = UDim2.fromOffset(2, 590),
 	Size = UDim2.fromOffset(440, 16),
-	Font = FONT_MEDIUM,
+	Font = MenuFont.Medium,
 	TextSize = 12,
 	TextColor3 = DIM,
 	Text = "Enter: jogar   ·   no jogo, o botão ≡ da HUD tem \"Menu principal\"",
@@ -1059,7 +1051,7 @@ for index, tab in TABS do
 		Size = UDim2.fromOffset(158, 38),
 		BackgroundColor3 = CARD,
 		AutoButtonColor = false,
-		Font = FONT_HEAVY,
+		Font = MenuFont.Heavy,
 		TextSize = 16,
 		TextColor3 = DIM,
 		Text = tab.Text,
@@ -1148,7 +1140,7 @@ end
 local clanName = label({
 	Position = UDim2.fromOffset(166, 14),
 	Size = UDim2.fromOffset(320, 40),
-	Font = FONT_HEAVY,
+	Font = MenuFont.Heavy,
 	TextSize = 30,
 	Text = "",
 	Parent = clanCard,
@@ -1534,7 +1526,7 @@ local function runReel(onDone)
 	if result then
 		local elapsed = 0
 		local interval = ROLL_FAST
-		while elapsed < ROLL_SLOWDOWN do
+		while elapsed < 1.7 do
 			local pick = clans[math.random(1, #clans)]
 			if pick.Id ~= result then
 				showClan(pick.Id, true)
@@ -1705,7 +1697,7 @@ end)
 Remotes.CodeResult.OnClientEvent:Connect(function(ok, message)
 	redeeming = false
 	setButtonEnabled(redeemButton, true)
-	codeResult.TextColor3 = if ok then GREEN else ACCENT
+	codeResult.TextColor3 = if ok then Colors.Green else ACCENT
 	codeResult.Text = tostring(message or "")
 	if ok then
 		codeBox.Text = ""
@@ -2005,7 +1997,7 @@ saveButton.MouseButton1Click:Connect(function()
 	while os.clock() < deadline and (not isCreated() or not sameAppearance(draft, readAppearance())) do
 		task.wait(0.1)
 	end
-	task.wait(if wasCreating then 0.3 else SAVED_FEEDBACK)
+	task.wait(if wasCreating then 0.3 else 1.4)
 	saving = false
 	saveButton.Text = if creating then "CRIAR" else "SALVAR"
 	refreshDirty()
