@@ -494,7 +494,8 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
 - `HUB_GUI`: sem molduras/degradês pesados, cantos arredondados, contorno quase transparente e fonte Builder Sans
   (`Enum.Font.BuilderSans*`) nos textos e números; kanji continuam na fonte do tema.
 - Embaixo à esquerda: selo do level + nome/clã/caminho + gold numa linha; vida com o número dentro; fôlego, tempo de
-  vida (Caçador) e XP em linhas finas. Os bônus em pílulas saíram da tela: estão no balão do level (e no inventário).
+  vida (Caçador) e XP em linhas finas. Os bônus voltaram (pedido do usuário) numa linha só de chips pequenos em cima
+  da vida (`Bonuses`; até 5 e um "+N" com o resto no balão); no balão do level também aparecem.
 - Linha de baixo única: estilos (só as casas com estilo) | F Z X C Q | V B. A tecla fica no canto de cada casa.
 - Menus em botões redondos (M, G, pescaria 釣, passes ★, configurações) numa coluna colada no lado esquerdo do minimapa
   (PC; a posição vem do `Minimap.Holder`; em cima do minimapa fica o `NavigationCard` dele, que se sobrepunha ao grupo

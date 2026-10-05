@@ -2,8 +2,8 @@
 --   sem molduras nem degradês pesados, cantos arredondados, fundo escuro translúcido e um destaque vermelho só no que
 --   importa agora (estilo na mão, guarda levantada, vida baixa). Fonte Builder Sans nos textos e números.
 --   embaixo à esquerda (no celular, em cima à esquerda): level, nome/clã/caminho e gold numa linha; a vida com o número
---     dentro da barra; fôlego, tempo de vida (só Caçador) e XP em linhas finas. Os bônus (árvore + itens) saíram da
---     tela: aparecem no balão do level e no inventário.
+--     dentro da barra; fôlego, tempo de vida (só Caçador) e XP em linhas finas. Em cima disso, os bônus (árvore +
+--     itens) numa linha só de chips pequenos (até 5 e um "+N" com o resto no balão).
 --   embaixo no centro, numa linha só: estilos de combate (1 a 5, só as casas com estilo), as habilidades (F guarda,
 --     Z/X/C do estilo, Q dash) e os poderes do caminho (V/B). A tecla fica no canto de cada casa.
 --   menus em botões redondos pequenos (árvore M, inventário G, pescaria, passes e configurações) numa coluna colada no
@@ -432,6 +432,121 @@ local function layoutVitals(showLifespan)
 	vitals.Size = UDim2.fromOffset(VITALS_WIDTH, if showLifespan then 67 else 59)
 end
 layoutVitals(false)
+
+-- ================= Bônus: uma linha de chips pequenos em cima da vida (no celular, embaixo) =================
+
+local MAX_BUFF_CHIPS = 5
+local buffRow = new("Frame", {
+	Name = "Bonuses",
+	AnchorPoint = if touchOnly then Vector2.new(0, 0) else Vector2.new(0, 1),
+	Position = if touchOnly then UDim2.new(0, 0, 1, 6) else UDim2.fromOffset(0, -6),
+	Size = UDim2.new(1, 0, 0, 18),
+	BackgroundTransparency = 1,
+	Parent = vitals,
+})
+UITheme.list(buffRow, 4, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
+
+local buffChips = {}
+for index = 1, MAX_BUFF_CHIPS + 1 do
+	local frame = round(new("Frame", {
+		Size = UDim2.fromOffset(0, 18),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundColor3 = BLACK,
+		BackgroundTransparency = 0.45,
+		BorderSizePixel = 0,
+		LayoutOrder = index,
+		Visible = false,
+		Parent = buffRow,
+	}))
+	UITheme.padding(frame, 0, 7, 0, 6)
+	UITheme.list(frame, 3, Enum.FillDirection.Horizontal, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
+	local chip = {
+		Frame = frame,
+		Icon = text({
+			Size = UDim2.fromOffset(0, 18),
+			AutomaticSize = Enum.AutomaticSize.X,
+			Font = Fonts.Title,
+			TextSize = 11,
+			LayoutOrder = 1,
+			Parent = frame,
+		}),
+		Value = text({
+			Size = UDim2.fromOffset(0, 18),
+			AutomaticSize = Enum.AutomaticSize.X,
+			Font = FONT_HEAVY,
+			TextSize = 11,
+			LayoutOrder = 2,
+			Parent = frame,
+		}),
+		Tip = nil,
+	}
+	-- Balão: o nome do bônus e o que ele faz (no "+N", a lista dos que não couberam)
+	UITheme.tooltip(frame, function()
+		return chip.Tip
+	end)
+	buffChips[index] = chip
+end
+
+local function updateBonuses()
+	local effects = currentBonuses()
+	local shown = {}
+	for _, key in SkillTreeData.EffectOrder do
+		if effects[key] ~= nil then
+			table.insert(shown, key)
+		end
+	end
+	for index, chip in buffChips do
+		local key = shown[index]
+		if index <= MAX_BUFF_CHIPS and key then
+			local info = SkillTreeData.EffectInfo[key] or {}
+			chip.Icon.Visible = true
+			chip.Icon.Text = info.Icon or "•"
+			chip.Value.Text = SkillTreeData.ShortValue(key, effects[key])
+			chip.Tip = UITheme.tipText(info.Name or key, SkillTreeData.EffectText(key, effects[key]))
+			chip.Frame.Visible = true
+		elseif index == MAX_BUFF_CHIPS + 1 and #shown > MAX_BUFF_CHIPS then
+			local lines = {}
+			for i = MAX_BUFF_CHIPS + 1, #shown do
+				local rest = shown[i]
+				local info = SkillTreeData.EffectInfo[rest] or {}
+				table.insert(lines, `{info.Icon or "•"} {SkillTreeData.EffectText(rest, effects[rest])}`)
+			end
+			chip.Icon.Visible = false
+			chip.Value.Text = `+{#shown - MAX_BUFF_CHIPS}`
+			chip.Tip = UITheme.tipText("Mais bônus", table.concat(lines, "\n"))
+			chip.Frame.Visible = true
+		else
+			chip.Frame.Visible = false
+		end
+	end
+end
+
+-- Os bônus mudam com os Stats e os atributos Tree<Efeito> (árvore e itens); várias mudanças juntas viram uma só
+local bonusQueued = false
+local function queueBonuses()
+	if bonusQueued then return end
+	bonusQueued = true
+	task.defer(function()
+		bonusQueued = false
+		updateBonuses()
+	end)
+end
+local function watchStat(value)
+	if value:IsA("IntValue") then
+		value.Changed:Connect(queueBonuses)
+	end
+	queueBonuses()
+end
+statsFolder.ChildAdded:Connect(watchStat)
+for _, value in statsFolder:GetChildren() do
+	watchStat(value)
+end
+player.AttributeChanged:Connect(function(name)
+	if string.sub(name, 1, 4) == "Tree" then
+		queueBonuses()
+	end
+end)
+updateBonuses()
 
 -- ================= Linha de baixo: estilos, habilidades e poderes =================
 
@@ -1587,7 +1702,7 @@ xp.Changed:Connect(function(value)
 	lastXP = value
 	updateXP()
 	if delta > 0 then
-		UITheme.floatText(vitals, `+{delta} XP`, RED_BRIGHT, UDim2.fromOffset(70, -2))
+		UITheme.floatText(vitals, `+{delta} XP`, RED_BRIGHT, UDim2.fromOffset(70, if touchOnly then -2 else -26))
 	end
 end)
 
