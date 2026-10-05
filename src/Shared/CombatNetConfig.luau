@@ -10,6 +10,9 @@ return table.freeze({
 	OriginTolerance = 6,
 	OriginLookback = 0.35, -- quanto do caminho guardado antes do envio vale para conferir a origem
 	DashTimestampSlack = 0.15, -- folga a mais para o pedido de dash chegar (oscilação de ping)
+	-- Tolerância da origem do dash (o golpe usa OriginTolerance). O personagem é do cliente (network ownership): a
+	-- conferência só barra origem absurda; correndo com ping alto, 6 studs recusava dash de verdade.
+	DashOriginTolerance = 14,
 	DashCost = 20,
 	DashDistance = 35,
 	DashTime = 0.3,

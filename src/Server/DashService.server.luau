@@ -9,6 +9,12 @@ local Rewind = require(script.Parent:WaitForChild("CombatRewind"))
 local History = require(script.Parent:WaitForChild("PositionHistory"))
 local states = {}
 
+-- Os scripts do dash mudam juntos: avisa no Output se o Studio ficou com uma cópia antiga de algum deles
+if type(History.DistanceToPath) ~= "function" or Config.OriginLookback == nil or Config.DashOriginTolerance == nil
+	or type(CombatState.InStance) ~= "function" then
+	warn("[DashService] PositionHistory, CombatNetConfig ou CombatState estão na versão antiga: cole as versões novas")
+end
+
 local function effect(player, name)
 	local value = player:GetAttribute("Tree" .. name)
 	return if History.Finite(value) then value else 0
@@ -110,10 +116,15 @@ local function onDash(player, character, seq, direction, timestamp, origin)
 		or direction.Magnitude < 0.9 or direction.Magnitude > 1.1 then deny("Direção"); return end
 	local _, sentAt = Rewind.ResolveTime(player, timestamp, now, Config.DashTimestampSlack)
 	if not sentAt then deny("Horário"); return end
-	-- Correndo, o personagem anda enquanto o pedido viaja: a tolerância cresce com a velocidade (até 10 studs)
+	-- Correndo, o personagem anda enquanto o pedido viaja: a tolerância cresce com a velocidade (até 12 studs a mais)
 	local velocity = root.AssemblyLinearVelocity
-	local extraTolerance = math.min(10, Vector3.new(velocity.X, 0, velocity.Z).Magnitude * (grace + 0.1))
-	if not Rewind.Origin(character, sentAt, origin, extraTolerance) then deny("Posição"); return end
+	local tolerance = (Config.DashOriginTolerance or 14)
+		+ math.min(12, Vector3.new(velocity.X, 0, velocity.Z).Magnitude * (grace + 0.15))
+	local validOrigin, distance = Rewind.Origin(character, sentAt, origin, tolerance)
+	if not validOrigin then
+		deny(if distance then string.format("Posição (%.1f studs de %.1f)", distance, tolerance) else "Posição (sem histórico)")
+		return
+	end
 	local cost = Config.DashCost * math.max(0, 1 - effect(player, "DashCost"))
 	if state.Stamina < cost - 0.5 then deny("Fôlego"); return end
 	direction = Vector3.new(direction.X, 0, direction.Z).Unit

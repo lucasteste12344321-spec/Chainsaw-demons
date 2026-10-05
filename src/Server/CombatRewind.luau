@@ -88,13 +88,14 @@ end
 -- A origem que o cliente mandou está perto do caminho que o servidor viu o personagem fazer (de OriginLookback antes
 -- do envio até agora)? Antes comparava com um ponto só, na hora do envio: a posição do personagem chega ao servidor com
 -- o atraso do ping, e correndo com ping alto a diferença passava da tolerância (dash recusado e puxado para trás).
--- extraTolerance (opcional): studs a mais (o dash soma a distância que o personagem anda no atraso do ping).
-function Rewind.Origin(character, timestamp, frame, extraTolerance)
+-- tolerance (opcional): limite no lugar de OriginTolerance (o dash usa um maior, somado ao que o personagem anda no
+-- atraso do ping). Devolve (frame ou nil, distância medida ou nil sem histórico), a distância para diagnóstico.
+function Rewind.Origin(character, timestamp, frame, tolerance)
 	if not History.FrameValid(frame) then return nil end
 	local entry = tracked[character]
 	local distance = entry and entry.History:DistanceToPath(timestamp - Config.OriginLookback, frame.Position)
-	if not distance or distance > Config.OriginTolerance + (extraTolerance or 0) then return nil end
-	return frame
+	if not distance or distance > (tolerance or Config.OriginTolerance) then return nil, distance end
+	return frame, distance
 end
 
 return Rewind
