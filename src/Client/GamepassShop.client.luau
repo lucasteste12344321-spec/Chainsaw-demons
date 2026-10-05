@@ -15,11 +15,14 @@ local gui = UI.screen("GamepassShop", 60, playerGui)
 local open = UI.new("BindableEvent", {Name = "Toggle", Parent = gui})
 local shade = UI.new("TextButton", {Name = "Shade", Parent = gui, Size = UDim2.fromScale(1,1), BackgroundColor3 = C.Black, BackgroundTransparency = .35, Text = "", Visible = false, AutoButtonColor = false})
 local panel = UI.panel({Name = "Shop", Parent = gui, AnchorPoint = Vector2.new(.5,.5), Position = UDim2.fromScale(.5,.5), Size = UDim2.fromOffset(580,570), Visible = false})
-if not UI.isTouch() then UI.autoScale(panel, 640, 630) end
+
 UI.label({Parent=panel,Position=UDim2.fromOffset(20,12),Size=UDim2.fromOffset(440,34),Text="PASSES & VIP",Font=UI.Fonts.Display,TextSize=25})
 local close = UI.button({Name="Close",Parent=panel,Position=UDim2.new(1,-50,0,14),Size=UDim2.fromOffset(32,30),Text="X"})
 UI.label({Parent=panel,Position=UDim2.fromOffset(20,49),Size=UDim2.new(1,-40,0,26),Text="Compra única · benefícios permanentes",TextSize=13,TextColor3=C.TextDim})
 local cards, info = {}, {}
+local EXTRA = (#Config.Order - 3) * 106 -- cada passe a mais empurra os botões de baixo
+panel.Size = UDim2.fromOffset(580, 570 + EXTRA)
+if not UI.isTouch() then UI.autoScale(panel, 640, 630 + EXTRA) end
 local state = {Owned={}, Ready=false, Restricted=true}
 local prompting = false
 local refresh
@@ -50,19 +53,19 @@ for i, key in Config.Order do
 		if refresh then refresh() end
 	end) end
 end
-local daily = UI.button({Name="DailyVIP",Parent=panel,Position=UDim2.fromOffset(20,405),Size=UDim2.fromOffset(260,34),Text="5 GIROS DIÁRIOS",TextSize=12})
-local server = UI.button({Name="VIPServer",Parent=panel,Position=UDim2.fromOffset(300,405),Size=UDim2.fromOffset(260,34),Text="MEU SERVIDOR VIP",TextSize=12})
-local status = UI.label({Name="DailyStatus",Parent=panel,Position=UDim2.fromOffset(20,446),Size=UDim2.new(1,-40,0,30),TextSize=12,TextColor3=C.TextDim,TextWrapped=true})
-local details = UI.button({Name="Details",Parent=panel,Position=UDim2.fromOffset(20,486),Size=UDim2.fromOffset(340,34),Text="CHANCES E REGRAS DOS BENEFÍCIOS",TextSize=12},C.PanelLight)
-local recheck = UI.button({Name="Refresh",Parent=panel,Position=UDim2.fromOffset(376,486),Size=UDim2.fromOffset(184,34),Text="ATUALIZAR PASSES",TextSize=11},C.PanelLight)
-UI.label({Parent=panel,Position=UDim2.fromOffset(20,529),Size=UDim2.new(1,-40,0,24),Text="O preço final aparece na confirmação oficial do Roblox.",TextSize=11,TextColor3=C.TextDim})
+local daily = UI.button({Name="DailyVIP",Parent=panel,Position=UDim2.fromOffset(20,405+EXTRA),Size=UDim2.fromOffset(260,34),Text="5 GIROS DIÁRIOS",TextSize=12})
+local server = UI.button({Name="VIPServer",Parent=panel,Position=UDim2.fromOffset(300,405+EXTRA),Size=UDim2.fromOffset(260,34),Text="MEU SERVIDOR VIP",TextSize=12})
+local status = UI.label({Name="DailyStatus",Parent=panel,Position=UDim2.fromOffset(20,446+EXTRA),Size=UDim2.new(1,-40,0,30),TextSize=12,TextColor3=C.TextDim,TextWrapped=true})
+local details = UI.button({Name="Details",Parent=panel,Position=UDim2.fromOffset(20,486+EXTRA),Size=UDim2.fromOffset(340,34),Text="CHANCES E REGRAS DOS BENEFÍCIOS",TextSize=12},C.PanelLight)
+local recheck = UI.button({Name="Refresh",Parent=panel,Position=UDim2.fromOffset(376,486+EXTRA),Size=UDim2.fromOffset(184,34),Text="ATUALIZAR PASSES",TextSize=11},C.PanelLight)
+UI.label({Parent=panel,Position=UDim2.fromOffset(20,529+EXTRA),Size=UDim2.new(1,-40,0,24),Text="O preço final aparece na confirmação oficial do Roblox.",TextSize=11,TextColor3=C.TextDim})
 local oddsPanel = UI.panel({Name="Odds",Parent=gui,AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromOffset(580,570),Visible=false})
 if not UI.isTouch() then UI.autoScale(oddsPanel,640,630) end
 local back = UI.button({Parent=oddsPanel,Position=UDim2.fromOffset(16,12),Size=UDim2.fromOffset(130,32),Text="VOLTAR",TextSize=12})
 local scroll = UI.new("ScrollingFrame",{Parent=oddsPanel,Position=UDim2.fromOffset(16,54),Size=UDim2.new(1,-32,1,-70),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=5,AutomaticCanvasSize=Enum.AutomaticSize.Y,CanvasSize=UDim2.new()})
 local oddsText = UI.label({Parent=scroll,Size=UDim2.new(1,-14,0,0),AutomaticSize=Enum.AutomaticSize.Y,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top,TextSize=13})
 -- Celular: o painel fica com a altura da tela e o conteúdo rola (botões no tamanho normal, sem encolher)
-UI.fitTouchPanel(panel, 640, 570)
+UI.fitTouchPanel(panel, 640, 570 + EXTRA)
 UI.fitTouchPanel(oddsPanel, 640, 570, scroll)
 refresh = function()
 	for _, key in Config.Order do

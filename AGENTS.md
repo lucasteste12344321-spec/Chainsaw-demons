@@ -74,6 +74,8 @@ Se precisar de algo num arquivo que não é seu, escreva na seção "Pedidos" no
 | TutorialAction | C→S | action, value ("Step" n, "Finish", "Skip", "Restart", "Dummy" bool; ver "Tutorial") |
 | EquipStyle | C→S | styleName, equip (guarda/equipa um estilo de combate pelo inventário; com a fusão do contrato fica travado) |
 | ContractAction | C→S | action ("Fuse"), npcId (funde o contrato com o estilo no Mestre dos Pactos; ContractService) |
+| SaveSlots | S→C | data: `{ Slots, Unlocked, Offline, PassesReady, Count }` (saves da conta, para a tela de escolha) |
+| SaveSlotAction | C→S | action, slot ("List", "Select", "Delete" na tela de saves; "Switch" troca de save no jogo) |
 | Notify | S→C | title, text, duration? |
 | Announcement | S→C | title, text, duration? |
 | SelectTeam | C→S | teamName |
@@ -667,6 +669,21 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   celular o painel não encolhe inteiro (botões ficavam pequenos para o dedo): fica na escala que cabe na largura, com a
   altura da tela, e o conteúdo rola (sem `rolagem`, um ScrollingFrame novo recebe tudo). Usado no aparelho (Device),
   painel VIP e loja de passes, que também ganharam botões maiores no toque (42–44 px). No PC continua o `autoScale`.
+
+## Saves (Claude, 2026-10-05, pedido do usuário: tela "CHOOSE A SAVE" antes do menu)
+- 3 saves por conta (`PlayerData.SlotCount`), **tudo separado** (level, Gold, clã, itens, caminho, códigos, recompensa do
+  grupo, VIP diário). Save 1 grátis com a chave antiga `Player_<id>` (ninguém perdeu progresso); 2 e 3 em
+  `Player_<id>_S<n>`, liberados pelo passe `ExtraSlots` (`GamepassConfig`, Id 0 até o usuário criar o passe).
+- O perfil **só carrega depois da escolha** (`SaveSlotAction` "Select" → `setupPlayer(player, slot)`); o atributo
+  `SaveSlot` no player marca o save carregado. Serviços que precisam do perfil usam `PlayerData.WaitForProfile` ou o
+  `ProfileLoaded` (sem tempo limite curto: o jogador pode ficar minutos escolhendo).
+- Cliente `src/Client/SaveSelect.client.luau` (ScreenGui `SaveSelect`, DisplayOrder 40): cartões com level, caminho,
+  prévia 3D (StarterCharacter + `AppearanceData.Apply`), clã, contrato/infernal e Gold; NEW SLOT; LOCKED com compra do
+  passe; DELETE com confirmação. A tela de carregamento sai quando a SaveSelect existe; o `MainMenu` espera o `SaveSlot`.
+- Trocar de save no jogo: botão CHANGE SAVE no menu principal → "Switch" (salva e `TeleportAsync` para o mesmo lugar;
+  no Studio só avisa).
+- Idioma: o jogo passa a ter o **inglês** como língua de origem (tradução automática do Roblox para os outros). Texto
+  novo de jogador em inglês; os antigos estão sendo traduzidos.
 
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada

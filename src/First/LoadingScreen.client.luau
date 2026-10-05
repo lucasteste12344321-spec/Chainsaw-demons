@@ -405,17 +405,15 @@ do
 	end, 15)
 end
 
--- 4. Dados salvos (o servidor cria o leaderstats depois de carregar o perfil) e caminho
+-- 4. Saves: o perfil só carrega depois da escolha na tela de saves (SaveSelect.client, por baixo desta). Espera a
+-- tela de saves existir (ou os dados, se o save já foi escolhido) e sai: a escolha acontece com esta tela fora.
 do
-	local progress = stage("Carregando seus dados...", 0.8, 0.95)
+	local progress = stage("Loading your saves...", 0.8, 0.95)
 	waitUntil(function()
 		local leaderstats = player:FindFirstChild("leaderstats")
-		return leaderstats ~= nil and leaderstats:FindFirstChild("Level") ~= nil
+		return (leaderstats ~= nil and leaderstats:FindFirstChild("Level") ~= nil)
+			or playerGui:FindFirstChild("SaveSelect") ~= nil
 	end, 15)
-	progress(0.6)
-	waitUntil(function()
-		return player:GetAttribute("Path") ~= nil
-	end, 3)
 	progress(1)
 end
 

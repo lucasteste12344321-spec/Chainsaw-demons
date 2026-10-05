@@ -12,6 +12,8 @@ local NAMES = {
 	"DailyAction", -- C->S (action, index) missões diárias: "State" | "Claim" (índice) | "Bonus" (DailyService)
 	"DailyState", -- S->C (data) missões do dia, sequência e horários
 	"DeviceAlert", -- S->C (title, text, kind) aviso no aparelho (tablet do Caçador / Kog do Infernal): chefe global
+	"SaveSlots", -- S->C (data) saves da conta para a tela de escolha (PlayerData; SaveSelect.client)
+	"SaveSlotAction", -- C->S (action, slot) "List" | "Select" | "Delete" (na tela de saves) | "Switch" (trocar no jogo)
 	-- Dados do jogador / progressão
 	"StatusUpgrade", -- C->S (statName) sistema antigo de pontos de status (não usado; a árvore substituiu)
 	"StatusReset", -- C->S () reseta a árvore de habilidades: devolve os pontos gastos, custa Gold

@@ -703,7 +703,7 @@ local statusLabel = label({
 
 local buttonList = new("Frame", {
 	Position = UDim2.fromOffset(0, 284),
-	Size = UDim2.fromOffset(300, 300),
+	Size = UDim2.fromOffset(300, 340),
 	BackgroundTransparency = 1,
 	Parent = home,
 })
@@ -721,9 +721,20 @@ UITheme.tooltip(clanButton, function()
 end)
 UITheme.tooltip(codesButton, UITheme.tipText("Códigos", "Resgate códigos para ganhar giros de clã"))
 UITheme.tooltip(passesButton, UITheme.tipText("Passes e VIP", "Benefícios permanentes, giros diários e servidor VIP"))
+-- Trocar de save (PlayerData "Switch": salva e entra num servidor novo, onde a tela de saves abre de novo).
+-- Num bloco: o script está perto do limite de variáveis locais.
+do
+	local switchButton = slabButton(buttonList, 7, "替", "CHANGE SAVE")
+	UITheme.tooltip(switchButton, UITheme.tipText("Change save", "Saves this character and opens the save list again"))
+	switchButton.MouseButton1Click:Connect(function()
+		confirm("CHANGE SAVE?", "Your progress is saved and you will rejoin the game to pick another save.", "CHANGE", "CANCEL", function()
+			Remotes.SaveSlotAction:FireServer("Switch")
+		end)
+	end)
+end
 
 label({
-	Position = UDim2.fromOffset(2, 590),
+	Position = UDim2.fromOffset(2, 612),
 	Size = UDim2.fromOffset(440, 16),
 	Font = MenuFont.Medium,
 	TextSize = 12,
@@ -2137,6 +2148,10 @@ if player:GetAttribute("SettingMusic") ~= nil then
 end
 
 task.spawn(function()
+	-- O perfil só carrega depois da tela de saves (SaveSelect.client): espera a escolha antes de contar o tempo
+	while player:GetAttribute("SaveSlot") == nil do
+		player:GetAttributeChangedSignal("SaveSlot"):Wait()
+	end
 	local leaderstats = player:WaitForChild("leaderstats", LOAD_TIMEOUT)
 	if leaderstats then
 		leaderstats:WaitForChild("Level", 5)
@@ -2183,6 +2198,9 @@ end
 local loadingDeadline = os.clock() + 40
 while playerGui:FindFirstChild("LoadingScreen") and os.clock() < loadingDeadline do
 	task.wait(0.05)
+end
+while player:GetAttribute("SaveSlot") == nil do
+	player:GetAttributeChangedSignal("SaveSlot"):Wait()
 end
 local dataDeadline = os.clock() + LOAD_TIMEOUT
 while not ready and os.clock() < dataDeadline do

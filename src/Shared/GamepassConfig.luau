@@ -1,11 +1,13 @@
 -- Fill these with GAME PASS IDs from this experience (not developer product IDs).
 -- Zero leaves that pass unavailable; never opens a purchase prompt for a placeholder.
 local Config = {}
-Config.Order = { "DoubleXP", "DoubleGold", "VIP" }
+Config.Order = { "DoubleXP", "DoubleGold", "VIP", "ExtraSlots" }
 Config.Passes = {
 	DoubleXP = { Id = 2006715499, Name = "2× XP", Description = "Dobra o XP de combate, missões, eventos e pesca. Acumula com o bônus do clã. Não inclui códigos nem maestria." },
 	DoubleGold = { Id = 2006961470, Name = "2× Gold", Description = "Dobra o Gold de combate, missões, eventos e venda de peixes. Não multiplica códigos, reembolsos ou valores de admin." },
 	VIP = { Id = 2005803494, Name = "VIP", Description = "2× chance de itens dos chefes, 5 giros de clã por dia e seu servidor reservado. Os passes de XP e Gold são vendidos separadamente." },
+	-- Saves extras (PlayerData): libera o 2º e o 3º save. Id 0 = ainda não criado (o cartão mostra "EM BREVE").
+	ExtraSlots = { Id = 0, Name = "+2 Save Slots", Description = "Unlocks save slots 2 and 3: play other characters with their own level, clan, path and items." },
 }
 Config.DailySpins = 5
 Config.DailyOffsetSeconds = -3 * 3600 -- Reset at midnight in Brasilia (UTC-3).

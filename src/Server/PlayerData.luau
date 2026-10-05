@@ -1,5 +1,6 @@
 
 local DataStoreService = game:GetService("DataStoreService")
+local TeleportService = game:GetService("TeleportService")
 local Debris = game:GetService("Debris")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -39,6 +40,14 @@ local DATASTORE_NAME = "PlayerData_v1"
 local DATA_VERSION = 1
 local AUTOSAVE_INTERVAL = 120
 local MAX_RETRIES = 3
+
+-- Saves (pedido do usuário, 2026-10-05): até SLOT_COUNT personagens por conta, tudo separado (level, Gold, clã,
+-- itens, códigos...). O 1º é grátis e usa a chave antiga (ninguém perde o progresso); os outros pedem o passe
+-- ExtraSlots (GamepassConfig). O perfil só carrega depois que o jogador escolhe o save na tela SaveSelect.client.
+local SLOT_COUNT = 3
+local FREE_SLOTS = 1
+PlayerData.SlotCount = SLOT_COUNT
+PlayerData.FreeSlots = FREE_SLOTS
 
 -- Efeitos que não são stats viram atributos Tree<Efeito> (todos os que aparecem em algum nó da árvore ou item)
 local EFFECT_KEYS = {}
@@ -425,8 +434,11 @@ local function reconcile(saved)
 	return data
 end
 
-local function dataKey(player)
-	return "Player_" .. player.UserId
+local function dataKey(player, slot)
+	if not slot or slot <= 1 then
+		return "Player_" .. player.UserId
+	end
+	return `Player_{player.UserId}_S{slot}`
 end
 
 -- No Studio sem "Enable Studio Access to API Services" não adianta tentar de novo
@@ -435,14 +447,14 @@ local function isAccessDenied(err)
 	return message:find("studio", 1, true) ~= nil or message:find("403", 1, true) ~= nil
 end
 
-local function loadData(player)
+local function loadData(player, slot)
 	if not store then
 		return defaultData(), false
 	end
 
 	for attempt = 1, MAX_RETRIES do
 		local ok, result = pcall(function()
-			return store:GetAsync(dataKey(player))
+			return store:GetAsync(dataKey(player, slot))
 		end)
 		if ok then
 			return reconcile(result), true
@@ -509,7 +521,7 @@ local function persist(player, claimDay)
 	if data then
 		for attempt = 1, MAX_RETRIES do
 			local ok, value = pcall(function()
-				return store:UpdateAsync(dataKey(player), function(old)
+				return store:UpdateAsync(dataKey(player, profile.Slot), function(old)
 					return VIPRules.Merge(data, old, claimDay)
 				end)
 			end)
@@ -1088,11 +1100,11 @@ function PlayerData.AddXP(player, amount, noBonus)
 	return amount
 end
 
-local function setupPlayer(player)
+local function setupPlayer(player, slot)
 	if profiles[player] or loading[player] then return end
 	loading[player] = true
 
-	local data, canSave = loadData(player)
+	local data, canSave = loadData(player, slot)
 	loading[player] = nil
 	if not player.Parent then return end
 
@@ -1158,8 +1170,10 @@ local function setupPlayer(player)
 		DodgeLevel = data.DodgeLevel,
 		DodgeForced = data.DodgeForced,
 		CanSave = canSave,
+		Slot = slot,
 	}
 	profiles[player] = profile
+	player:SetAttribute("SaveSlot", slot)
 	publishStyles(player, profile)
 	-- Fusão do contrato (atributos que o PathModule escreve): trava ou solta os estilos
 	for _, attribute in { "Path", "Contracts", "ContractForm" } do
@@ -1272,13 +1286,172 @@ local function onSaveSetting(player, key, value)
 	end
 end
 
-function PlayerData.Init()
-	Players.PlayerAdded:Connect(setupPlayer)
-	for _, player in Players:GetPlayers() do
-		task.spawn(setupPlayer, player)
+-- ================= Saves =================
+
+local slotCache = {} -- [player] = { [slot] = resumo | false } lido na entrada (só enquanto escolhe)
+local slotBusy = {}
+local lastSlotAction = {}
+
+local function slotUnlocked(player, slot)
+	return slot <= FREE_SLOTS or Passes.Owns(player, "ExtraSlots")
+end
+
+-- Resumo para o cartão do save (só o que a tela mostra; o perfil inteiro continua no servidor)
+local function slotSummary(raw)
+	if type(raw) ~= "table" then return false end
+	local path = if type(raw.Path) == "table" then raw.Path else {}
+	local contract = nil
+	if type(path.Contracts) == "table" then
+		for _, id in path.Contracts do
+			if type(id) == "string" then
+				contract = id
+				break
+			end
+		end
+	end
+	return {
+		Level = if type(raw.Level) == "number" then math.floor(raw.Level) else 1,
+		Gold = if type(raw.Gold) == "number" then math.floor(raw.Gold) else 0,
+		Path = if type(path.Path) == "string" then path.Path else "None",
+		Contract = contract,
+		FiendType = if type(path.FiendType) == "string" and path.FiendType ~= "" then path.FiendType else nil,
+		Clan = if type(raw.Clan) == "string" and raw.Clan ~= "" then raw.Clan else nil,
+		Created = raw.Created == true,
+		Appearance = AppearanceData.Sanitize(raw.Appearance),
+	}
+end
+
+-- Lê os saves da conta (uma chave por save). Sem DataStore (Studio sem acesso): todos vazios, sem salvar.
+local function readSlots(player)
+	local list = {}
+	local offline = store == nil
+	for slot = 1, SLOT_COUNT do
+		list[slot] = false
+		if store then
+			for attempt = 1, MAX_RETRIES do
+				local ok, result = pcall(function()
+					return store:GetAsync(dataKey(player, slot))
+				end)
+				if ok then
+					list[slot] = slotSummary(result)
+					break
+				end
+				if isAccessDenied(result) or attempt == MAX_RETRIES then
+					offline = true
+					break
+				end
+				task.wait(attempt)
+			end
+			if offline then break end
+		end
+		if not player.Parent then return nil, offline end
+	end
+	return list, offline
+end
+
+local function sendSlots(player)
+	if not player.Parent or profiles[player] then return end
+	local cache = slotCache[player]
+	if not cache then return end
+	local unlocked = {}
+	for slot = 1, SLOT_COUNT do
+		unlocked[slot] = slotUnlocked(player, slot)
+	end
+	Remotes.SaveSlots:FireClient(player, {
+		Slots = cache.List,
+		Unlocked = unlocked,
+		Offline = cache.Offline,
+		PassesReady = Passes.Ready(player),
+		Count = SLOT_COUNT,
+	})
+end
+
+local function refreshSlots(player)
+	if slotBusy[player] then return end
+	slotBusy[player] = true
+	local list, offline = readSlots(player)
+	slotBusy[player] = nil
+	if not list or not player.Parent then return end
+	slotCache[player] = { List = list, Offline = offline }
+	sendSlots(player)
+end
+
+local function onSlotAction(player, action, slot)
+	if type(action) ~= "string" then return end
+	local clock = os.clock()
+	if clock < (lastSlotAction[player] or 0) then return end
+	lastSlotAction[player] = clock + 0.5
+
+	if action == "List" then
+		if slotCache[player] then sendSlots(player) else task.spawn(refreshSlots, player) end
+		return
+	elseif action == "Switch" then
+		-- Trocar de save no meio do jogo: salva e volta para um servidor novo (a tela de saves abre de novo)
+		if not profiles[player] then return end
+		if RunService:IsStudio() then
+			PlayerData.Notify(player, "Saves", "Changing saves only works in the published game. Stop and press Play again.", 5)
+			return
+		end
+		savePlayer(player)
+		local ok, err = pcall(function()
+			TeleportService:TeleportAsync(game.PlaceId, { player })
+		end)
+		if not ok then
+			warn("[PlayerData] Falha ao trocar de save: " .. tostring(err))
+			PlayerData.Notify(player, "Saves", "Could not change saves right now. Try again in a moment.", 5)
+		end
+		return
 	end
 
+	if type(slot) ~= "number" or slot ~= math.floor(slot) or slot < 1 or slot > SLOT_COUNT then return end
+	if profiles[player] or loading[player] or slotBusy[player] then return end
+	local cache = slotCache[player]
+	if not cache then return end
+
+	if action == "Select" then
+		-- O passe pode ainda estar sendo conferido logo na entrada
+		local deadline = os.clock() + 6
+		while not Passes.Ready(player) and not slotUnlocked(player, slot) and os.clock() < deadline and player.Parent do
+			task.wait(0.2)
+		end
+		if not slotUnlocked(player, slot) then
+			sendSlots(player)
+			return
+		end
+		slotCache[player] = nil
+		setupPlayer(player, slot)
+	elseif action == "Delete" then
+		if not store or cache.Offline or not cache.List[slot] then return end
+		slotBusy[player] = true
+		local ok, err = pcall(function()
+			store:RemoveAsync(dataKey(player, slot))
+		end)
+		slotBusy[player] = nil
+		if not ok then
+			warn("[PlayerData] Falha ao apagar save: " .. tostring(err))
+			PlayerData.Notify(player, "Saves", "Could not delete this save. Try again.", 4)
+			return
+		end
+		cache.List[slot] = false
+		sendSlots(player)
+	end
+end
+
+function PlayerData.Init()
+	-- O perfil só carrega quando o jogador escolhe o save (Remotes.SaveSlotAction "Select")
+	Players.PlayerAdded:Connect(function(player)
+		refreshSlots(player)
+	end)
+	for _, player in Players:GetPlayers() do
+		task.spawn(refreshSlots, player)
+	end
+	Passes.Changed:Connect(sendSlots)
+	Remotes.SaveSlotAction.OnServerEvent:Connect(onSlotAction)
+
 	Players.PlayerRemoving:Connect(function(player)
+		slotCache[player] = nil
+		slotBusy[player] = nil
+		lastSlotAction[player] = nil
 		savePlayer(player)
 		profiles[player] = nil
 	end)
