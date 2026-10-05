@@ -18,7 +18,7 @@ local Fonts = UITheme.Fonts
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local level = player:WaitForChild("leaderstats"):WaitForChild("Level")
+local level = player:WaitForChild("leaderstats", math.huge):WaitForChild("Level")
 
 local CARD = Color3.fromRGB(20, 20, 24)
 local LINE = Color3.fromRGB(56, 56, 62)

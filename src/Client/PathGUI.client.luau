@@ -903,7 +903,7 @@ end)
 
 -- Gold muda enquanto o modo Reset está aberto: atualiza o custo e o botão
 task.spawn(function()
-	local leaderstats = player:WaitForChild("leaderstats")
+	local leaderstats = player:WaitForChild("leaderstats", math.huge)
 	local gold = leaderstats:WaitForChild("Gold")
 	gold.Changed:Connect(function()
 		if current and current.Mode == "Reset" then

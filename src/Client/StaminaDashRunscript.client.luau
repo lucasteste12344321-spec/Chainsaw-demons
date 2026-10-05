@@ -8,7 +8,7 @@ local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 local NetConfig = require(ReplicatedStorage:WaitForChild("CombatNetConfig"))
 local CombatAnimations = require(script.Parent:WaitForChild("CombatAnimations"))
 local player = Players.LocalPlayer
-local stats = player:WaitForChild("Stats")
+local stats = player:WaitForChild("Stats", math.huge)
 local speedStat = stats:WaitForChild("Velocidade")
 local energyStat = stats:WaitForChild("Energia")
 

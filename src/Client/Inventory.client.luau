@@ -27,7 +27,7 @@ local Fonts = UITheme.Fonts
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local inventoryFolder = player:WaitForChild("Inventory")
+local inventoryFolder = player:WaitForChild("Inventory", math.huge)
 
 local CARD = Color3.fromRGB(20, 20, 24)
 local LINE = Color3.fromRGB(56, 56, 62)

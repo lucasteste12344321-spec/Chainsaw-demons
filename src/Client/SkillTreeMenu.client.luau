@@ -21,12 +21,12 @@ local Fonts = UITheme.Fonts
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local leaderstats = player:WaitForChild("leaderstats")
-local progress = player:WaitForChild("Progress")
+local leaderstats = player:WaitForChild("leaderstats", math.huge)
+local progress = player:WaitForChild("Progress", math.huge)
 local level = leaderstats:WaitForChild("Level")
 local gold = leaderstats:WaitForChild("Gold")
 local points = progress:WaitForChild("StatusPoints")
-local masteryFolder = player:WaitForChild("Mastery")
+local masteryFolder = player:WaitForChild("Mastery", math.huge)
 
 -- Paleta de mangá: tinta, prata, aço e um vermelho só para o que dá para pegar
 local INK = Color3.fromRGB(12, 12, 14)
