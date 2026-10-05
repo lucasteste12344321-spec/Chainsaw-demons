@@ -662,6 +662,12 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   ("DENJI · aparece em 1h 42min" / "ESTÁ AQUI!"). O BossService publica `GlobalBossPos_`, `GlobalBossTitle_` e
   `GlobalBossActive_<Tipo>` no ReplicatedStorage (além do `GlobalBoss_<Tipo>` com o horário).
 
+## Painéis no celular (Claude, 2026-10-05)
+- `UITheme.isTouch()` (só toque, ou `ForceMobileHUD`) e `UITheme.fitTouchPanel(painel, largura, altura, rolagem?)`: no
+  celular o painel não encolhe inteiro (botões ficavam pequenos para o dedo): fica na escala que cabe na largura, com a
+  altura da tela, e o conteúdo rola (sem `rolagem`, um ScrollingFrame novo recebe tudo). Usado no aparelho (Device),
+  painel VIP e loja de passes, que também ganharam botões maiores no toque (42–44 px). No PC continua o `autoScale`.
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.

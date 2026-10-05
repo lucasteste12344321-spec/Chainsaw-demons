@@ -392,6 +392,55 @@ function UITheme.autoScale(guiObject, designWidth, designHeight)
 	return scale
 end
 
+-- Só toque (celular/tablet sem teclado), ou o atributo ForceMobileHUD = true no ReplicatedStorage para testar no PC
+function UITheme.isTouch()
+	local UserInputService = game:GetService("UserInputService")
+	return (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
+		or game:GetService("ReplicatedStorage"):GetAttribute("ForceMobileHUD") == true
+end
+
+-- Celular: em vez de encolher o painel inteiro (os botões ficavam pequenos demais para o dedo), o painel fica no tamanho
+-- normal (escala 1, ou o que couber na largura), com a altura da tela, e o conteúdo rola. content = o ScrollingFrame
+-- que já existe no painel; sem ele, um ScrollingFrame novo recebe tudo o que estava no painel (designHeight = altura do
+-- conteúdo). Devolve o ScrollingFrame. No PC não faz nada (devolve nil).
+function UITheme.fitTouchPanel(panel, designWidth, designHeight, content)
+	if not UITheme.isTouch() then return nil end
+	local scroller = content
+	if not scroller then
+		scroller = UITheme.new("ScrollingFrame", {
+			Name = "TouchScroll",
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ScrollBarThickness = 6,
+			CanvasSize = UDim2.fromOffset(0, designHeight),
+			ScrollingDirection = Enum.ScrollingDirection.Y,
+		})
+		for _, child in panel:GetChildren() do
+			if child:IsA("GuiObject") then
+				child.Parent = scroller
+			end
+		end
+		scroller.Parent = panel
+	end
+	local scale = panel:FindFirstChildOfClass("UIScale") or UITheme.new("UIScale", { Parent = panel })
+	local function update()
+		local camera = workspace.CurrentCamera
+		if not camera then return end
+		local viewport = camera.ViewportSize
+		local fit = math.clamp((viewport.X - 24) / designWidth, 0.6, 1)
+		scale.Scale = fit
+		local height = math.min(designHeight, (viewport.Y - 20) / fit)
+		panel.Size = UDim2.fromOffset(panel.Size.X.Offset, height)
+	end
+	update()
+	local camera = workspace.CurrentCamera
+	if camera then
+		camera:GetPropertyChangedSignal("ViewportSize"):Connect(update)
+	end
+	return scroller
+end
+
 -- ================= Enfeites Chainsaw Man =================
 -- Só com Frames e texto (sem imagens). O pai não pode ter UIListLayout (o enfeite entraria na lista).
 

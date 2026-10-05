@@ -12,6 +12,9 @@ local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 
 local player = Players.LocalPlayer
 local C = UI.Colors
+local TOUCH = UI.isTouch() -- celular: botões maiores e o painel com a altura da tela (UITheme.fitTouchPanel)
+local BUTTON_W, BUTTON_H = if TOUCH then 128 else 116, if TOUCH then 42 else 34
+local CARD_H = if TOUCH then 72 else 64
 
 -- Visual de cada aparelho
 local STYLES = {
@@ -46,7 +49,9 @@ local bezel = UI.new("Frame", { Name = "Bezel", Parent = gui, AnchorPoint = Vect
 	Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(470, 560), BorderSizePixel = 0, Visible = false })
 UI.corner(bezel, UDim.new(0, 22))
 local bezelStroke = UI.stroke(bezel, C.White, 2, 0.2)
-UI.autoScale(bezel, 520, 620)
+if not TOUCH then
+	UI.autoScale(bezel, 520, 620)
+end
 local screen = UI.new("Frame", { Name = "Screen", Parent = bezel, Position = UDim2.fromOffset(14, 14),
 	Size = UDim2.new(1, -28, 1, -28), BorderSizePixel = 0, ClipsDescendants = true })
 UI.corner(screen, UDim.new(0, 12))
@@ -56,15 +61,18 @@ local glyph = UI.label({ Parent = screen, Position = UDim2.fromOffset(12, 6), Si
 	Font = UI.Fonts.Title, TextXAlignment = Enum.TextXAlignment.Center })
 local title = UI.label({ Parent = screen, Position = UDim2.fromOffset(44, 6), Size = UDim2.fromOffset(240, 28), TextSize = 18,
 	Font = UI.Fonts.Title })
-local clock = UI.label({ Parent = screen, Position = UDim2.new(1, -150, 0, 8), Size = UDim2.fromOffset(100, 24), TextSize = 13,
+local clock = UI.label({ Parent = screen, Position = UDim2.new(1, if TOUCH then -160 else -150, 0, 8), Size = UDim2.fromOffset(100, 24), TextSize = 13,
 	TextColor3 = C.TextDim, TextXAlignment = Enum.TextXAlignment.Right })
-local close = UI.button({ Parent = screen, Position = UDim2.new(1, -40, 0, 6), Size = UDim2.fromOffset(30, 28), Text = "X",
+local close = UI.button({ Parent = screen, Position = UDim2.new(1, if TOUCH then -48 else -40, 0, 4),
+	Size = if TOUCH then UDim2.fromOffset(40, 34) else UDim2.fromOffset(30, 28), Text = "X",
 	TextSize = 14 }, C.PanelLight)
 
 local body = UI.new("ScrollingFrame", { Parent = screen, Position = UDim2.fromOffset(12, 42), Size = UDim2.new(1, -24, 1, -54),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, AutomaticCanvasSize = Enum.AutomaticSize.Y,
 	CanvasSize = UDim2.new() })
 UI.list(body, 8)
+
+UI.fitTouchPanel(bezel, 520, 560, body)
 
 local state = nil -- DailyState
 
@@ -162,18 +170,18 @@ local function render()
 	for _, mission in state.Missions do
 		local done = mission.Progress >= mission.Goal
 		allClaimed = allClaimed and mission.Claimed
-		local frame = card(order, 64)
+		local frame = card(order, CARD_H)
 		order += 1
-		textLine(frame, { Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -140, 0, 32), Text = mission.Text, TextSize = 14,
+		textLine(frame, { Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -(BUTTON_W + 24), 0, 32), Text = mission.Text, TextSize = 14,
 			TextColor3 = if mission.Claimed then C.TextDim else C.Text })
-		local barBack = UI.new("Frame", { Parent = frame, Position = UDim2.fromOffset(10, 44), Size = UDim2.new(1, -140, 0, 8),
+		local barBack = UI.new("Frame", { Parent = frame, Position = UDim2.new(0, 10, 1, -18), Size = UDim2.new(1, -(BUTTON_W + 24), 0, 8),
 			BackgroundColor3 = C.Black, BackgroundTransparency = 0.2, BorderSizePixel = 0 })
 		UI.corner(barBack, UDim.new(1, 0))
 		local fill = UI.new("Frame", { Parent = barBack, Size = UDim2.fromScale(mission.Progress / mission.Goal, 1),
 			BackgroundColor3 = style.Accent, BorderSizePixel = 0 })
 		UI.corner(fill, UDim.new(1, 0))
 		local button = UI.button({ Parent = frame, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
-			Size = UDim2.fromOffset(116, 34), TextSize = 12,
+			Size = UDim2.fromOffset(BUTTON_W, BUTTON_H), TextSize = if TOUCH then 14 else 12,
 			Text = if mission.Claimed then "✓ FEITO" elseif done then "RESGATAR" else `{mission.Progress}/{mission.Goal}` },
 			if done and not mission.Claimed then style.Accent else C.PanelLight)
 		if done and not mission.Claimed then
@@ -190,12 +198,12 @@ local function render()
 		Text = `Cada missão: {state.Gold} Gold{streakText} e {state.XP} XP` })
 
 	-- Bônus de completar as três
-	local bonus = card(order, 64)
+	local bonus = card(order, CARD_H)
 	order += 1
-	textLine(bonus, { Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -140, 0, 52), TextSize = 13,
+	textLine(bonus, { Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -(BUTTON_W + 24), 0, CARD_H - 12), TextSize = 13,
 		Text = `Complete as 3: +{state.BonusSpins} giro de clã.\nSequência: {state.Streak} dia(s) seguidos.` })
 	local bonusButton = UI.button({ Parent = bonus, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
-		Size = UDim2.fromOffset(116, 34), TextSize = 12,
+		Size = UDim2.fromOffset(BUTTON_W, BUTTON_H), TextSize = if TOUCH then 14 else 12,
 		Text = if state.BonusClaimed then "✓ RECEBIDO" elseif allClaimed then "PEGAR BÔNUS" else "FALTA" },
 		if allClaimed and not state.BonusClaimed then style.Accent else C.PanelLight)
 	if allClaimed and not state.BonusClaimed then

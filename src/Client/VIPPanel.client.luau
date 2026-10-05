@@ -14,6 +14,8 @@ local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 
 local player = Players.LocalPlayer
 local C = UI.Colors
+local TOUCH = UI.isTouch() -- celular: botões maiores e o painel com a altura da tela (UITheme.fitTouchPanel)
+local ROW_H, ROW_BUTTON_H, ACTION_H = if TOUCH then 44 else 34, if TOUCH then 36 else 26, if TOUCH then 42 else 34
 
 local gui = UI.screen("VIPPanel", 61, player:WaitForChild("PlayerGui"))
 local toggle = UI.new("BindableEvent", { Name = "Toggle", Parent = gui })
@@ -25,10 +27,13 @@ local panel = UI.panel({
 	Name = "Panel", Parent = gui, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
 	Size = UDim2.fromOffset(580, 540), Visible = false,
 })
-UI.autoScale(panel, 640, 600)
+if not TOUCH then
+	UI.autoScale(panel, 640, 600)
+end
 UI.label({ Parent = panel, Position = UDim2.fromOffset(20, 12), Size = UDim2.fromOffset(400, 34), Text = "SERVIDOR VIP",
 	Font = UI.Fonts.Display, TextSize = 25 })
-local close = UI.button({ Parent = panel, Position = UDim2.new(1, -50, 0, 14), Size = UDim2.fromOffset(32, 30), Text = "X" })
+local close = UI.button({ Parent = panel, Position = UDim2.new(1, if TOUCH then -56 else -50, 0, 12),
+	Size = if TOUCH then UDim2.fromOffset(42, 36) else UDim2.fromOffset(32, 30), Text = "X" })
 local subtitle = UI.label({ Parent = panel, Position = UDim2.fromOffset(20, 48), Size = UDim2.new(1, -40, 0, 22), TextSize = 13,
 	TextColor3 = C.TextDim })
 
@@ -38,17 +43,21 @@ local tabButtons = {}
 local currentTab = "SERVIDOR"
 for index, name in TABS do
 	tabButtons[name] = UI.button({ Parent = panel, Position = UDim2.fromOffset(20 + (index - 1) * 140, 76),
-		Size = UDim2.fromOffset(130, 30), Text = name, TextSize = 13 }, C.PanelLight)
+		Size = UDim2.fromOffset(130, if TOUCH then 38 else 30), Text = name, TextSize = 13 }, C.PanelLight)
 end
 
 -- Barra de cima da aba (botões de ação) e a lista rolando embaixo
-local actions = UI.new("Frame", { Parent = panel, Position = UDim2.fromOffset(20, 114), Size = UDim2.new(1, -40, 0, 36),
+local actions = UI.new("Frame", { Parent = panel, Position = UDim2.fromOffset(20, if TOUCH then 122 else 114),
+	Size = UDim2.new(1, -40, 0, ACTION_H + 2),
 	BackgroundTransparency = 1 })
 UI.list(actions, 8, Enum.FillDirection.Horizontal)
-local scroll = UI.new("ScrollingFrame", { Parent = panel, Position = UDim2.fromOffset(20, 158), Size = UDim2.new(1, -40, 1, -176),
+local scrollTop = if TOUCH then 172 else 158
+local scroll = UI.new("ScrollingFrame", { Parent = panel, Position = UDim2.fromOffset(20, scrollTop), Size = UDim2.new(1, -40, 1, -scrollTop - 18),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 5, AutomaticCanvasSize = Enum.AutomaticSize.Y,
 	CanvasSize = UDim2.new() })
 UI.list(scroll, 6)
+
+UI.fitTouchPanel(panel, 640, 540, scroll)
 
 -- Aviso de convite
 local invite = UI.panel({ Name = "Invite", Parent = gui, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -150),
@@ -76,7 +85,7 @@ local function clear(container)
 end
 
 local function actionButton(text, width, callback, color)
-	local button = UI.button({ Parent = actions, Size = UDim2.fromOffset(width, 34), Text = text, TextSize = 12 }, color)
+	local button = UI.button({ Parent = actions, Size = UDim2.fromOffset(width, ACTION_H), Text = text, TextSize = 12 }, color)
 	button.Activated:Connect(callback)
 	return button
 end
@@ -93,7 +102,7 @@ end
 
 -- Linha: nome à esquerda e botões à direita ({ Texto, ação, cor? })
 local function row(order, text, buttons)
-	local frame = UI.new("Frame", { Parent = scroll, LayoutOrder = order, Size = UDim2.new(1, -10, 0, 34),
+	local frame = UI.new("Frame", { Parent = scroll, LayoutOrder = order, Size = UDim2.new(1, -10, 0, ROW_H),
 		BackgroundColor3 = C.Black, BackgroundTransparency = 0.6, BorderSizePixel = 0 })
 	UI.corner(frame, UDim.new(0, 4))
 	UI.label({ Parent = frame, Position = UDim2.fromOffset(10, 0), Size = UDim2.new(1, -20, 1, 0), Text = text, TextSize = 14,
@@ -104,7 +113,7 @@ local function row(order, text, buttons)
 		local width = math.max(70, #entry[1] * 9)
 		x -= width
 		local button = UI.button({ Parent = frame, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(1, x, 0.5, 0),
-			Size = UDim2.fromOffset(width, 26), Text = entry[1], TextSize = 11 }, entry[3])
+			Size = UDim2.fromOffset(width, ROW_BUTTON_H), Text = entry[1], TextSize = if TOUCH then 12 else 11 }, entry[3])
 		button.Activated:Connect(entry[2])
 		x -= 6
 	end
@@ -169,7 +178,7 @@ local function renderLists()
 		note("As listas são do dono do passe VIP.", 1)
 		return
 	end
-	nameBox = UI.new("TextBox", { Parent = actions, Size = UDim2.fromOffset(220, 34), BackgroundColor3 = C.Black,
+	nameBox = UI.new("TextBox", { Parent = actions, Size = UDim2.fromOffset(220, ACTION_H), BackgroundColor3 = C.Black,
 		BackgroundTransparency = 0.4, BorderSizePixel = 0, Font = UI.Fonts.Body, TextSize = 14, TextColor3 = C.Text,
 		PlaceholderText = "nome do jogador", ClearTextOnFocus = false, Text = "" })
 	UI.corner(nameBox, UDim.new(0, 4))
