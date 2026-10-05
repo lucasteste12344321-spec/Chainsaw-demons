@@ -55,7 +55,7 @@ local spawnBoss -- (enemyType, config, carry?) definida no fim
 local active = {} -- [chefe de base] = modelo atual (qualquer forma)
 local globalToken = {} -- [chefe de base] = número da aparição global em andamento (nil = fora do horário)
 
--- Avisos do chefe global: chegam no aparelho de cada um (tablet do Caçador / Kogane do Infernal, Device.client)
+-- Avisos do chefe global: chegam no aparelho de cada um (tablet do Caçador / Kog do Infernal, Device.client)
 local function announceAll(title, text)
 	Remotes.DeviceAlert:FireAllClients(title, text, "Boss")
 end

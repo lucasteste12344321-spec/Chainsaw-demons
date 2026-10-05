@@ -1314,12 +1314,12 @@ end
 treeButton.MouseButton1Click:Connect(function()
 	fireToggle("SkillTree")
 end)
--- Aparelho do caminho (Device.client: tablet do Caçador / Kogane do Infernal): missões diárias e chefe global, tecla T.
+-- Aparelho do caminho (Device.client: tablet do Caçador / Kog do Infernal): missões diárias e chefe global, tecla T.
 -- Bolinha vermelha com missão para resgatar (atributo DailyClaimable do DailyService).
 do
 	local deviceButton = menuButton(0, "T", "▣")
 	UITheme.tooltip(deviceButton, UITheme.tipText("Missões diárias (T)",
-		"Seu tablet (ou a Kogane, se for Infernal): 3 missões por dia, bônus de sequência e o horário do chefe global."))
+		"Tablet (Caçador e Humano) ou Kog (Infernal): 3 missões por dia, bônus de sequência e o horário do chefe global."))
 	deviceButton.MouseButton1Click:Connect(function()
 		fireToggle("Device")
 	end)

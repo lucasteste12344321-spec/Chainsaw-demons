@@ -655,7 +655,7 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   de sequência até +60%) e 15% do XP do level; as três: +1 giro de clã e a sequência (`Streak`). Salvo em
   `profile.Daily`. Remotes `DailyAction` ("State", "Claim" índice, "Bonus") / `DailyState`. Atributo `DailyClaimable`.
 - Cliente `src/Client/Device.client.luau`: o aparelho do caminho, tecla T e botão ▣/金 na coluna de menus da HUD (bolinha
-  vermelha com algo para resgatar). Caçador e Humano: TABLET (azul); Infernal: KOGANE (dourado, fala com aspas). Mostra o
+  vermelha com algo para resgatar). Caçador e Humano: TABLET (azul); Infernal: KOG (dourado, fala com aspas; antes "Kogane", renomeado a pedido do usuário). Mostra o
   chefe global e as missões. Os avisos do chefe global agora vêm por `Remotes.DeviceAlert` (aviso no canto, no estilo do
   aparelho), não mais pelo Announcement.
 - Contador no mapa: `src/Client/BossBeacon.client.luau`, placa flutuando 14 studs acima de onde o chefe global aparece

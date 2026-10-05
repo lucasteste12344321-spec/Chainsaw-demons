@@ -1,5 +1,5 @@
 -- Missões diárias (DailyData). O progresso vem do QuestModule.Listen (inimigo, peixe, poder) e fica no perfil
--- (profile.Daily, salvo pelo PlayerData). O cliente (Device.client: tablet do Caçador / Kogane do Infernal) pede o
+-- (profile.Daily, salvo pelo PlayerData). O cliente (Device.client: tablet do Caçador / Kog do Infernal) pede o
 -- estado e resgata por Remotes.DailyAction; o servidor confere tudo. Atributo DailyClaimable no player = tem algo
 -- para resgatar (bolinha vermelha no botão da HUD).
 local Players = game:GetService("Players")
@@ -99,7 +99,7 @@ local function progress(player, kind, target)
 				changed = true
 				if mission.Progress >= mission.Goal then
 					PlayerData.Notify(player, "Missão diária completa!", DailyData.TextFor(entry, mission.Goal)
-						.. ". Resgate no " .. (if player:GetAttribute("Path") == "Fiend" then "Kogane" else "tablet") .. " (T).", 5)
+						.. ". Aperte T para resgatar.", 5)
 				end
 			end
 		end

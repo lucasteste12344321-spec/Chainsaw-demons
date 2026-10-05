@@ -1,4 +1,4 @@
--- Aparelho do caminho: o TABLET do Caçador (e do Humano, antes de escolher) ou a KOGANE do Infernal. Mostra as missões
+-- Aparelho do caminho: o TABLET do Caçador (e do Humano, antes de escolher) ou o KOG do Infernal. Mostra as missões
 -- diárias (DailyService, Remotes.DailyAction/DailyState) e o chefe global (atributos GlobalBoss_* do ReplicatedStorage,
 -- escritos pelo BossService), e é por ele que chegam os avisos do chefe (Remotes.DeviceAlert).
 -- Abre com T, pelo botão da HUD (HUB_GUI) ou pelo BindableEvent Device.Toggle.
@@ -26,18 +26,18 @@ local STYLES = {
 		Screen = Color3.fromRGB(12, 18, 28),
 		Speaker = nil,
 	},
-	Kogane = {
-		Name = "KOGANE",
+	Kog = {
+		Name = "KOG",
 		Glyph = "金",
 		Accent = Color3.fromRGB(255, 190, 60),
 		Bezel = Color3.fromRGB(40, 24, 10),
 		Screen = Color3.fromRGB(24, 16, 10),
-		Speaker = "Kogane",
+		Speaker = "Kog",
 	},
 }
 
 local function styleOf()
-	return if player:GetAttribute("Path") == "Fiend" then STYLES.Kogane else STYLES.Tablet
+	return if player:GetAttribute("Path") == "Fiend" then STYLES.Kog else STYLES.Tablet
 end
 
 local gui = UI.screen("Device", 55, player:WaitForChild("PlayerGui"))
@@ -104,7 +104,7 @@ local function textLine(parent, props)
 	return UI.label(props)
 end
 
--- Fala da Kogane (no tablet é só o texto)
+-- Fala do Kog (no tablet é só o texto)
 local function speech(order, text)
 	local style = styleOf()
 	local frame = card(order, 0)
