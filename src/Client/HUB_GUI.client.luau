@@ -26,6 +26,7 @@ local StatConfig = require(ReplicatedStorage:WaitForChild("StatConfig"))
 local PathData = require(ReplicatedStorage:WaitForChild("PathData"))
 local CombatStyles = require(ReplicatedStorage:WaitForChild("CombatStyles"))
 local SkillTreeData = require(ReplicatedStorage:WaitForChild("SkillTreeData"))
+local Icons = require(ReplicatedStorage:WaitForChild("Icons")) -- ícones em imagem (sem ícone, fica o kanji)
 local ClanData = require(ReplicatedStorage:WaitForChild("ClanData"))
 local UITheme = require(ReplicatedStorage:WaitForChild("UITheme"))
 local FastMode = require(script.Parent:WaitForChild("FastMode"))
@@ -308,13 +309,25 @@ local goldRow = new("Frame", {
 	BackgroundTransparency = 1,
 	Parent = topRow,
 })
-round(new("Frame", {
-	AnchorPoint = Vector2.new(1, 0.5),
-	Position = UDim2.new(1, 0, 0.5, 0),
-	Size = UDim2.fromOffset(9, 9),
-	BackgroundColor3 = CREAM,
-	Parent = goldRow,
-}))
+if Icons.Get("gold") then
+	new("ImageLabel", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, 2, 0.5, 0),
+		Size = UDim2.fromOffset(16, 16),
+		BackgroundTransparency = 1,
+		ScaleType = Enum.ScaleType.Fit,
+		Image = Icons.Get("gold"),
+		Parent = goldRow,
+	})
+else
+	round(new("Frame", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		Size = UDim2.fromOffset(9, 9),
+		BackgroundColor3 = CREAM,
+		Parent = goldRow,
+	}))
+end
 local goldLabel = text({
 	AnchorPoint = Vector2.new(1, 0),
 	Position = UDim2.new(1, -14, 0, 0),
@@ -471,6 +484,15 @@ for index = 1, MAX_BUFF_CHIPS + 1 do
 			LayoutOrder = 1,
 			Parent = frame,
 		}),
+		-- Ícone em imagem do efeito (Icons); no lugar do kanji quando existe
+		Image = new("ImageLabel", {
+			Size = UDim2.fromOffset(13, 13),
+			BackgroundTransparency = 1,
+			ScaleType = Enum.ScaleType.Fit,
+			LayoutOrder = 1,
+			Visible = false,
+			Parent = frame,
+		}),
 		Value = text({
 			Size = UDim2.fromOffset(0, 18),
 			AutomaticSize = Enum.AutomaticSize.X,
@@ -500,7 +522,10 @@ local function updateBonuses()
 		local key = shown[index]
 		if index <= MAX_BUFF_CHIPS and key then
 			local info = SkillTreeData.EffectInfo[key] or {}
-			chip.Icon.Visible = true
+			local image = Icons.Effect(key)
+			chip.Image.Visible = image ~= nil
+			chip.Image.Image = image or ""
+			chip.Icon.Visible = image == nil
 			chip.Icon.Text = info.Icon or "•"
 			chip.Value.Text = SkillTreeData.ShortValue(key, effects[key])
 			chip.Tip = UITheme.tipText(info.Name or key, SkillTreeData.EffectText(key, effects[key]))
@@ -513,6 +538,7 @@ local function updateBonuses()
 				table.insert(lines, `{info.Icon or "•"} {SkillTreeData.EffectText(rest, effects[rest])}`)
 			end
 			chip.Icon.Visible = false
+			chip.Image.Visible = false
 			chip.Value.Text = `+{#shown - MAX_BUFF_CHIPS}`
 			chip.Tip = UITheme.tipText("More bonuses", table.concat(lines, "\n"))
 			chip.Frame.Visible = true
@@ -1256,6 +1282,12 @@ local fishingButton = menuButton(3, nil, "釣")
 local passesButton = menuButton(4, nil, "★")
 local groupButton = menuButton(5, nil, "団") -- some depois de ganhar a recompensa do grupo
 local settingsButton = menuButton(6, nil, "≡")
+-- Ícones em imagem nos botões redondos (o da árvore ainda não tem: fica o ⛓)
+Icons.Apply(inventoryButton, "inventory")
+Icons.Apply(fishingButton, "fishing")
+Icons.Apply(passesButton, "passes")
+Icons.Apply(groupButton, "group")
+Icons.Apply(settingsButton, "settings")
 passesButton.TextColor3 = CREAM
 treeButton:SetAttribute("TutorialAnchor", "TreeButton")
 inventoryButton:SetAttribute("TutorialAnchor", "InventoryButton")
@@ -1335,7 +1367,14 @@ do
 	}))
 	local function updateDot()
 		dailyDot.Visible = player:GetAttribute("DailyClaimable") == true or player:GetAttribute("MilestoneClaimable") == true
-		deviceButton.Text = if player:GetAttribute("Path") == "Fiend" then "金" else "▣"
+		-- Tablet com o ícone; o Kog (Infernal) continua com o kanji
+		if player:GetAttribute("Path") == "Fiend" then
+			Icons.Clear(deviceButton)
+			deviceButton.Text = "金"
+		else
+			deviceButton.Text = "▣"
+			Icons.Apply(deviceButton, "tablet")
+		end
 	end
 	player:GetAttributeChangedSignal("DailyClaimable"):Connect(updateDot)
 	player:GetAttributeChangedSignal("MilestoneClaimable"):Connect(updateDot)

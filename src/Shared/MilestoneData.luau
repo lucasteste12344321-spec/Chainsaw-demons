@@ -13,6 +13,7 @@ local MilestoneData = {}
 MilestoneData.Tracks = {
 	{
 		Id = "Kills",
+		Icon = "fists", -- Icons (imagem; sem ela fica o Glyph)
 		Name = "Devil Hunter",
 		Glyph = "狩",
 		Text = "Defeat %d devils",
@@ -31,6 +32,7 @@ MilestoneData.Tracks = {
 	},
 	{
 		Id = "Bosses",
+		Icon = "milestones", -- Icons (imagem; sem ela fica o Glyph)
 		Name = "Boss Slayer",
 		Glyph = "王",
 		Text = "Help defeat %d bosses",
@@ -46,6 +48,7 @@ MilestoneData.Tracks = {
 	},
 	{
 		Id = "Quests",
+		Icon = "quests", -- Icons (imagem; sem ela fica o Glyph)
 		Name = "Problem Solver",
 		Glyph = "務",
 		Text = "Complete %d quests",
@@ -60,6 +63,7 @@ MilestoneData.Tracks = {
 	},
 	{
 		Id = "Fish",
+		Icon = "fishing", -- Icons (imagem; sem ela fica o Glyph)
 		Name = "Angler",
 		Glyph = "釣",
 		Text = "Catch %d fish",
@@ -74,6 +78,7 @@ MilestoneData.Tracks = {
 	},
 	{
 		Id = "Level",
+		Icon = "xp", -- Icons (imagem; sem ela fica o Glyph)
 		Name = "Rising Power",
 		Glyph = "昇",
 		Text = "Reach level %d",

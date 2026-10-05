@@ -701,6 +701,12 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   `MilestoneClaimable` (bolinha no botão do aparelho na HUD e na aba). O `QuestModule.Listen` ganhou o tipo "Quest".
 - Cliente: aba MILESTONES no aparelho (`Device.client`, tecla T), ao lado da DAILY.
 
+## Ícones em imagem (Claude, 2026-10-05)
+- `src/Shared/Icons.luau`: IDs das imagens que o usuário subiu (feitas pelo ChatGPT), `Icons.Get(nome)`,
+  `Icons.Effect(chaveDoEfeito)` e `Icons.Apply(guiObject, nome, escala?)` / `Icons.Clear` (ImageLabel "Icon" no lugar do
+  texto; sem ID, continua o kanji). Em uso: botões redondos da HUD (inventário, pesca, passes, grupo, configurações,
+  tablet), Gold, chips de bônus, título do tablet e trilhas dos Milestones. Falta ícone da árvore de habilidades.
+
 ## Do usuário
 - `src/Server/Version of the game.server.luau` é do usuário: imprime a versão do jogo e ele troca o número a cada
   atualização. Não mexer.

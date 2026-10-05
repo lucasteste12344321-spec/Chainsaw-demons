@@ -11,6 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local UI = require(ReplicatedStorage:WaitForChild("UITheme"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Remotes"))
 local MilestoneData = require(ReplicatedStorage:WaitForChild("MilestoneData"))
+local Icons = require(ReplicatedStorage:WaitForChild("Icons"))
 
 local player = Players.LocalPlayer
 local C = UI.Colors
@@ -186,6 +187,7 @@ function renderMilestones(style)
 			Text = track.Glyph, TextSize = if TOUCH then 22 else 18, Font = UI.Fonts.Title },
 			if active then style.Accent else C.PanelLight)
 		button.TextColor3 = if active then C.Black else C.Text
+		Icons.Apply(button, track.Icon, 0.72)
 		UI.tooltip(button, UI.tipText(track.Name, string.format(track.Text, track.Tiers[1].Goal)))
 		if trackClaimable(track) then
 			local dot = UI.new("Frame", { Parent = button, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -7, 0, 7),
@@ -242,6 +244,11 @@ function render()
 	bezelStroke.Color = style.Accent
 	screen.BackgroundColor3 = style.Screen
 	glyph.Text = style.Glyph
+	if style.Speaker then
+		Icons.Clear(glyph)
+	else
+		Icons.Apply(glyph, "tablet", 0.95)
+	end
 	glyph.TextColor3 = style.Accent
 	local pathName = if player:GetAttribute("Path") == "Hunter" then "HUNTER" elseif style.Speaker then "FIEND" else "HUMAN"
 	title.Text = if style.Speaker then style.Name else `{style.Name} · {pathName}`
