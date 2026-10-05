@@ -338,6 +338,11 @@ animação), `src/Server/CombatService.server.luau`, `CombatState.luau`, `Combat
   Admin: `/restricao on|off` simula a conta restrita. Hoje nada no jogo é vendido por Robux; se um dia o Gold ou os giros
   forem vendidos, a regra continua valendo.
 - Configuração nova: `Music` (liga/desliga o volume do `SoundService.LobbyMusic`, que é do usuário).
+- Menu e carregamento mais compactos (2026-10-05, pedido do usuário): fundo grafite com brilho laranja (círculos quase
+  transparentes) e sombra atrás da coluna, sem listras nem dentes de serra; botões da coluna compactos (290 x 38, JOGAR
+  48) com o kanji num quadradinho; páginas em painel escuro de cantos redondos a 92% (`PAGE_SCALE`) no meio da altura;
+  Builder Sans nos textos e botões (o nome do jogo continua Creepster). A tela de carregamento segue o mesmo visual
+  (barra fina, anel girando, dicas atualizadas).
 - Tema do menu principal (2026-09-30, pedido do usuário): laranja e branco sobre cinza (`ACCENT`, `ACCENT_DARK`, `LIGHT`,
   `BACKDROP` no topo do `MainMenu`). O resto da interface continua com o vermelho do `UITheme`; `UITheme.panel` e
   `UITheme.button` aceitam a cor de destaque como parâmetro opcional.

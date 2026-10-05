@@ -41,6 +41,11 @@ local ACCENT = Color3.fromRGB(255, 122, 26) -- laranja
 local ACCENT_DARK = Color3.fromRGB(128, 52, 8)
 local LIGHT = Color3.fromRGB(255, 255, 255) -- no lugar do creme do tema (Colors.Gold)
 local BACKDROP = Color3.fromRGB(62, 62, 68) -- cinza do fundo
+-- Visual compacto (2026-10-05, pedido do usuário: "mais compacto e bonito"): Builder Sans nos textos e botões; o nome
+-- do jogo continua com a fonte de terror
+local FONT_HEAVY = Enum.Font.BuilderSansExtraBold
+local FONT_BOLD = Enum.Font.BuilderSansBold
+local FONT_MEDIUM = Enum.Font.BuilderSansMedium
 local BLACK = Colors.Black
 local GREEN = Colors.Green
 local PREVIEW_SPIN = 0.3 -- radianos por segundo da prévia girando sozinha na tela inicial
@@ -134,7 +139,8 @@ local curtain = new("Frame", {
 	Parent = curtainGui,
 })
 
--- Fundo: preto em cima, cinza embaixo. Já nasce opaco para o mapa nunca aparecer depois do carregamento.
+-- Fundo: grafite escuro, um brilho laranja atrás da prévia e uma sombra atrás da coluna de botões. Já nasce opaco
+-- para o mapa nunca aparecer depois do carregamento.
 local background = new("Frame", {
 	Size = UDim2.fromScale(1, 1),
 	BackgroundColor3 = BACKDROP,
@@ -142,24 +148,38 @@ local background = new("Frame", {
 	Active = true, -- segura os cliques (a ferramenta equipada não recebe)
 	Parent = screen,
 })
-UITheme.gradient(background, { Color3.fromRGB(16, 16, 18), Color3.fromRGB(255, 255, 255) })
-for _, stripe in {
-	{ Y = 0.16, Height = 5, Transparency = 0.78 },
-	{ Y = 0.2, Height = 2, Transparency = 0.86 },
-	{ Y = 0.84, Height = 7, Transparency = 0.72 },
-	{ Y = 0.89, Height = 3, Transparency = 0.86 },
-} do
-	new("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, stripe.Y),
-		Size = UDim2.new(1.6, 0, 0, stripe.Height),
-		Rotation = -8,
-		BackgroundColor3 = ACCENT,
-		BackgroundTransparency = stripe.Transparency,
-		BorderSizePixel = 0,
-		Parent = background,
+UITheme.gradient(background, { Color3.fromRGB(50, 50, 55), Color3.fromRGB(180, 180, 188) })
+-- Brilho atrás do personagem: círculos quase transparentes um dentro do outro (fica um degradê redondo e suave)
+for index = 1, 6 do
+	local size = 1 - (index - 1) * 0.14
+	new("UICorner", {
+		CornerRadius = UDim.new(0.5, 0),
+		Parent = new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.72, 0.5),
+			Size = UDim2.fromScale(0.62 * size, 1.1 * size),
+			BackgroundColor3 = ACCENT,
+			BackgroundTransparency = 0.965,
+			BorderSizePixel = 0,
+			Parent = background,
+		}),
 	})
 end
+-- Sombra à esquerda (os botões leem melhor)
+local leftShade = new("Frame", {
+	Size = UDim2.fromScale(0.55, 1),
+	BackgroundColor3 = BLACK,
+	BorderSizePixel = 0,
+	Parent = background,
+})
+new("UIGradient", {
+	Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.35),
+		NumberSequenceKeypoint.new(0.7, 0.8),
+		NumberSequenceKeypoint.new(1, 1),
+	}),
+	Parent = leftShade,
+})
 -- Kanji gigante de fundo (悪魔 = demônio), bem apagado atrás da prévia
 label({
 	AnchorPoint = Vector2.new(1, 0.5),
@@ -169,13 +189,11 @@ label({
 	Font = Fonts.Title,
 	TextSize = 330,
 	TextColor3 = ACCENT,
-	TextTransparency = 0.9,
+	TextTransparency = 0.94,
 	Text = "悪\n魔",
 	LineHeight = 0.95,
 	Parent = background,
 })
-UITheme.sawEdge(background, "Top", ACCENT_DARK, 22)
-UITheme.sawEdge(background, "Bottom", ACCENT_DARK, 22)
 
 local content = new("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
@@ -238,9 +256,9 @@ label({
 	Position = UDim2.new(0.5, 0, 0, 584),
 	Size = UDim2.fromOffset(560, 40),
 	TextXAlignment = Enum.TextXAlignment.Center,
-	Font = Fonts.Marker,
-	TextSize = 32,
-	TextStrokeTransparency = 0.4,
+	Font = FONT_HEAVY,
+	TextSize = 28,
+	TextStrokeTransparency = 0.6,
 	Text = upper(player.DisplayName),
 	Parent = stage,
 })
@@ -250,8 +268,8 @@ local clanLine = label({
 	Size = UDim2.fromOffset(560, 24),
 	TextXAlignment = Enum.TextXAlignment.Center,
 	RichText = true,
-	Font = Fonts.Title,
-	TextSize = 17,
+	Font = FONT_BOLD,
+	TextSize = 16,
 	Parent = stage,
 })
 label({
@@ -396,58 +414,76 @@ end
 
 -- ================= Botões e peças =================
 
--- Botão da coluna da esquerda (barra laranja, kanji e texto de pincel). primary = laranja (JOGAR).
--- Mais baixos e estreitos desde 2026-10-05 (o usuário achou os botões grandes demais).
+-- Botão da coluna da esquerda: compacto, com o kanji num quadradinho e o texto em Builder Sans. primary = laranja
+-- cheio (JOGAR); os outros são cartões escuros que acendem no hover (barrinha laranja à esquerda).
 local function slabButton(parent, order, glyph, textValue, primary)
-	local height = if primary then 54 else 42
+	local height = if primary then 48 else 38
 	local button = new("TextButton", {
-		Size = UDim2.fromOffset(330, height),
+		Size = UDim2.fromOffset(290, height),
 		BackgroundColor3 = if primary then ACCENT else CARD,
-		BackgroundTransparency = if primary then 0 else 0.12,
+		BackgroundTransparency = if primary then 0 else 0.35,
 		AutoButtonColor = false,
 		LayoutOrder = order,
+		Text = "",
 		Parent = parent,
 	})
-	round(button, UDim.new(0, 4))
-	local stroke = UITheme.stroke(button, if primary then BLACK else LINE, 1.5)
+	round(button, UDim.new(0, 10))
+	local stroke = UITheme.stroke(button, if primary then ACCENT_DARK else WHITE, 1, if primary then 0.4 else 0.9)
 	if primary then
-		UITheme.gradient(button, { Color3.fromRGB(255, 255, 255), Color3.fromRGB(175, 170, 165) })
+		UITheme.gradient(button, { Color3.fromRGB(255, 255, 255), Color3.fromRGB(215, 205, 198) })
 	end
-	local bar = new("Frame", {
-		Size = UDim2.new(0, 4, 1, 0),
+	local bar = round(new("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 0, 0.5, 0),
+		Size = UDim2.new(0, 3, 0.5, 0),
 		BackgroundColor3 = if primary then LIGHT else ACCENT,
-		BackgroundTransparency = if primary then 0.3 else 0.55,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Parent = button,
-	})
+	}), UDim.new(0, 2))
+	local glyphBox = round(new("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 8, 0.5, 0),
+		Size = UDim2.fromOffset(height - 14, height - 14),
+		BackgroundColor3 = if primary then BLACK else ACCENT,
+		BackgroundTransparency = if primary then 0.82 else 0.85,
+		BorderSizePixel = 0,
+		Parent = button,
+	}), UDim.new(0, 7))
 	local glyphLabel = label({
-		Position = UDim2.fromOffset(10, 0),
-		Size = UDim2.new(0, 36, 1, 0),
+		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Fonts.Title,
-		TextSize = if primary then 24 else 18,
+		TextSize = if primary then 18 else 15,
 		TextColor3 = if primary then WHITE else ACCENT,
 		Text = glyph,
-		Parent = button,
+		Parent = glyphBox,
 	})
+	local textX = height + 2
 	local textLabel = label({
-		Position = UDim2.fromOffset(54, 0),
-		Size = UDim2.new(1, -70, 1, 0),
-		Font = Fonts.Marker,
-		TextSize = if primary then 27 else 20,
+		Position = UDim2.fromOffset(textX, 0),
+		Size = UDim2.new(1, -(textX + 40), 1, 0),
+		Font = FONT_HEAVY,
+		TextSize = if primary then 20 else 16,
 		TextColor3 = WHITE,
 		Text = textValue,
 		Parent = button,
 	})
 	button.MouseEnter:Connect(function()
-		UITheme.tween(textLabel, 0.12, { Position = UDim2.fromOffset(62, 0) })
-		UITheme.tween(bar, 0.12, { BackgroundTransparency = 0, Size = UDim2.new(0, 7, 1, 0) })
-		stroke.Color = if primary then LIGHT else ACCENT
+		UITheme.tween(textLabel, 0.12, { Position = UDim2.fromOffset(textX + 5, 0) })
+		UITheme.tween(bar, 0.12, { BackgroundTransparency = 0 })
+		if not primary then
+			UITheme.tween(button, 0.12, { BackgroundTransparency = 0.1 })
+			stroke.Transparency = 0.7
+		end
 	end)
 	button.MouseLeave:Connect(function()
-		UITheme.tween(textLabel, 0.12, { Position = UDim2.fromOffset(54, 0) })
-		UITheme.tween(bar, 0.12, { BackgroundTransparency = if primary then 0.3 else 0.55, Size = UDim2.new(0, 4, 1, 0) })
-		stroke.Color = if primary then BLACK else LINE
+		UITheme.tween(textLabel, 0.12, { Position = UDim2.fromOffset(textX, 0) })
+		UITheme.tween(bar, 0.12, { BackgroundTransparency = 1 })
+		if not primary then
+			UITheme.tween(button, 0.12, { BackgroundTransparency = 0.35 })
+			stroke.Transparency = 0.9
+		end
 	end)
 	return button, textLabel, glyphLabel
 end
@@ -457,77 +493,89 @@ local function badge(parent)
 	local frame = round(new("Frame", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -14, 0.5, 0),
-		Size = UDim2.fromOffset(24, 24),
+		Size = UDim2.fromOffset(20, 20),
 		BackgroundColor3 = ACCENT,
 		Visible = false,
 		Parent = parent,
 	}), UDim.new(0.5, 0))
-	UITheme.stroke(frame, BLACK, 2)
+	UITheme.stroke(frame, BLACK, 1.5)
 	local value = label({
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
-		Font = Fonts.Number,
-		TextSize = 14,
+		Font = FONT_HEAVY,
+		TextSize = 12,
 		Parent = frame,
 	})
 	return frame, value
 end
 
--- Cabeçalho das páginas: título de pincel, subtítulo e o × de voltar
+-- Cabeçalho das páginas: título, subtítulo e o × de voltar. Painel escuro de cantos redondos, a 92% do tamanho do
+-- projeto (o conteúdo continua nas mesmas posições) e no meio da altura.
+local PAGE_SCALE = 0.92
 local function makePage(titleText, subtitleText)
-	local page = UITheme.panel({
-		Position = UDim2.fromOffset(60, 40),
+	local page = new("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.fromOffset(60, DESIGN_H / 2),
 		Size = UDim2.fromOffset(540, 640),
+		BackgroundColor3 = Color3.fromRGB(18, 18, 21),
+		BackgroundTransparency = 0.06,
+		BorderSizePixel = 0,
 		Visible = false,
 		Active = true,
 		Parent = content,
-	}, ACCENT, ACCENT_DARK)
+	})
+	round(page, UDim.new(0, 14))
+	UITheme.stroke(page, WHITE, 1, 0.88)
+	new("UIScale", { Scale = PAGE_SCALE, Parent = page })
 	local title = label({
-		Position = UDim2.fromOffset(24, 14),
-		Size = UDim2.fromOffset(420, 42),
-		Font = Fonts.Marker,
-		TextSize = 34,
+		Position = UDim2.fromOffset(24, 18),
+		Size = UDim2.fromOffset(420, 34),
+		Font = FONT_HEAVY,
+		TextSize = 28,
 		Text = titleText,
 		Parent = page,
 	})
 	local subtitle = label({
-		Position = UDim2.fromOffset(26, 56),
+		Position = UDim2.fromOffset(25, 54),
 		Size = UDim2.fromOffset(440, 18),
-		Font = Fonts.Body,
+		Font = FONT_MEDIUM,
 		TextSize = 14,
 		TextColor3 = DIM,
 		Text = subtitleText,
 		Parent = page,
 	})
-	local close = new("TextButton", {
+	local close = round(new("TextButton", {
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -14, 0, 14),
-		Size = UDim2.fromOffset(36, 36),
-		BackgroundTransparency = 1,
+		Position = UDim2.new(1, -16, 0, 16),
+		Size = UDim2.fromOffset(34, 34),
+		BackgroundColor3 = CARD_LIGHT,
+		BackgroundTransparency = 0.3,
 		AutoButtonColor = false,
 		Font = Fonts.Title,
-		TextSize = 28,
+		TextSize = 22,
 		TextColor3 = DIM,
 		Text = "×",
 		Parent = page,
-	})
+	}), UDim.new(0.5, 0))
 	close.MouseEnter:Connect(function()
 		close.TextColor3 = WHITE
+		close.BackgroundColor3 = ACCENT
 	end)
 	close.MouseLeave:Connect(function()
 		close.TextColor3 = DIM
+		close.BackgroundColor3 = CARD_LIGHT
 	end)
 	local line = new("Frame", {
-		Position = UDim2.fromOffset(20, 84),
-		Size = UDim2.new(1, -40, 0, 2),
-		BackgroundColor3 = ACCENT,
+		Position = UDim2.fromOffset(24, 84),
+		Size = UDim2.new(1, -48, 0, 1),
+		BackgroundColor3 = WHITE,
+		BackgroundTransparency = 0.85,
 		BorderSizePixel = 0,
 		Parent = page,
 	})
 	new("UIGradient", {
 		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.2),
-			NumberSequenceKeypoint.new(0.6, 0.6),
+			NumberSequenceKeypoint.new(0, 0),
 			NumberSequenceKeypoint.new(1, 1),
 		}),
 		Parent = line,
@@ -535,10 +583,10 @@ local function makePage(titleText, subtitleText)
 	return { Frame = page, Title = title, Subtitle = subtitle, Close = close }
 end
 
--- Botão comum (UITheme.button) com fonte de pincel
+-- Botão comum (UITheme.button) com Builder Sans (antes era a fonte de pincel)
 local function actionButton(parent, props, color)
-	props.Font = props.Font or Fonts.Marker
-	props.TextSize = props.TextSize or 22
+	props.Font = props.Font or FONT_HEAVY
+	props.TextSize = math.min(props.TextSize or 18, 18)
 	props.Parent = parent
 	return UITheme.button(props, color or ACCENT, ACCENT)
 end
@@ -561,19 +609,23 @@ local confirmLayer = new("Frame", {
 	ZIndex = 50,
 	Parent = screen,
 })
-local confirmPanel = UITheme.panel({
+local confirmPanel = round(new("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Position = UDim2.fromScale(0.5, 0.5),
 	Size = UDim2.fromOffset(460, 220),
+	BackgroundColor3 = Color3.fromRGB(18, 18, 21),
+	BackgroundTransparency = 0.04,
+	BorderSizePixel = 0,
 	ZIndex = 51,
 	Parent = confirmLayer,
-}, ACCENT, ACCENT_DARK)
+}), UDim.new(0, 14))
+UITheme.stroke(confirmPanel, WHITE, 1, 0.85)
 UITheme.autoScale(confirmPanel, 500, 260)
 local confirmTitle = label({
 	Position = UDim2.fromOffset(24, 18),
 	Size = UDim2.fromOffset(412, 36),
-	Font = Fonts.Marker,
-	TextSize = 28,
+	Font = FONT_HEAVY,
+	TextSize = 24,
 	ZIndex = 52,
 	Parent = confirmPanel,
 })
@@ -626,44 +678,44 @@ end)
 -- ================= Tela inicial (esquerda) =================
 
 local home = new("Frame", {
-	Position = UDim2.fromOffset(70, 0),
-	Size = UDim2.fromOffset(520, DESIGN_H),
+	Position = UDim2.fromOffset(80, 0),
+	Size = UDim2.fromOffset(460, DESIGN_H),
 	BackgroundTransparency = 1,
 	Parent = content,
 })
 local logo = label({
-	Position = UDim2.fromOffset(0, 46),
-	Size = UDim2.fromOffset(520, 170),
+	Position = UDim2.fromOffset(0, 112),
+	Size = UDim2.fromOffset(460, 130),
 	TextYAlignment = Enum.TextYAlignment.Top,
 	Font = Fonts.Horror,
-	TextSize = 88,
-	LineHeight = 0.86,
+	TextSize = 66,
+	LineHeight = 0.88,
 	TextColor3 = LIGHT,
 	Text = "CHAINSAW\nDEMONS",
 	Parent = home,
 })
-new("UIStroke", { Color = BLACK, Thickness = 5, Parent = logo })
-UITheme.drips(logo, { Color = ACCENT, Count = 7, MaxLength = 34, Seed = 21, From = 0.04, To = 0.62 })
+new("UIStroke", { Color = BLACK, Thickness = 4, Parent = logo })
+UITheme.drips(logo, { Color = ACCENT, Count = 5, MaxLength = 22, Seed = 21, From = 0.04, To = 0.5 })
 local logoScale = new("UIScale", { Parent = logo })
 
 local statusLabel = label({
-	Position = UDim2.fromOffset(4, 236),
-	Size = UDim2.fromOffset(500, 22),
+	Position = UDim2.fromOffset(2, 248),
+	Size = UDim2.fromOffset(440, 20),
 	RichText = true,
-	Font = Fonts.Title,
-	TextSize = 18,
+	Font = FONT_BOLD,
+	TextSize = 16,
 	TextColor3 = LIGHT,
 	Text = "Carregando seus dados...",
 	Parent = home,
 })
 
 local buttonList = new("Frame", {
-	Position = UDim2.fromOffset(0, 282),
-	Size = UDim2.fromOffset(420, 360),
+	Position = UDim2.fromOffset(0, 284),
+	Size = UDim2.fromOffset(300, 300),
 	BackgroundTransparency = 1,
 	Parent = home,
 })
-UITheme.list(buttonList, 8)
+UITheme.list(buttonList, 6)
 local playButton, playText = slabButton(buttonList, 1, "始", "JOGAR", true)
 local characterButton = slabButton(buttonList, 2, "顔", "PERSONAGEM")
 local clanButton = slabButton(buttonList, 3, "家", "CLÃ")
@@ -679,10 +731,10 @@ UITheme.tooltip(codesButton, UITheme.tipText("Códigos", "Resgate códigos para 
 UITheme.tooltip(passesButton, UITheme.tipText("Passes e VIP", "Benefícios permanentes, giros diários e servidor VIP"))
 
 label({
-	Position = UDim2.fromOffset(4, 660),
-	Size = UDim2.fromOffset(500, 18),
-	Font = Fonts.Body,
-	TextSize = 13,
+	Position = UDim2.fromOffset(2, 590),
+	Size = UDim2.fromOffset(440, 16),
+	Font = FONT_MEDIUM,
+	TextSize = 12,
 	TextColor3 = DIM,
 	Text = "Enter: jogar   ·   no jogo, o botão ≡ da HUD tem \"Menu principal\"",
 	Parent = home,
@@ -1007,8 +1059,8 @@ for index, tab in TABS do
 		Size = UDim2.fromOffset(158, 38),
 		BackgroundColor3 = CARD,
 		AutoButtonColor = false,
-		Font = Fonts.Marker,
-		TextSize = 19,
+		Font = FONT_HEAVY,
+		TextSize = 16,
 		TextColor3 = DIM,
 		Text = tab.Text,
 		LayoutOrder = index,
@@ -1096,8 +1148,8 @@ end
 local clanName = label({
 	Position = UDim2.fromOffset(166, 14),
 	Size = UDim2.fromOffset(320, 40),
-	Font = Fonts.Marker,
-	TextSize = 34,
+	Font = FONT_HEAVY,
+	TextSize = 30,
 	Text = "",
 	Parent = clanCard,
 })
@@ -1813,7 +1865,7 @@ local function refreshHome()
 		statusLabel.Text = ""
 	end
 	playText.Text = if not isCreated() then "CRIAR PERSONAGEM" elseif hasPlayed then "VOLTAR AO JOGO" else "JOGAR"
-	playText.TextSize = if isCreated() then 27 else 22
+	playText.TextSize = if isCreated() then 20 else 17
 	local spins = spinsLeft()
 	spinBadge.Visible = spins > 0
 	spinBadgeText.Text = if spins > 99 then "99+" else tostring(spins)
