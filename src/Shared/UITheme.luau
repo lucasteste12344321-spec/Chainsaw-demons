@@ -555,12 +555,12 @@ function UITheme.sawBlade(parent, diameter, color, teeth)
 	end
 end
 
--- 12345 -> "12.345"
+-- 12345 -> "12,345" (formato em inglês)
 function UITheme.formatNumber(n)
 	local negative = n < 0
 	local digits = tostring(math.floor(math.abs(n)))
-	local formatted = digits:reverse():gsub("(%d%d%d)", "%1."):reverse()
-	if formatted:sub(1, 1) == "." then
+	local formatted = digits:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+	if formatted:sub(1, 1) == "," then
 		formatted = formatted:sub(2)
 	end
 	return if negative then "-" .. formatted else formatted
@@ -582,12 +582,12 @@ end
 
 -- Nome curto do tipo de habilidade (campo Kind do PathData)
 UITheme.SkillKinds = {
-	Cone = "cone à frente",
-	Area = "área à frente",
-	Dash = "investida",
-	Projectile = "projétil",
-	Mark = "marca",
-	Buff = "em si mesmo",
+	Cone = "cone in front",
+	Area = "area in front",
+	Dash = "charge",
+	Projectile = "projectile",
+	Mark = "mark",
+	Buff = "self buff",
 }
 
 -- string.upper não conhece letras acentuadas em UTF-8 ("Caçador" viraria "CAçADOR")
@@ -618,13 +618,12 @@ function UITheme.formatPercent(fraction)
 	return `{math.floor(fraction * 100 + 0.5)}%`
 end
 
--- 10 -> "10s", 0.5 -> "0,5s"
+-- 10 -> "10s", 0.5 -> "0.5s"
 function UITheme.formatSeconds(seconds)
 	if seconds == math.floor(seconds) then
 		return `{seconds}s`
 	end
-	local text = string.gsub(string.format("%.1f", seconds), "%.", ",")
-	return text .. "s"
+	return string.format("%.1fs", seconds)
 end
 
 -- Etiqueta arredondada com texto colorido (recompensas, custos, passivos)
@@ -656,19 +655,19 @@ end
 function UITheme.skillStats(skill)
 	local parts = {}
 	if type(skill.Damage) == "number" and skill.Damage > 0 then
-		table.insert(parts, `{skill.Damage} de dano`)
+		table.insert(parts, `{skill.Damage} damage`)
 	end
 	if skill.Kind == "Mark" and skill.Delay then
-		table.insert(parts, `explode em {UITheme.formatSeconds(skill.Delay)}`)
+		table.insert(parts, `explodes in {UITheme.formatSeconds(skill.Delay)}`)
 	end
 	if skill.Kind == "Buff" and skill.Duration then
-		table.insert(parts, `dura {UITheme.formatSeconds(skill.Duration)}`)
+		table.insert(parts, `lasts {UITheme.formatSeconds(skill.Duration)}`)
 	end
 	if type(skill.Stun) == "number" and skill.Stun > 0 then
-		table.insert(parts, `atordoa {UITheme.formatSeconds(skill.Stun)}`)
+		table.insert(parts, `stuns {UITheme.formatSeconds(skill.Stun)}`)
 	end
 	if skill.Cooldown then
-		table.insert(parts, `recarga {UITheme.formatSeconds(skill.Cooldown)}`)
+		table.insert(parts, `cooldown {UITheme.formatSeconds(skill.Cooldown)}`)
 	end
 	return table.concat(parts, "  ·  ")
 end
@@ -676,11 +675,11 @@ end
 -- Custo de uso de uma habilidade: texto e cor
 function UITheme.skillCost(skill)
 	if skill.LifespanCost then
-		return `{skill.LifespanCost} de tempo de vida`, Colors.Lifespan[1]
+		return `{skill.LifespanCost} lifespan`, Colors.Lifespan[1]
 	elseif skill.HealthCost then
-		return `{UITheme.formatPercent(skill.HealthCost)} da vida máxima`, Colors.Health[1]
+		return `{UITheme.formatPercent(skill.HealthCost)} of max health`, Colors.Health[1]
 	end
-	return "Sem custo", Colors.TextDim
+	return "No cost", Colors.TextDim
 end
 
 -- Versão curta do custo, para o slot da HUD ("⏳8", "🩸5%")
@@ -698,13 +697,13 @@ function UITheme.passiveText(passive)
 	if type(passive) ~= "table" then return nil end
 	local parts = {}
 	if type(passive.DodgeChance) == "number" and passive.DodgeChance > 0 then
-		table.insert(parts, `{UITheme.formatPercent(passive.DodgeChance)} de chance de esquivar`)
+		table.insert(parts, `{UITheme.formatPercent(passive.DodgeChance)} dodge chance`)
 	end
 	if type(passive.LifeSteal) == "number" and passive.LifeSteal > 0 then
-		table.insert(parts, `{UITheme.formatPercent(passive.LifeSteal)} do dano causado vira vida`)
+		table.insert(parts, `{UITheme.formatPercent(passive.LifeSteal)} of damage dealt becomes health`)
 	end
 	if type(passive.SpeedBonus) == "number" and passive.SpeedBonus > 0 then
-		table.insert(parts, `+{passive.SpeedBonus} de velocidade`)
+		table.insert(parts, `+{passive.SpeedBonus} speed`)
 	end
 	if #parts == 0 then return nil end
 	return table.concat(parts, "  ·  ")

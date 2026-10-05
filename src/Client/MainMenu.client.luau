@@ -66,13 +66,13 @@ local function upper(textValue)
 	return UITheme.upper(textValue)
 end
 
--- 0.0786 -> "7,86%", 0.55 -> "55%", 0.005 -> "0,5%"
+-- 0.0786 -> "7.86%", 0.55 -> "55%", 0.005 -> "0.5%"
 local function formatChance(chance)
 	local percent = chance * 100
 	local textValue = string.format(if percent >= 10 then "%.1f" else "%.2f", percent)
 	textValue = string.gsub(textValue, "0+$", "")
 	textValue = string.gsub(textValue, "%.$", "")
-	return (string.gsub(textValue, "%.", ",")) .. "%"
+	return textValue .. "%"
 end
 
 -- ================= Estado vindo do servidor =================
@@ -241,7 +241,7 @@ local previewStatus = label({
 	Font = Fonts.Body,
 	TextSize = 15,
 	TextColor3 = DIM,
-	Text = "Carregando o personagem...",
+	Text = "Loading character...",
 	Parent = stage,
 })
 label({
@@ -273,7 +273,7 @@ label({
 	Font = Fonts.Light,
 	TextSize = 12,
 	TextColor3 = DIM,
-	Text = "arraste o personagem para girar",
+	Text = "drag the character to rotate",
 	Parent = stage,
 })
 
@@ -402,7 +402,7 @@ local function refreshClanLine()
 		return
 	end
 	local color = ClanData.Color(clan.Id)
-	clanLine.Text = `<font color="#{color:ToHex()}">{clan.Kanji}  Clã {clan.Name}</font>  <font color="#{DIM:ToHex()}">·  {clan.Rarity}</font>`
+	clanLine.Text = `<font color="#{color:ToHex()}">{clan.Kanji}  {clan.Name} Clan</font>  <font color="#{DIM:ToHex()}">·  {clan.Rarity}</font>`
 end
 
 -- ================= Botões e peças =================
@@ -697,7 +697,7 @@ local statusLabel = label({
 	Font = MenuFont.Bold,
 	TextSize = 16,
 	TextColor3 = LIGHT,
-	Text = "Carregando seus dados...",
+	Text = "Loading your data...",
 	Parent = home,
 })
 
@@ -708,19 +708,19 @@ local buttonList = new("Frame", {
 	Parent = home,
 })
 UITheme.list(buttonList, 6)
-local playButton, playText = slabButton(buttonList, 1, "始", "JOGAR", true)
-local characterButton = slabButton(buttonList, 2, "顔", "PERSONAGEM")
-local clanButton = slabButton(buttonList, 3, "家", "CLÃ")
-local codesButton = slabButton(buttonList, 4, "符", "CÓDIGOS")
+local playButton, playText = slabButton(buttonList, 1, "始", "PLAY", true)
+local characterButton = slabButton(buttonList, 2, "顔", "CHARACTER")
+local clanButton = slabButton(buttonList, 3, "家", "CLAN")
+local codesButton = slabButton(buttonList, 4, "符", "CODES")
 local passesButton = slabButton(buttonList, 5, "券", "PASSES")
-local settingsButton = slabButton(buttonList, 6, "設", "CONFIGURAÇÕES")
+local settingsButton = slabButton(buttonList, 6, "設", "SETTINGS")
 local spinBadge, spinBadgeText = badge(clanButton)
-UITheme.tooltip(characterButton, UITheme.tipText("Personagem", "Pele, rosto, cabelo e roupas"))
+UITheme.tooltip(characterButton, UITheme.tipText("Character", "Skin, face, hair and clothes"))
 UITheme.tooltip(clanButton, function()
-	return UITheme.tipText("Clã", `Seu sobrenome dá um bônus pequeno. Giros guardados: {spinsLeft()}`)
+	return UITheme.tipText("Clan", `Your family name gives a small bonus. Saved spins: {spinsLeft()}`)
 end)
-UITheme.tooltip(codesButton, UITheme.tipText("Códigos", "Resgate códigos para ganhar giros de clã"))
-UITheme.tooltip(passesButton, UITheme.tipText("Passes e VIP", "Benefícios permanentes, giros diários e servidor VIP"))
+UITheme.tooltip(codesButton, UITheme.tipText("Codes", "Redeem codes to earn clan spins"))
+UITheme.tooltip(passesButton, UITheme.tipText("Passes & VIP", "Permanent perks, daily spins and a VIP server"))
 -- Trocar de save (PlayerData "Switch": salva e entra num servidor novo, onde a tela de saves abre de novo).
 -- Num bloco: o script está perto do limite de variáveis locais.
 do
@@ -739,13 +739,13 @@ label({
 	Font = MenuFont.Medium,
 	TextSize = 12,
 	TextColor3 = DIM,
-	Text = "Enter: jogar   ·   no jogo, o botão ≡ da HUD tem \"Menu principal\"",
+	Text = "Enter: play   ·   in game, the HUD ≡ button has \"Main menu\"",
 	Parent = home,
 })
 
 -- ================= Página: personagem =================
 
-local characterPage = makePage("PERSONAGEM", "Monte o visual do seu caçador")
+local characterPage = makePage("CHARACTER", "Design your hunter's look")
 local creating = false -- primeiro acesso: sem voltar, termina no SALVAR
 
 local tabsRow = new("Frame", {
@@ -782,14 +782,14 @@ local randomButton = actionButton(characterPage.Frame, {
 	AnchorPoint = Vector2.new(0, 1),
 	Position = UDim2.new(0, 20, 1, -18),
 	Size = UDim2.fromOffset(200, 46),
-	Text = "ALEATÓRIO",
+	Text = "RANDOM",
 	TextSize = 20,
 }, Colors.PanelLight)
 local saveButton = actionButton(characterPage.Frame, {
 	AnchorPoint = Vector2.new(1, 1),
 	Position = UDim2.new(1, -20, 1, -18),
 	Size = UDim2.fromOffset(260, 46),
-	Text = "SALVAR",
+	Text = "SAVE",
 })
 
 local sectionRefreshers = {} -- funções que repintam a seleção de cada seção
@@ -870,7 +870,7 @@ end
 
 -- Rostos: a imagem do rosto em cima da cor da pele escolhida
 local function faceSection(tabId, order)
-	local title = sectionTitle(tabContent, order, "Rosto")
+	local title = sectionTitle(tabContent, order, "Face")
 	local grid = gridFrame(tabContent, order + 1, UDim2.fromOffset(110, 110))
 	local cells = {}
 	for index, entry in AppearanceData.Faces do
@@ -1006,11 +1006,11 @@ local function addHairTag(entry, button, nameText)
 		Font = Fonts.Title,
 		TextSize = 11,
 		TextColor3 = LIGHT,
-		Text = "física",
+		Text = "physics",
 		Parent = tag,
 	})
 	nameText.Size = UDim2.new(1, -84, 1, 0)
-	UITheme.tooltip(button, UITheme.tipText(entry.Name, "Balança com o movimento (SmartBone)"))
+	UITheme.tooltip(button, UITheme.tipText(entry.Name, "Sways as you move (SmartBone)"))
 end
 local function hairTag(entry, button, nameText)
 	if not entry.Model then return end
@@ -1024,17 +1024,17 @@ local function hairTag(entry, button, nameText)
 	end)
 end
 
-swatchSection("Corpo", 10, "Pele", "Skin", AppearanceData.Skins)
+swatchSection("Corpo", 10, "Skin", "Skin", AppearanceData.Skins)
 faceSection("Corpo", 20)
-optionSection("Cabelo", 30, "Estilo", "Hair", AppearanceData.Hairs, hairTag)
-swatchSection("Cabelo", 40, "Cor do cabelo", "HairColor", AppearanceData.HairColors)
-optionSection("Roupa", 50, "Camisa", "Shirt", AppearanceData.Shirts, clothingChip)
-optionSection("Roupa", 60, "Calça", "Pants", AppearanceData.Pants, clothingChip)
+optionSection("Cabelo", 30, "Style", "Hair", AppearanceData.Hairs, hairTag)
+swatchSection("Cabelo", 40, "Hair color", "HairColor", AppearanceData.HairColors)
+optionSection("Roupa", 50, "Shirt", "Shirt", AppearanceData.Shirts, clothingChip)
+optionSection("Roupa", 60, "Pants", "Pants", AppearanceData.Pants, clothingChip)
 
 local TABS = {
-	{ Id = "Corpo", Text = "CORPO", Camera = CAMERA_HEAD },
-	{ Id = "Cabelo", Text = "CABELO", Camera = CAMERA_HEAD },
-	{ Id = "Roupa", Text = "ROUPA", Camera = CAMERA_FULL },
+	{ Id = "Corpo", Text = "BODY", Camera = CAMERA_HEAD },
+	{ Id = "Cabelo", Text = "HAIR", Camera = CAMERA_HEAD },
+	{ Id = "Roupa", Text = "CLOTHES", Camera = CAMERA_FULL },
 }
 
 local function selectTab(tabId, instant)
@@ -1085,13 +1085,13 @@ end
 
 function refreshDirty()
 	local dirty = not sameAppearance(draft, readAppearance()) or not isCreated()
-	dirtyLabel.Text = if dirty and isCreated() then "• alterações não salvas" else ""
+	dirtyLabel.Text = if dirty and isCreated() then "• unsaved changes" else ""
 	return dirty
 end
 
 -- ================= Página: clã =================
 
-local clanPage = makePage("CLÃ", "Seu sobrenome dá um bônus pequeno para sempre")
+local clanPage = makePage("CLAN", "Your family name gives a small permanent bonus")
 local clanCard = round(new("Frame", {
 	Position = UDim2.fromOffset(20, 98),
 	Size = UDim2.fromOffset(500, 196),
@@ -1203,7 +1203,7 @@ ClanChoice.SpinsTitle = label({
 	Font = Fonts.Title,
 	TextSize = 13,
 	TextColor3 = DIM,
-	Text = "GIROS",
+	Text = "SPINS",
 	Parent = clanPage.Frame,
 })
 local spinsValue = label({
@@ -1217,7 +1217,7 @@ local spinsValue = label({
 local spinButton = actionButton(clanPage.Frame, {
 	Position = UDim2.fromOffset(128, 310),
 	Size = UDim2.fromOffset(170, 50),
-	Text = "GIRAR",
+	Text = "SPIN",
 	TextSize = 26,
 })
 local buyButton = actionButton(clanPage.Frame, {
@@ -1225,7 +1225,7 @@ local buyButton = actionButton(clanPage.Frame, {
 	Size = UDim2.fromOffset(210, 50),
 	Font = Fonts.Title,
 	TextSize = 15,
-	Text = `+1 GIRO  ·  {UITheme.formatNumber(ClanData.SpinGoldCost)} Gold`,
+	Text = `+1 SPIN  ·  {UITheme.formatNumber(ClanData.SpinGoldCost)} Gold`,
 }, Colors.PanelLight)
 local clanHint = label({
 	Position = UDim2.fromOffset(24, 366),
@@ -1240,7 +1240,7 @@ local continueButton = actionButton(clanPage.Frame, {
 	AnchorPoint = Vector2.new(0.5, 1),
 	Position = UDim2.new(0.5, 0, 1, -18),
 	Size = UDim2.fromOffset(300, 48),
-	Text = "CONTINUAR",
+	Text = "CONTINUE",
 	Visible = false,
 })
 
@@ -1249,7 +1249,7 @@ label({
 	Size = UDim2.fromOffset(300, 20),
 	Font = Fonts.Title,
 	TextSize = 14,
-	Text = "TODOS OS CLÃS",
+	Text = "ALL CLANS",
 	Parent = clanPage.Frame,
 })
 local clanList = new("ScrollingFrame", {
@@ -1294,7 +1294,7 @@ do
 				RichText = true,
 				Font = Fonts.Title,
 				TextSize = 13,
-				Text = `<font color="#{rarity.Color:ToHex()}">{upper(rarity.Id)}</font>  <font color="#{DIM:ToHex()}">{formatChance(rarity.Chance)} no total</font>`,
+				Text = `<font color="#{rarity.Color:ToHex()}">{upper(rarity.Id)}</font>  <font color="#{DIM:ToHex()}">{formatChance(rarity.Chance)} total</font>`,
 				LayoutOrder = order,
 				Parent = clanList,
 			})
@@ -1382,7 +1382,7 @@ local function showClan(clanId, reel)
 		kanjiLabel.Text = "?"
 		kanjiLabel.TextColor3 = DIM
 		kanjiStroke.Color = LINE
-		clanName.Text = "SEM CLÃ"
+		clanName.Text = "NO CLAN"
 		clanRarity.Text = ""
 		clanDescription.Text = ""
 		return
@@ -1399,8 +1399,8 @@ local function showClan(clanId, reel)
 		return
 	end
 	local detail = if ClanChoice.Restricted()
-		then `{UITheme.formatNumber(ClanData.ChooseGoldCost[clan.Rarity] or 0)} Gold para escolher`
-		else `{formatChance(ClanData.Chance(clan.Id))} de chance`
+		then `{UITheme.formatNumber(ClanData.ChooseGoldCost[clan.Rarity] or 0)} Gold to choose`
+		else `{formatChance(ClanData.Chance(clan.Id))} chance`
 	clanRarity.Text = `<font color="#{color:ToHex()}">{upper(clan.Rarity)}</font>  <font color="#{DIM:ToHex()}">·  {detail}</font>`
 	clanDescription.Text = clan.Description
 	for index, key in SkillTreeData.EffectOrder do
@@ -1415,12 +1415,12 @@ end
 
 local revealing = false -- primeiro acesso: mostrando o clã de nascença
 
--- Preço de escolher o clã em texto ("2 créditos + 3.000 Gold") e o Gold que falta pagar
+-- Preço de escolher o clã em texto ("2 credits + 3,000 Gold") e o Gold que falta pagar
 function ClanChoice.CostText(clanId)
 	local credits, gold = ClanData.ChooseCost(clanId, spinsLeft())
 	local parts = {}
 	if credits > 0 then
-		table.insert(parts, `{credits} {if credits == 1 then "crédito" else "créditos"}`)
+		table.insert(parts, `{credits} {if credits == 1 then "credit" else "credits"}`)
 	end
 	if gold > 0 or credits == 0 then
 		table.insert(parts, `{UITheme.formatNumber(gold)} Gold`)
@@ -1450,36 +1450,36 @@ function refreshClanPage()
 	for rarityId, header in ClanChoice.Headers do
 		local rarity = ClanData.GetRarity(rarityId)
 		local detail = if choosing
-			then `{UITheme.formatNumber(ClanData.ChooseGoldCost[rarityId] or 0)} Gold cada`
-			else `{formatChance(rarity.Chance)} no total`
+			then `{UITheme.formatNumber(ClanData.ChooseGoldCost[rarityId] or 0)} Gold each`
+			else `{formatChance(rarity.Chance)} total`
 		header.Text = `<font color="#{rarity.Color:ToHex()}">{upper(rarity.Id)}</font>  <font color="#{DIM:ToHex()}">{detail}</font>`
 	end
 	spinsValue.Text = tostring(spinsLeft())
-	ClanChoice.SpinsTitle.Text = if choosing then "CRÉDITOS" else "GIROS"
+	ClanChoice.SpinsTitle.Text = if choosing then "CREDITS" else "SPINS"
 	buyButton.Visible = not choosing
 	if choosing then
-		spinButton.Text = "ESCOLHER"
+		spinButton.Text = "CHOOSE"
 		local gold = if ClanChoice.Selected then select(2, ClanChoice.CostText(ClanChoice.Selected)) else 0
 		setButtonEnabled(spinButton, not rolling and ClanChoice.Selected ~= nil and goldAmount() >= gold)
 		if not rolling then
 			if ClanChoice.Selected then
 				local clan = ClanData.Get(ClanChoice.Selected)
-				clanHint.Text = `Escolher <b>{clan.Name}</b>: {ClanChoice.CostText(ClanChoice.Selected)} (você tem <b>{UITheme.formatNumber(goldAmount())}</b> Gold).`
+				clanHint.Text = `Choose <b>{clan.Name}</b>: {ClanChoice.CostText(ClanChoice.Selected)} (you have <b>{UITheme.formatNumber(goldAmount())}</b> Gold).`
 			else
-				clanHint.Text = `Sem sorteio na sua conta: toque num clã da lista para escolher. Cada crédito vale {UITheme.formatNumber(ClanData.SpinGoldCost)} Gold.`
+				clanHint.Text = `No random rolls on your account: tap a clan in the list to choose it. Each credit is worth {UITheme.formatNumber(ClanData.SpinGoldCost)} Gold.`
 			end
 		end
 		return
 	end
-	spinButton.Text = "GIRAR"
+	spinButton.Text = "SPIN"
 	local canSpin = not rolling and spinsLeft() > 0
 	setButtonEnabled(spinButton, canSpin)
 	setButtonEnabled(buyButton, not rolling and goldAmount() >= ClanData.SpinGoldCost)
 	if not rolling then
 		if spinsLeft() > 0 then
-			clanHint.Text = `Você tem <b>{UITheme.formatNumber(goldAmount())}</b> Gold. Cada giro troca o seu clã pelo que sair.`
+			clanHint.Text = `You have <b>{UITheme.formatNumber(goldAmount())}</b> Gold. Each spin replaces your clan with whatever you roll.`
 		else
-			clanHint.Text = `Sem giros: resgate um código ou compre com Gold (você tem <b>{UITheme.formatNumber(goldAmount())}</b>).`
+			clanHint.Text = `No spins: redeem a code or buy one with Gold (you have <b>{UITheme.formatNumber(goldAmount())}</b>).`
 		end
 	end
 end
@@ -1519,7 +1519,7 @@ local pendingResult -- nil = esperando; false = sem giro; string = Id sorteado
 local function runReel(onDone)
 	rolling = true
 	refreshClanPage()
-	clanHint.Text = "Girando..."
+	clanHint.Text = "Spinning..."
 	local clans = ClanData.Clans
 	local started = os.clock()
 	local last
@@ -1562,19 +1562,19 @@ local function spin()
 		Remotes.ClanSpin:FireServer()
 		task.spawn(runReel, function(result)
 			if result == nil then
-				clanHint.Text = "O servidor não respondeu. Tente de novo."
+				clanHint.Text = "The server did not respond. Try again."
 			elseif result == false then
-				clanHint.Text = "Sem giros: resgate um código ou compre com Gold."
+				clanHint.Text = "No spins: redeem a code or buy one with Gold."
 			else
 				local clan = ClanData.Get(result)
-				clanHint.Text = `Novo clã: <b>{clan.Name}</b> ({clan.Rarity}). Giros restantes: {spinsLeft()}.`
+				clanHint.Text = `New clan: <b>{clan.Name}</b> ({clan.Rarity}). Spins left: {spinsLeft()}.`
 			end
 		end)
 	end
 	local current = currentClanId()
 	if current and ClanData.IsPrecious(current) then
 		local clan = ClanData.Get(current)
-		confirm("TROCAR DE CLÃ?", `Você vai perder o clã <b>{clan.Name}</b> ({clan.Rarity}). O giro troca pelo que sair, mesmo que seja pior.`, "GIRAR", "CANCELAR", go)
+		confirm("CHANGE CLAN?", `You will lose the <b>{clan.Name}</b> clan ({clan.Rarity}). The spin replaces it with whatever you roll, even if it is worse.`, "SPIN", "CANCEL", go)
 	else
 		go()
 	end
@@ -1586,13 +1586,13 @@ function ClanChoice.Choose()
 	local clan = ClanData.Get(clanId)
 	if rolling or not clan or clanId == currentClanId() then return end
 	local current = ClanData.Get(currentClanId())
-	local loses = if current then ` Você deixa o clã <b>{current.Name}</b>.` else ""
-	confirm("ESCOLHER CLÃ?", `Trocar para <b>{clan.Name}</b> ({clan.Rarity}) por {ClanChoice.CostText(clanId)}.{loses}`, "ESCOLHER", "CANCELAR", function()
+	local loses = if current then ` You leave the <b>{current.Name}</b> clan.` else ""
+	confirm("CHOOSE CLAN?", `Switch to <b>{clan.Name}</b> ({clan.Rarity}) for {ClanChoice.CostText(clanId)}.{loses}`, "CHOOSE", "CANCEL", function()
 		task.spawn(function()
 			pendingResult = nil
 			rolling = true
 			refreshClanPage()
-			clanHint.Text = "Trocando..."
+			clanHint.Text = "Switching..."
 			Remotes.ClanChoose:FireServer(clanId)
 			local started = os.clock()
 			while pendingResult == nil and os.clock() - started < ROLL_TIMEOUT do
@@ -1606,11 +1606,11 @@ function ClanChoice.Choose()
 			end
 			refreshClanPage()
 			if result == nil then
-				clanHint.Text = "O servidor não respondeu. Tente de novo."
+				clanHint.Text = "The server did not respond. Try again."
 			elseif result == false then
-				clanHint.Text = "Não deu para trocar: falta Gold."
+				clanHint.Text = "Could not switch: not enough Gold."
 			else
-				clanHint.Text = `Novo clã: <b>{ClanData.Get(result).Name}</b> ({ClanData.Get(result).Rarity}).`
+				clanHint.Text = `New clan: <b>{ClanData.Get(result).Name}</b> ({ClanData.Get(result).Rarity}).`
 			end
 		end)
 	end)
@@ -1636,7 +1636,7 @@ end)
 
 -- ================= Página: códigos =================
 
-local codesPage = makePage("CÓDIGOS", "Códigos saem nas atualizações e nos avisos do jogo")
+local codesPage = makePage("CODES", "Codes come out with updates and game announcements")
 local codeBox = round(new("TextBox", {
 	Position = UDim2.fromOffset(20, 110),
 	Size = UDim2.fromOffset(500, 56),
@@ -1645,7 +1645,7 @@ local codeBox = round(new("TextBox", {
 	Font = Fonts.Title,
 	TextSize = 22,
 	TextColor3 = WHITE,
-	PlaceholderText = "Digite o código",
+	PlaceholderText = "Enter a code",
 	PlaceholderColor3 = DIM,
 	Text = "",
 	Parent = codesPage.Frame,
@@ -1654,7 +1654,7 @@ local codeStroke = UITheme.stroke(codeBox, LINE, 1.5)
 local redeemButton = actionButton(codesPage.Frame, {
 	Position = UDim2.fromOffset(20, 180),
 	Size = UDim2.fromOffset(500, 50),
-	Text = "RESGATAR",
+	Text = "REDEEM",
 	TextSize = 24,
 })
 local codeResult = label({
@@ -1674,7 +1674,7 @@ label({
 	Font = Fonts.Body,
 	TextSize = 13,
 	TextColor3 = DIM,
-	Text = "Cada código vale uma vez por conta. Os giros de clã ganhos aqui ficam guardados até você usar na aba CLÃ.",
+	Text = "Each code works once per save. Clan spins earned here are kept until you use them on the CLAN tab.",
 	Parent = codesPage.Frame,
 })
 
@@ -1685,13 +1685,13 @@ local function redeem()
 	redeeming = true
 	setButtonEnabled(redeemButton, false)
 	codeResult.TextColor3 = DIM
-	codeResult.Text = "Conferindo..."
+	codeResult.Text = "Checking..."
 	Remotes.RedeemCode:FireServer(code)
 	task.delay(4, function()
 		if redeeming then
 			redeeming = false
 			setButtonEnabled(redeemButton, true)
-			codeResult.Text = "Sem resposta do servidor. Tente de novo."
+			codeResult.Text = "No response from the server. Try again."
 		end
 	end)
 end
@@ -1717,7 +1717,7 @@ end)
 
 -- ================= Página: configurações =================
 
-local settingsPage = makePage("CONFIGURAÇÕES", "Gráficos, movimento e som")
+local settingsPage = makePage("SETTINGS", "Graphics, movement and sound")
 local settingsList = new("Frame", {
 	Position = UDim2.fromOffset(20, 100),
 	Size = UDim2.fromOffset(500, 260),
@@ -1791,12 +1791,12 @@ local function applyMusic()
 	end
 end
 
-toggleRow(1, "Fast Mode", "Menos efeitos e sombras: mais FPS em PC fraco e celular", function()
+toggleRow(1, "Fast Mode", "Fewer effects and shadows: more FPS on weak PCs and phones", function()
 	return FastMode.IsEnabled()
 end, function()
 	FastMode.Toggle()
 end)
-toggleRow(2, "Corrida automática", "Anda correndo; segure Ctrl para andar devagar", function()
+toggleRow(2, "Auto run", "Run while moving; hold Ctrl to walk slowly", function()
 	return player:GetAttribute("AutoRun") ~= false
 end, function()
 	local event = script.Parent:FindFirstChild("MovementAction")
@@ -1804,7 +1804,7 @@ end, function()
 		event:Fire("AutoRun", player:GetAttribute("AutoRun") == false)
 	end
 end)
-toggleRow(3, "Música do menu", "A música que toca quando você entra no jogo", function()
+toggleRow(3, "Menu music", "The music that plays when you join the game", function()
 	return musicOn
 end, function()
 	musicOn = not musicOn
@@ -1827,7 +1827,7 @@ label({
 	Size = UDim2.fromOffset(300, 20),
 	Font = Fonts.Title,
 	TextSize = 14,
-	Text = "CONTROLES",
+	Text = "CONTROLS",
 	Parent = settingsPage.Frame,
 })
 label({
@@ -1840,10 +1840,10 @@ label({
 	Font = Fonts.Body,
 	TextSize = 14,
 	TextColor3 = DIM,
-	Text = "<b>Clique</b>: golpes   ·   <b>F</b>: defender (parry no começo)   ·   <b>Z / X / C</b>: skills do estilo\n"
-		.. "<b>Q</b>: dash   ·   <b>Ctrl</b>: andar/correr   ·   <b>Espaço</b> + 4º golpe: golpe aéreo\n"
-		.. "<b>V / B</b>: poderes do caminho (level 25)   ·   <b>M</b>: árvore de habilidades   ·   <b>G</b>: inventário\n"
-		.. "<b>N</b>: missões   ·   <b>E</b> perto do NPC: falar   ·   <b>1–5</b>: estilos de combate",
+	Text = "<b>Click</b>: attack   ·   <b>F</b>: block (parry at the start)   ·   <b>Z / X / C</b>: style skills\n"
+		.. "<b>Q</b>: dash   ·   <b>Ctrl</b>: walk/run   ·   <b>Space</b> + 4th hit: aerial attack\n"
+		.. "<b>V / B</b>: path powers (level 25)   ·   <b>M</b>: skill tree   ·   <b>G</b>: inventory\n"
+		.. "<b>N</b>: quests   ·   <b>E</b> near an NPC: talk   ·   <b>T</b>: device   ·   <b>1–5</b>: combat styles",
 	Parent = settingsPage.Frame,
 })
 
@@ -1859,7 +1859,7 @@ local function refreshHome()
 	local level = leaderstats and leaderstats:FindFirstChild("Level")
 	if not ready then
 		statusLabel.TextColor3 = DIM
-		statusLabel.Text = "Carregando seus dados..."
+		statusLabel.Text = "Loading your data..."
 	elseif level then
 		local info = PathData.Paths[PathData.FromPlayer(player)]
 		statusLabel.TextColor3 = LIGHT
@@ -1867,7 +1867,7 @@ local function refreshHome()
 	else
 		statusLabel.Text = ""
 	end
-	playText.Text = if not isCreated() then "CRIAR PERSONAGEM" elseif hasPlayed then "VOLTAR AO JOGO" else "JOGAR"
+	playText.Text = if not isCreated() then "CREATE CHARACTER" elseif hasPlayed then "BACK TO GAME" else "PLAY"
 	playText.TextSize = if isCreated() then 20 else 17
 	local spins = spinsLeft()
 	spinBadge.Visible = spins > 0
@@ -1913,10 +1913,10 @@ end
 local function showCharacter(creationMode)
 	hideAll()
 	creating = creationMode == true
-	characterPage.Title.Text = if creating then "CRIE SEU PERSONAGEM" else "PERSONAGEM"
-	characterPage.Subtitle.Text = if creating then "Escolha o visual do seu caçador. Dá para mudar depois no menu." else "Monte o visual do seu caçador"
+	characterPage.Title.Text = if creating then "CREATE YOUR CHARACTER" else "CHARACTER"
+	characterPage.Subtitle.Text = if creating then "Choose your hunter's look. You can change it later in the menu." else "Design your hunter's look"
 	characterPage.Close.Visible = not creating
-	saveButton.Text = if creating then "CRIAR" else "SALVAR"
+	saveButton.Text = if creating then "CREATE" else "SAVE"
 	draft = readAppearance()
 	applyDraftToPreview()
 	previewSpin = false
@@ -1932,8 +1932,8 @@ end
 local function showClanPage(revealMode)
 	hideAll()
 	revealing = revealMode == true
-	clanPage.Title.Text = if revealing then "SEU CLÃ" else "CLÃ"
-	clanPage.Subtitle.Text = if revealing then "O sobrenome que você recebeu ao nascer" else "Seu sobrenome dá um bônus pequeno para sempre"
+	clanPage.Title.Text = if revealing then "YOUR CLAN" else "CLAN"
+	clanPage.Subtitle.Text = if revealing then "The family name you were born with" else "Your family name gives a small permanent bonus"
 	clanPage.Close.Visible = not revealing
 	continueButton.Visible = revealing
 	previewSpin = true
@@ -1946,7 +1946,7 @@ local function showClanPage(revealMode)
 		task.spawn(runReel, function(result)
 			local clan = ClanData.Get(result)
 			if clan then
-				clanHint.Text = `Você nasceu no clã <b>{clan.Name}</b>. Tem <b>{spinsLeft()}</b> giros para tentar outro quando quiser.`
+				clanHint.Text = `You were born into the <b>{clan.Name}</b> clan. You have <b>{spinsLeft()}</b> spins to try for another one whenever you want.`
 			end
 		end)
 	end
@@ -1962,7 +1962,7 @@ end
 local function leaveCharacterPage()
 	if creating then return end
 	if refreshDirty() then
-		confirm("SAIR SEM SALVAR?", "As mudanças no visual vão se perder.", "SALVAR", "DESCARTAR", function()
+		confirm("LEAVE WITHOUT SAVING?", "Your look changes will be lost.", "SAVE", "DISCARD", function()
 			Remotes.SaveAppearance:FireServer(draft)
 			showHome()
 		end, function()
@@ -2002,7 +2002,7 @@ saveButton.MouseButton1Click:Connect(function()
 	saving = true
 	local wasCreating = creating
 	Remotes.SaveAppearance:FireServer(draft)
-	saveButton.Text = "SALVO!"
+	saveButton.Text = "SAVED!"
 	-- Espera o servidor confirmar (atributos Appearance/CharacterCreated)
 	local deadline = os.clock() + 3
 	while os.clock() < deadline and (not isCreated() or not sameAppearance(draft, readAppearance())) do
@@ -2010,7 +2010,7 @@ saveButton.MouseButton1Click:Connect(function()
 	end
 	task.wait(if wasCreating then 0.3 else 1.4)
 	saving = false
-	saveButton.Text = if creating then "CRIAR" else "SALVAR"
+	saveButton.Text = if creating then "CREATE" else "SAVE"
 	refreshDirty()
 	if wasCreating and characterPage.Frame.Visible then
 		creating = false
